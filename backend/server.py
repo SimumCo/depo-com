@@ -1,14 +1,18 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
-from typing import List
+from pydantic import BaseModel, Field, ConfigDict, EmailStr
+from typing import List, Optional, Dict, Any
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+from passlib.context import CryptContext
+import jwt
+from enum import Enum
 
 
 ROOT_DIR = Path(__file__).parent
@@ -19,6 +23,13 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
+# Security
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+security = HTTPBearer()
+SECRET_KEY = os.environ.get("SECRET_KEY", "your-secret-key-change-in-production")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
+
 # Create the main app without a prefix
 app = FastAPI()
 
@@ -26,45 +37,681 @@ app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
 
-# Define Models
-class StatusCheck(BaseModel):
-    model_config = ConfigDict(extra="ignore")  # Ignore MongoDB's _id field
-    
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    client_name: str
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+# ===============================
+# ENUMS
+# ===============================
+class UserRole(str, Enum):
+    ADMIN = "admin"
+    WAREHOUSE_MANAGER = "warehouse_manager"
+    WAREHOUSE_STAFF = "warehouse_staff"
+    SALES_REP = "sales_rep"
+    CUSTOMER = "customer"
 
-class StatusCheckCreate(BaseModel):
-    client_name: str
+class ChannelType(str, Enum):
+    LOGISTICS = "logistics"  # Hotels, Government
+    DEALER = "dealer"  # Supermarkets, End-users
+
+class OrderStatus(str, Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    PREPARING = "preparing"
+    READY = "ready"
+    DISPATCHED = "dispatched"
+    DELIVERED = "delivered"
+    CANCELLED = "cancelled"
+
+class TaskStatus(str, Enum):
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    APPROVED = "approved"
+
+class ShipmentStatus(str, Enum):
+    EXPECTED = "expected"
+    ARRIVED = "arrived"
+    PROCESSED = "processed"
+
+
+# ===============================
+# MODELS
+# ===============================
+class User(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    username: str
+    password_hash: str
+    email: Optional[EmailStr] = None
+    full_name: str
+    role: UserRole
+    customer_number: Optional[str] = None  # For customers only
+    channel_type: Optional[ChannelType] = None  # For customers/sales reps
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class Product(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    sku: str
+    category: str
+    weight: float  # in kg
+    units_per_case: int
+    image_url: Optional[str] = None
+    description: Optional[str] = None
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class Inventory(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    product_id: str
+    total_units: int = 0
+    expiry_date: Optional[datetime] = None
+    last_supply_date: Optional[datetime] = None
+    next_shipment_date: Optional[datetime] = None
+    is_out_of_stock: bool = False
+    location: Optional[str] = None  # Warehouse location
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class IncomingShipment(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    shipment_number: str
+    expected_date: datetime
+    arrival_date: Optional[datetime] = None
+    status: ShipmentStatus = ShipmentStatus.EXPECTED
+    products: List[Dict[str, Any]] = []  # [{product_id, expected_units, received_units, expiry_date}]
+    notes: Optional[str] = None
+    processed_by: Optional[str] = None  # User ID
+    created_by: str  # User ID
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class Order(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    order_number: str
+    customer_id: str
+    sales_rep_id: Optional[str] = None
+    channel_type: ChannelType
+    status: OrderStatus = OrderStatus.PENDING
+    products: List[Dict[str, Any]] = []  # [{product_id, units, cases, unit_price, total_price}]
+    total_amount: float = 0.0
+    notes: Optional[str] = None
+    approved_by: Optional[str] = None  # User ID
+    prepared_by: Optional[str] = None  # User ID
+    dispatched_date: Optional[datetime] = None
+    delivered_date: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class Task(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    title: str
+    description: str
+    assigned_to: str  # User ID (warehouse staff)
+    assigned_by: str  # User ID (warehouse manager)
+    status: TaskStatus = TaskStatus.PENDING
+    priority: str = "medium"  # low, medium, high
+    due_date: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    feedback: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+# ===============================
+# INPUT MODELS
+# ===============================
+class UserCreate(BaseModel):
+    username: str
+    password: str
+    email: Optional[EmailStr] = None
+    full_name: str
+    role: UserRole
+    customer_number: Optional[str] = None
+    channel_type: Optional[ChannelType] = None
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+class ProductCreate(BaseModel):
+    name: str
+    sku: str
+    category: str
+    weight: float
+    units_per_case: int
+    image_url: Optional[str] = None
+    description: Optional[str] = None
+
+class InventoryUpdate(BaseModel):
+    product_id: str
+    units_change: int  # Can be positive or negative
+    expiry_date: Optional[datetime] = None
+    location: Optional[str] = None
+
+class IncomingShipmentCreate(BaseModel):
+    shipment_number: str
+    expected_date: datetime
+    products: List[Dict[str, Any]]
+    notes: Optional[str] = None
+
+class OrderCreate(BaseModel):
+    customer_id: str
+    channel_type: ChannelType
+    products: List[Dict[str, Any]]
+    notes: Optional[str] = None
+
+class TaskCreate(BaseModel):
+    title: str
+    description: str
+    assigned_to: str
+    priority: str = "medium"
+    due_date: Optional[datetime] = None
+
+class TaskUpdate(BaseModel):
+    status: Optional[TaskStatus] = None
+    feedback: Optional[str] = None
+
+
+# ===============================
+# HELPER FUNCTIONS
+# ===============================
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> User:
+    try:
+        token = credentials.credentials
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+    
+    user_doc = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if user_doc is None:
+        raise HTTPException(status_code=401, detail="User not found")
+    
+    # Convert ISO strings back to datetime
+    if isinstance(user_doc.get('created_at'), str):
+        user_doc['created_at'] = datetime.fromisoformat(user_doc['created_at'])
+    
+    return User(**user_doc)
+
+def require_role(allowed_roles: List[UserRole]):
+    async def role_checker(current_user: User = Depends(get_current_user)):
+        if current_user.role not in allowed_roles:
+            raise HTTPException(status_code=403, detail="Not authorized to perform this action")
+        return current_user
+    return role_checker
+
+
+# ===============================
+# AUTHENTICATION ROUTES
+# ===============================
+@api_router.post("/auth/register", response_model=Dict[str, str])
+async def register(user_input: UserCreate):
+    # Check if username exists
+    existing_user = await db.users.find_one({"username": user_input.username}, {"_id": 0})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Username already registered")
+    
+    # Create user
+    user_dict = user_input.model_dump()
+    password = user_dict.pop("password")
+    user_dict["password_hash"] = hash_password(password)
+    
+    user_obj = User(**user_dict)
+    doc = user_obj.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    
+    await db.users.insert_one(doc)
+    
+    return {"message": "User registered successfully", "user_id": user_obj.id}
+
+@api_router.post("/auth/login")
+async def login(credentials: UserLogin):
+    # Find user
+    user_doc = await db.users.find_one({"username": credentials.username}, {"_id": 0})
+    if not user_doc:
+        raise HTTPException(status_code=401, detail="Invalid username or password")
+    
+    # Verify password
+    if not verify_password(credentials.password, user_doc["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid username or password")
+    
+    # Check if active
+    if not user_doc.get("is_active", True):
+        raise HTTPException(status_code=401, detail="User account is deactivated")
+    
+    # Create access token
+    access_token = create_access_token(data={"sub": user_doc["id"], "role": user_doc["role"]})
+    
+    # Convert datetime for response
+    if isinstance(user_doc.get('created_at'), str):
+        user_doc['created_at'] = datetime.fromisoformat(user_doc['created_at'])
+    
+    user_obj = User(**user_doc)
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": user_obj.model_dump(exclude={"password_hash"})
+    }
+
+@api_router.get("/auth/me", response_model=User)
+async def get_me(current_user: User = Depends(get_current_user)):
+    return current_user
+
+
+# ===============================
+# PRODUCT ROUTES
+# ===============================
+@api_router.post("/products", response_model=Product)
+async def create_product(
+    product_input: ProductCreate,
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.WAREHOUSE_MANAGER]))
+):
+    product_obj = Product(**product_input.model_dump())
+    doc = product_obj.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    
+    await db.products.insert_one(doc)
+    
+    # Initialize inventory
+    inventory_obj = Inventory(product_id=product_obj.id)
+    inv_doc = inventory_obj.model_dump()
+    inv_doc['updated_at'] = inv_doc['updated_at'].isoformat()
+    await db.inventory.insert_one(inv_doc)
+    
+    return product_obj
+
+@api_router.get("/products", response_model=List[Product])
+async def get_products(current_user: User = Depends(get_current_user)):
+    products = await db.products.find({"is_active": True}, {"_id": 0}).to_list(1000)
+    
+    for product in products:
+        if isinstance(product.get('created_at'), str):
+            product['created_at'] = datetime.fromisoformat(product['created_at'])
+    
+    return products
+
+@api_router.get("/products/{product_id}", response_model=Product)
+async def get_product(product_id: str, current_user: User = Depends(get_current_user)):
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    if isinstance(product.get('created_at'), str):
+        product['created_at'] = datetime.fromisoformat(product['created_at'])
+    
+    return Product(**product)
+
+
+# ===============================
+# INVENTORY ROUTES
+# ===============================
+@api_router.get("/inventory")
+async def get_inventory(current_user: User = Depends(get_current_user)):
+    inventory_items = await db.inventory.find({}, {"_id": 0}).to_list(1000)
+    
+    # Get product details for each inventory item
+    result = []
+    for item in inventory_items:
+        if isinstance(item.get('updated_at'), str):
+            item['updated_at'] = datetime.fromisoformat(item['updated_at'])
+        if isinstance(item.get('expiry_date'), str):
+            item['expiry_date'] = datetime.fromisoformat(item['expiry_date'])
+        if isinstance(item.get('last_supply_date'), str):
+            item['last_supply_date'] = datetime.fromisoformat(item['last_supply_date'])
+        if isinstance(item.get('next_shipment_date'), str):
+            item['next_shipment_date'] = datetime.fromisoformat(item['next_shipment_date'])
+        
+        product = await db.products.find_one({"id": item["product_id"]}, {"_id": 0})
+        if product:
+            if isinstance(product.get('created_at'), str):
+                product['created_at'] = datetime.fromisoformat(product['created_at'])
+            
+            # Calculate cases and remaining units
+            units_per_case = product.get('units_per_case', 1)
+            total_units = item.get('total_units', 0)
+            full_cases = total_units // units_per_case
+            remaining_units = total_units % units_per_case
+            
+            # Apply stock visibility rules based on user role
+            visible_units = total_units
+            if current_user.role in [UserRole.SALES_REP, UserRole.CUSTOMER]:
+                # Show limited stock (1/3 of actual)
+                visible_units = max(1, total_units // 3) if total_units > 0 else 0
+            
+            visible_full_cases = visible_units // units_per_case
+            visible_remaining_units = visible_units % units_per_case
+            
+            result.append({
+                **item,
+                "product": product,
+                "full_cases": full_cases,
+                "remaining_units": remaining_units,
+                "visible_units": visible_units,
+                "visible_full_cases": visible_full_cases,
+                "visible_remaining_units": visible_remaining_units
+            })
+    
+    return result
+
+@api_router.put("/inventory/update")
+async def update_inventory(
+    update: InventoryUpdate,
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.WAREHOUSE_MANAGER, UserRole.WAREHOUSE_STAFF]))
+):
+    inventory = await db.inventory.find_one({"product_id": update.product_id}, {"_id": 0})
+    if not inventory:
+        raise HTTPException(status_code=404, detail="Inventory not found")
+    
+    new_total = inventory['total_units'] + update.units_change
+    if new_total < 0:
+        raise HTTPException(status_code=400, detail="Insufficient stock")
+    
+    update_doc = {
+        "total_units": new_total,
+        "is_out_of_stock": new_total == 0,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    if update.expiry_date:
+        update_doc["expiry_date"] = update.expiry_date.isoformat()
+    if update.location:
+        update_doc["location"] = update.location
+    if update.units_change > 0:
+        update_doc["last_supply_date"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.inventory.update_one({"product_id": update.product_id}, {"$set": update_doc})
+    
+    return {"message": "Inventory updated successfully"}
+
+
+# ===============================
+# INCOMING SHIPMENT ROUTES
+# ===============================
+@api_router.post("/shipments/incoming", response_model=IncomingShipment)
+async def create_incoming_shipment(
+    shipment_input: IncomingShipmentCreate,
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.WAREHOUSE_MANAGER]))
+):
+    shipment_dict = shipment_input.model_dump()
+    shipment_dict['created_by'] = current_user.id
+    shipment_obj = IncomingShipment(**shipment_dict)
+    
+    doc = shipment_obj.model_dump()
+    doc['expected_date'] = doc['expected_date'].isoformat()
+    doc['created_at'] = doc['created_at'].isoformat()
+    doc['updated_at'] = doc['updated_at'].isoformat()
+    
+    await db.incoming_shipments.insert_one(doc)
+    
+    return shipment_obj
+
+@api_router.get("/shipments/incoming", response_model=List[IncomingShipment])
+async def get_incoming_shipments(
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.WAREHOUSE_MANAGER, UserRole.WAREHOUSE_STAFF]))
+):
+    shipments = await db.incoming_shipments.find({}, {"_id": 0}).to_list(1000)
+    
+    for shipment in shipments:
+        if isinstance(shipment.get('expected_date'), str):
+            shipment['expected_date'] = datetime.fromisoformat(shipment['expected_date'])
+        if isinstance(shipment.get('arrival_date'), str):
+            shipment['arrival_date'] = datetime.fromisoformat(shipment['arrival_date'])
+        if isinstance(shipment.get('created_at'), str):
+            shipment['created_at'] = datetime.fromisoformat(shipment['created_at'])
+        if isinstance(shipment.get('updated_at'), str):
+            shipment['updated_at'] = datetime.fromisoformat(shipment['updated_at'])
+    
+    return shipments
+
+@api_router.put("/shipments/incoming/{shipment_id}/process")
+async def process_incoming_shipment(
+    shipment_id: str,
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.WAREHOUSE_MANAGER, UserRole.WAREHOUSE_STAFF]))
+):
+    shipment = await db.incoming_shipments.find_one({"id": shipment_id}, {"_id": 0})
+    if not shipment:
+        raise HTTPException(status_code=404, detail="Shipment not found")
+    
+    # Update inventory for each product
+    for product_item in shipment.get('products', []):
+        product_id = product_item.get('product_id')
+        received_units = product_item.get('received_units', product_item.get('expected_units', 0))
+        expiry_date = product_item.get('expiry_date')
+        
+        inventory = await db.inventory.find_one({"product_id": product_id}, {"_id": 0})
+        if inventory:
+            new_total = inventory['total_units'] + received_units
+            update_doc = {
+                "total_units": new_total,
+                "is_out_of_stock": False,
+                "last_supply_date": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }
+            if expiry_date:
+                update_doc["expiry_date"] = expiry_date if isinstance(expiry_date, str) else expiry_date.isoformat()
+            
+            await db.inventory.update_one({"product_id": product_id}, {"$set": update_doc})
+    
+    # Update shipment status
+    await db.incoming_shipments.update_one(
+        {"id": shipment_id},
+        {"$set": {
+            "status": ShipmentStatus.PROCESSED.value,
+            "arrival_date": datetime.now(timezone.utc).isoformat(),
+            "processed_by": current_user.id,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": "Shipment processed successfully"}
+
+
+# ===============================
+# ORDER ROUTES
+# ===============================
+@api_router.post("/orders", response_model=Order)
+async def create_order(
+    order_input: OrderCreate,
+    current_user: User = Depends(get_current_user)
+):
+    # Calculate total
+    total_amount = sum(item.get('total_price', 0) for item in order_input.products)
+    
+    order_dict = order_input.model_dump()
+    order_dict['order_number'] = f"ORD-{datetime.now().strftime('%Y%m%d')}-{str(uuid.uuid4())[:8]}"
+    order_dict['total_amount'] = total_amount
+    
+    if current_user.role == UserRole.SALES_REP:
+        order_dict['sales_rep_id'] = current_user.id
+    
+    order_obj = Order(**order_dict)
+    doc = order_obj.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    doc['updated_at'] = doc['updated_at'].isoformat()
+    
+    await db.orders.insert_one(doc)
+    
+    return order_obj
+
+@api_router.get("/orders", response_model=List[Order])
+async def get_orders(current_user: User = Depends(get_current_user)):
+    query = {}
+    if current_user.role == UserRole.CUSTOMER:
+        query['customer_id'] = current_user.id
+    elif current_user.role == UserRole.SALES_REP:
+        query['sales_rep_id'] = current_user.id
+    
+    orders = await db.orders.find(query, {"_id": 0}).to_list(1000)
+    
+    for order in orders:
+        if isinstance(order.get('created_at'), str):
+            order['created_at'] = datetime.fromisoformat(order['created_at'])
+        if isinstance(order.get('updated_at'), str):
+            order['updated_at'] = datetime.fromisoformat(order['updated_at'])
+        if isinstance(order.get('dispatched_date'), str):
+            order['dispatched_date'] = datetime.fromisoformat(order['dispatched_date'])
+        if isinstance(order.get('delivered_date'), str):
+            order['delivered_date'] = datetime.fromisoformat(order['delivered_date'])
+    
+    return orders
+
+@api_router.put("/orders/{order_id}/status")
+async def update_order_status(
+    order_id: str,
+    status: OrderStatus,
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.WAREHOUSE_MANAGER, UserRole.SALES_REP]))
+):
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    update_doc = {
+        "status": status.value,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    if status == OrderStatus.APPROVED:
+        update_doc['approved_by'] = current_user.id
+    elif status == OrderStatus.DISPATCHED:
+        update_doc['dispatched_date'] = datetime.now(timezone.utc).isoformat()
+    elif status == OrderStatus.DELIVERED:
+        update_doc['delivered_date'] = datetime.now(timezone.utc).isoformat()
+    
+    await db.orders.update_one({"id": order_id}, {"$set": update_doc})
+    
+    return {"message": "Order status updated successfully"}
+
+
+# ===============================
+# TASK ROUTES
+# ===============================
+@api_router.post("/tasks", response_model=Task)
+async def create_task(
+    task_input: TaskCreate,
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.WAREHOUSE_MANAGER]))
+):
+    task_dict = task_input.model_dump()
+    task_dict['assigned_by'] = current_user.id
+    task_obj = Task(**task_dict)
+    
+    doc = task_obj.model_dump()
+    if doc.get('due_date'):
+        doc['due_date'] = doc['due_date'].isoformat()
+    doc['created_at'] = doc['created_at'].isoformat()
+    doc['updated_at'] = doc['updated_at'].isoformat()
+    
+    await db.tasks.insert_one(doc)
+    
+    return task_obj
+
+@api_router.get("/tasks", response_model=List[Task])
+async def get_tasks(current_user: User = Depends(get_current_user)):
+    query = {}
+    if current_user.role == UserRole.WAREHOUSE_STAFF:
+        query['assigned_to'] = current_user.id
+    elif current_user.role == UserRole.WAREHOUSE_MANAGER:
+        query['assigned_by'] = current_user.id
+    
+    tasks = await db.tasks.find(query, {"_id": 0}).to_list(1000)
+    
+    for task in tasks:
+        if isinstance(task.get('due_date'), str):
+            task['due_date'] = datetime.fromisoformat(task['due_date'])
+        if isinstance(task.get('completed_at'), str):
+            task['completed_at'] = datetime.fromisoformat(task['completed_at'])
+        if isinstance(task.get('created_at'), str):
+            task['created_at'] = datetime.fromisoformat(task['created_at'])
+        if isinstance(task.get('updated_at'), str):
+            task['updated_at'] = datetime.fromisoformat(task['updated_at'])
+    
+    return tasks
+
+@api_router.put("/tasks/{task_id}")
+async def update_task(
+    task_id: str,
+    task_update: TaskUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    task = await db.tasks.find_one({"id": task_id}, {"_id": 0})
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    update_doc = {"updated_at": datetime.now(timezone.utc).isoformat()}
+    
+    if task_update.status:
+        update_doc['status'] = task_update.status.value
+        if task_update.status == TaskStatus.COMPLETED:
+            update_doc['completed_at'] = datetime.now(timezone.utc).isoformat()
+    
+    if task_update.feedback:
+        update_doc['feedback'] = task_update.feedback
+    
+    await db.tasks.update_one({"id": task_id}, {"$set": update_doc})
+    
+    return {"message": "Task updated successfully"}
+
+
+# ===============================
+# DASHBOARD/STATS ROUTES
+# ===============================
+@api_router.get("/dashboard/stats")
+async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
+    stats = {}
+    
+    if current_user.role in [UserRole.ADMIN, UserRole.WAREHOUSE_MANAGER]:
+        # Total products
+        stats['total_products'] = await db.products.count_documents({"is_active": True})
+        
+        # Total inventory value
+        inventory_items = await db.inventory.find({}, {"_id": 0}).to_list(1000)
+        stats['total_inventory_units'] = sum(item.get('total_units', 0) for item in inventory_items)
+        
+        # Out of stock count
+        stats['out_of_stock_count'] = await db.inventory.count_documents({"is_out_of_stock": True})
+        
+        # Pending orders
+        stats['pending_orders'] = await db.orders.count_documents({"status": OrderStatus.PENDING.value})
+        
+        # Orders to prepare
+        stats['orders_to_prepare'] = await db.orders.count_documents({"status": OrderStatus.APPROVED.value})
+        
+        # Pending tasks
+        stats['pending_tasks'] = await db.tasks.count_documents({"status": TaskStatus.PENDING.value})
+        
+        # Expected shipments
+        stats['expected_shipments'] = await db.incoming_shipments.count_documents({"status": ShipmentStatus.EXPECTED.value})
+    
+    return stats
+
 
 # Add your routes to the router instead of directly to app
 @api_router.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"message": "Distribution Management System API"}
 
-@api_router.post("/status", response_model=StatusCheck)
-async def create_status_check(input: StatusCheckCreate):
-    status_dict = input.model_dump()
-    status_obj = StatusCheck(**status_dict)
-    
-    # Convert to dict and serialize datetime to ISO string for MongoDB
-    doc = status_obj.model_dump()
-    doc['timestamp'] = doc['timestamp'].isoformat()
-    
-    _ = await db.status_checks.insert_one(doc)
-    return status_obj
-
-@api_router.get("/status", response_model=List[StatusCheck])
-async def get_status_checks():
-    # Exclude MongoDB's _id field from the query results
-    status_checks = await db.status_checks.find({}, {"_id": 0}).to_list(1000)
-    
-    # Convert ISO string timestamps back to datetime objects
-    for check in status_checks:
-        if isinstance(check['timestamp'], str):
-            check['timestamp'] = datetime.fromisoformat(check['timestamp'])
-    
-    return status_checks
 
 # Include the router in the main app
 app.include_router(api_router)
