@@ -1,0 +1,195 @@
+import React, { useState, useEffect } from 'react';
+import { productsAPI } from '../services/api';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
+import { toast } from 'sonner';
+import { Plus, Package } from 'lucide-react';
+
+const ProductManagement = () => {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [open, setOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    sku: '',
+    category: '',
+    weight: '',
+    units_per_case: '',
+    description: '',
+  });
+
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  const loadProducts = async () => {
+    try {
+      const response = await productsAPI.getAll();
+      setProducts(response.data);
+    } catch (error) {
+      toast.error('Ürünler yüklenemedi');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await productsAPI.create({
+        ...formData,
+        weight: parseFloat(formData.weight),
+        units_per_case: parseInt(formData.units_per_case),
+      });
+      toast.success('Ürün başarıyla eklendi');
+      setOpen(false);
+      setFormData({
+        name: '',
+        sku: '',
+        category: '',
+        weight: '',
+        units_per_case: '',
+        description: '',
+      });
+      loadProducts();
+    } catch (error) {
+      toast.error('Ürün eklenemedi');
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>Ürün Yönetimi</CardTitle>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button data-testid="add-product-button">
+              <Plus className="mr-2 h-4 w-4" />
+              Yeni Ürün
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Yeni Ürün Ekle</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Ürün Adı *</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                    data-testid="product-name-input"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sku">SKU *</Label>
+                  <Input
+                    id="sku"
+                    value={formData.sku}
+                    onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                    required
+                    data-testid="product-sku-input"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="category">Kategori *</Label>
+                  <Input
+                    id="category"
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    required
+                    data-testid="product-category-input"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="weight">Ağırlık (kg) *</Label>
+                  <Input
+                    id="weight"
+                    type="number"
+                    step="0.01"
+                    value={formData.weight}
+                    onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+                    required
+                    data-testid="product-weight-input"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="units_per_case">Koli Başına Birim *</Label>
+                <Input
+                  id="units_per_case"
+                  type="number"
+                  value={formData.units_per_case}
+                  onChange={(e) => setFormData({ ...formData, units_per_case: e.target.value })}
+                  required
+                  data-testid="product-units-input"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Açıklama</Label>
+                <Input
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  data-testid="product-description-input"
+                />
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                  İptal
+                </Button>
+                <Button type="submit" data-testid="save-product-button">Kaydet</Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        ) : products.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <Package className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+            <p>Henüz ürün eklenmemiş</p>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Ürün Adı</TableHead>
+                <TableHead>SKU</TableHead>
+                <TableHead>Kategori</TableHead>
+                <TableHead>Ağırlık (kg)</TableHead>
+                <TableHead>Koli/Birim</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {products.map((product) => (
+                <TableRow key={product.id} data-testid={`product-row-${product.sku}`}>
+                  <TableCell className="font-medium">{product.name}</TableCell>
+                  <TableCell>{product.sku}</TableCell>
+                  <TableCell>{product.category}</TableCell>
+                  <TableCell>{product.weight}</TableCell>
+                  <TableCell>{product.units_per_case}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+export default ProductManagement;
