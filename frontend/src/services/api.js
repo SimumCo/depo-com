@@ -1,0 +1,82 @@
+import axios from 'axios';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API_BASE = `${BACKEND_URL}/api`;
+
+// Create axios instance
+const api = axios.create({
+  baseURL: API_BASE,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Add token to requests
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Handle response errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+// Auth API
+export const authAPI = {
+  register: (data) => api.post('/auth/register', data),
+  login: (data) => api.post('/auth/login', data),
+  getMe: () => api.get('/auth/me'),
+};
+
+// Products API
+export const productsAPI = {
+  getAll: () => api.get('/products'),
+  getOne: (id) => api.get(`/products/${id}`),
+  create: (data) => api.post('/products', data),
+};
+
+// Inventory API
+export const inventoryAPI = {
+  getAll: () => api.get('/inventory'),
+  update: (data) => api.put('/inventory/update', data),
+};
+
+// Shipments API
+export const shipmentsAPI = {
+  getIncoming: () => api.get('/shipments/incoming'),
+  createIncoming: (data) => api.post('/shipments/incoming', data),
+  processIncoming: (id) => api.put(`/shipments/incoming/${id}/process`),
+};
+
+// Orders API
+export const ordersAPI = {
+  getAll: () => api.get('/orders'),
+  create: (data) => api.post('/orders', data),
+  updateStatus: (id, status) => api.put(`/orders/${id}/status`, null, { params: { status } }),
+};
+
+// Tasks API
+export const tasksAPI = {
+  getAll: () => api.get('/tasks'),
+  create: (data) => api.post('/tasks', data),
+  update: (id, data) => api.put(`/tasks/${id}`, data),
+};
+
+// Dashboard API
+export const dashboardAPI = {
+  getStats: () => api.get('/dashboard/stats'),
+};
+
+export default api;
