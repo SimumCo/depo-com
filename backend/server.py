@@ -98,8 +98,34 @@ class Product(BaseModel):
     units_per_case: int
     image_url: Optional[str] = None
     description: Optional[str] = None
+    logistics_price: float = 0.0  # Price for logistics channel
+    dealer_price: float = 0.0  # Price for dealer channel
     is_active: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class ProductFeedback(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    product_id: str
+    customer_id: str
+    order_id: Optional[str] = None
+    rating: int  # 1-5
+    comment: Optional[str] = None
+    is_defective: bool = False
+    defect_description: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class CustomerProfile(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    company_name: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    tax_number: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class Inventory(BaseModel):
     model_config = ConfigDict(extra="ignore")
