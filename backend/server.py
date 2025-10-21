@@ -243,6 +243,21 @@ class TaskUpdate(BaseModel):
     status: Optional[TaskStatus] = None
     feedback: Optional[str] = None
 
+class ProductFeedbackCreate(BaseModel):
+    product_id: str
+    order_id: Optional[str] = None
+    rating: int  # 1-5
+    comment: Optional[str] = None
+    is_defective: bool = False
+    defect_description: Optional[str] = None
+
+class CustomerProfileCreate(BaseModel):
+    company_name: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    tax_number: Optional[str] = None
+
 
 # ===============================
 # HELPER FUNCTIONS
