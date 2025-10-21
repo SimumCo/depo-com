@@ -750,6 +750,233 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
     return stats
 
 
+# ===============================
+# PRODUCT CATALOG & PRICING ROUTES
+# ===============================
+@api_router.get("/catalog")
+async def get_product_catalog(current_user: User = Depends(get_current_user)):
+    """Get product catalog with pricing based on user's channel"""
+    products = await db.products.find({"is_active": True}, {"_id": 0}).to_list(1000)
+    inventory_items = await db.inventory.find({}, {"_id": 0}).to_list(1000)
+    
+    # Create inventory lookup
+    inventory_lookup = {item['product_id']: item for item in inventory_items}
+    
+    catalog = []
+    for product in products:
+        if isinstance(product.get('created_at'), str):
+            product['created_at'] = datetime.fromisoformat(product['created_at'])
+        
+        # Get inventory info
+        inv = inventory_lookup.get(product['id'], {})
+        total_units = inv.get('total_units', 0)
+        units_per_case = product.get('units_per_case', 1)
+        
+        # Calculate visible stock based on role
+        visible_units = total_units
+        if current_user.role in [UserRole.SALES_REP, UserRole.CUSTOMER]:
+            visible_units = max(1, total_units // 3) if total_units > 0 else 0
+        
+        # Determine price based on channel
+        price = 0.0
+        if current_user.channel_type == ChannelType.LOGISTICS:
+            price = product.get('logistics_price', 0.0)
+        elif current_user.channel_type == ChannelType.DEALER:
+            price = product.get('dealer_price', 0.0)
+        
+        catalog.append({
+            **product,
+            "available_units": visible_units,
+            "available_cases": visible_units // units_per_case,
+            "price": price,
+            "in_stock": total_units > 0
+        })
+    
+    return catalog
+
+
+# ===============================
+# CUSTOMER PROFILE ROUTES
+# ===============================
+@api_router.post("/customer/profile", response_model=CustomerProfile)
+async def create_customer_profile(
+    profile_input: CustomerProfileCreate,
+    current_user: User = Depends(require_role([UserRole.CUSTOMER]))
+):
+    profile_dict = profile_input.model_dump()
+    profile_dict['user_id'] = current_user.id
+    profile_obj = CustomerProfile(**profile_dict)
+    
+    doc = profile_obj.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    doc['updated_at'] = doc['updated_at'].isoformat()
+    
+    await db.customer_profiles.insert_one(doc)
+    
+    return profile_obj
+
+@api_router.get("/customer/profile")
+async def get_customer_profile(current_user: User = Depends(require_role([UserRole.CUSTOMER]))):
+    profile = await db.customer_profiles.find_one({"user_id": current_user.id}, {"_id": 0})
+    
+    if not profile:
+        return None
+    
+    if isinstance(profile.get('created_at'), str):
+        profile['created_at'] = datetime.fromisoformat(profile['created_at'])
+    if isinstance(profile.get('updated_at'), str):
+        profile['updated_at'] = datetime.fromisoformat(profile['updated_at'])
+    
+    return profile
+
+@api_router.put("/customer/profile")
+async def update_customer_profile(
+    profile_input: CustomerProfileCreate,
+    current_user: User = Depends(require_role([UserRole.CUSTOMER]))
+):
+    update_doc = profile_input.model_dump()
+    update_doc['updated_at'] = datetime.now(timezone.utc).isoformat()
+    
+    result = await db.customer_profiles.update_one(
+        {"user_id": current_user.id},
+        {"$set": update_doc}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    
+    return {"message": "Profile updated successfully"}
+
+
+# ===============================
+# PRODUCT FEEDBACK ROUTES
+# ===============================
+@api_router.post("/feedback", response_model=ProductFeedback)
+async def create_product_feedback(
+    feedback_input: ProductFeedbackCreate,
+    current_user: User = Depends(require_role([UserRole.CUSTOMER]))
+):
+    feedback_dict = feedback_input.model_dump()
+    feedback_dict['customer_id'] = current_user.id
+    feedback_obj = ProductFeedback(**feedback_dict)
+    
+    doc = feedback_obj.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    
+    await db.product_feedback.insert_one(doc)
+    
+    return feedback_obj
+
+@api_router.get("/feedback/product/{product_id}")
+async def get_product_feedback(product_id: str, current_user: User = Depends(get_current_user)):
+    feedbacks = await db.product_feedback.find({"product_id": product_id}, {"_id": 0}).to_list(1000)
+    
+    for feedback in feedbacks:
+        if isinstance(feedback.get('created_at'), str):
+            feedback['created_at'] = datetime.fromisoformat(feedback['created_at'])
+        
+        # Get customer name
+        customer = await db.users.find_one({"id": feedback['customer_id']}, {"_id": 0})
+        if customer:
+            feedback['customer_name'] = customer.get('full_name', 'Anonymous')
+    
+    return feedbacks
+
+@api_router.get("/feedback/my")
+async def get_my_feedback(current_user: User = Depends(require_role([UserRole.CUSTOMER]))):
+    feedbacks = await db.product_feedback.find({"customer_id": current_user.id}, {"_id": 0}).to_list(1000)
+    
+    for feedback in feedbacks:
+        if isinstance(feedback.get('created_at'), str):
+            feedback['created_at'] = datetime.fromisoformat(feedback['created_at'])
+        
+        # Get product name
+        product = await db.products.find_one({"id": feedback['product_id']}, {"_id": 0})
+        if product:
+            feedback['product_name'] = product.get('name', 'Unknown')
+    
+    return feedbacks
+
+
+# ===============================
+# SALES REP ROUTES
+# ===============================
+@api_router.get("/salesrep/customers")
+async def get_customers_for_sales_rep(current_user: User = Depends(require_role([UserRole.SALES_REP, UserRole.ADMIN]))):
+    """Get list of customers for sales representative"""
+    customers = await db.users.find({"role": UserRole.CUSTOMER.value, "is_active": True}, {"_id": 0, "password_hash": 0}).to_list(1000)
+    
+    result = []
+    for customer in customers:
+        if isinstance(customer.get('created_at'), str):
+            customer['created_at'] = datetime.fromisoformat(customer['created_at'])
+        
+        # Get customer profile
+        profile = await db.customer_profiles.find_one({"user_id": customer['id']}, {"_id": 0})
+        
+        # Get order count
+        order_count = await db.orders.count_documents({"customer_id": customer['id']})
+        
+        result.append({
+            **customer,
+            "profile": profile,
+            "order_count": order_count
+        })
+    
+    return result
+
+@api_router.post("/salesrep/order", response_model=Order)
+async def create_order_for_customer(
+    order_input: OrderCreate,
+    current_user: User = Depends(require_role([UserRole.SALES_REP]))
+):
+    """Sales rep creates order on behalf of customer"""
+    # Calculate total
+    total_amount = sum(item.get('total_price', 0) for item in order_input.products)
+    
+    order_dict = order_input.model_dump()
+    order_dict['order_number'] = f"ORD-{datetime.now().strftime('%Y%m%d')}-{str(uuid.uuid4())[:8]}"
+    order_dict['total_amount'] = total_amount
+    order_dict['sales_rep_id'] = current_user.id
+    
+    order_obj = Order(**order_dict)
+    doc = order_obj.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    doc['updated_at'] = doc['updated_at'].isoformat()
+    
+    await db.orders.insert_one(doc)
+    
+    return order_obj
+
+@api_router.get("/salesrep/stats")
+async def get_sales_rep_stats(current_user: User = Depends(require_role([UserRole.SALES_REP]))):
+    """Get statistics for sales representative"""
+    # Total customers assigned
+    total_customers = await db.users.count_documents({"role": UserRole.CUSTOMER.value})
+    
+    # Orders created by this sales rep
+    my_orders = await db.orders.count_documents({"sales_rep_id": current_user.id})
+    
+    # Pending orders
+    pending_orders = await db.orders.count_documents({
+        "sales_rep_id": current_user.id,
+        "status": OrderStatus.PENDING.value
+    })
+    
+    # Delivered orders
+    delivered_orders = await db.orders.count_documents({
+        "sales_rep_id": current_user.id,
+        "status": OrderStatus.DELIVERED.value
+    })
+    
+    return {
+        "total_customers": total_customers,
+        "my_orders": my_orders,
+        "pending_orders": pending_orders,
+        "delivered_orders": delivered_orders
+    }
+
+
 # Add your routes to the router instead of directly to app
 @api_router.get("/")
 async def root():
