@@ -42,6 +42,10 @@ const DashboardRouter = () => {
       return <WarehouseManagerDashboard />;
     case 'warehouse_staff':
       return <WarehouseStaffDashboard />;
+    case 'sales_rep':
+      return <SalesRepDashboard />;
+    case 'customer':
+      return <CustomerDashboard />;
     default:
       return <Navigate to="/login" replace />;
   }
