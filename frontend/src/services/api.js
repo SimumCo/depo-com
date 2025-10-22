@@ -79,4 +79,30 @@ export const dashboardAPI = {
   getStats: () => api.get('/dashboard/stats'),
 };
 
+// Catalog API
+export const catalogAPI = {
+  getAll: () => api.get('/catalog'),
+};
+
+// Feedback API
+export const feedbackAPI = {
+  create: (data) => api.post('/feedback', data),
+  getByProduct: (productId) => api.get(`/feedback/product/${productId}`),
+  getMy: () => api.get('/feedback/my'),
+};
+
+// Customer Profile API
+export const customerProfileAPI = {
+  get: () => api.get('/customer/profile'),
+  create: (data) => api.post('/customer/profile', data),
+  update: (data) => api.put('/customer/profile', data),
+};
+
+// Sales Rep API
+export const salesRepAPI = {
+  getCustomers: () => api.get('/salesrep/customers'),
+  createOrder: (data) => api.post('/salesrep/order', data),
+  getStats: () => api.get('/salesrep/stats'),
+};
+
 export default api;
