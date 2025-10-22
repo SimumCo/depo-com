@@ -91,6 +91,22 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/sales-rep/*"
+            element={
+              <ProtectedRoute allowedRoles={['sales_rep']}>
+                <SalesRepDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/customer/*"
+            element={
+              <ProtectedRoute allowedRoles={['customer']}>
+                <CustomerDashboard />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </BrowserRouter>
       <Toaster />
