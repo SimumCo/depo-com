@@ -6,6 +6,8 @@ import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import WarehouseManagerDashboard from './pages/WarehouseManagerDashboard';
 import WarehouseStaffDashboard from './pages/WarehouseStaffDashboard';
+import SalesRepDashboard from './pages/SalesRepDashboard';
+import CustomerDashboard from './pages/CustomerDashboard';
 import './App.css';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
