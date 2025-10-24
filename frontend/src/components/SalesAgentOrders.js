@@ -207,6 +207,7 @@ const SalesAgentOrders = () => {
                     <TableHead>Ürün Sayısı</TableHead>
                     <TableHead>Durum</TableHead>
                     <TableHead className="text-right">Tutar</TableHead>
+                    <TableHead className="text-center">İşlem</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
