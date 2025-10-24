@@ -50,6 +50,10 @@ const DashboardRouter = () => {
       return <SalesRepDashboard />;
     case 'customer':
       return <CustomerDashboard />;
+    case 'accounting':
+      return <AccountingDashboard />;
+    case 'sales_agent':
+      return <SalesAgentDashboard />;
     default:
       return <Navigate to="/login" replace />;
   }
