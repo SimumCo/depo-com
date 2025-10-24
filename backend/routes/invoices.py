@@ -15,26 +15,59 @@ logger = logging.getLogger(__name__)
 @router.post("/upload")
 async def upload_invoice(
     file: UploadFile = File(...),
-    current_user: User = Depends(require_role([UserRole.CUSTOMER]))
+    customer_id: str = None,
+    current_user: User = Depends(get_current_user)
 ):
-    """Upload invoice PDF/Image for OCR processing"""
+    """Upload invoice PDF/Image for OCR processing - For Accounting role"""
     try:
+        # Check permissions
+        if current_user.role not in [UserRole.CUSTOMER, UserRole.ACCOUNTING]:
+            raise HTTPException(status_code=403, detail="Not authorized")
+        
         # Read file
         file_content = await file.read()
         file_base64 = base64.b64encode(file_content).decode('utf-8')
         
-        # Here you would call OCR service (for now, return placeholder)
-        # In production, integrate with analyze_file_tool or external OCR API
+        # For accounting, customer_id should be provided
+        if current_user.role == UserRole.ACCOUNTING and not customer_id:
+            raise HTTPException(status_code=400, detail="customer_id is required for accounting role")
         
-        logger.info(f"Invoice uploaded by customer {current_user.id}: {file.filename}")
+        # For customer, use their own ID
+        if current_user.role == UserRole.CUSTOMER:
+            customer_id = current_user.id
+        
+        # Save file info temporarily
+        file_url = f"uploads/{file.filename}"  # In production, save to cloud storage
+        
+        # Create a simplified invoice record (without items)
+        invoice_obj = Invoice(
+            customer_id=customer_id,
+            invoice_number=f"INV-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            invoice_date=datetime.now(),
+            file_url=file_url,
+            file_type=file.content_type,
+            notes="OCR işlemi bekleniyor"
+        )
+        
+        doc = invoice_obj.model_dump()
+        doc['invoice_date'] = doc['invoice_date'].isoformat()
+        doc['created_at'] = doc['created_at'].isoformat()
+        doc['updated_at'] = doc['updated_at'].isoformat()
+        
+        await db.invoices.insert_one(doc)
+        
+        logger.info(f"Invoice uploaded by {current_user.role} {current_user.id}: {file.filename} for customer {customer_id}")
         
         return {
-            "message": "Invoice uploaded successfully",
+            "message": "Fatura başarıyla yüklendi",
+            "invoice_id": invoice_obj.id,
             "filename": file.filename,
             "size": len(file_content),
-            "status": "processing",
-            "info": "OCR analizi için lütfen /invoices/create endpoint'ini kullanarak manuel giriş yapın veya OCR işleminin tamamlanmasını bekleyin."
+            "customer_id": customer_id,
+            "status": "uploaded"
         }
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Invoice upload failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
