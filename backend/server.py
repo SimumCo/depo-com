@@ -979,6 +979,225 @@ async def get_sales_rep_stats(current_user: User = Depends(require_role([UserRol
     }
 
 
+# ===============================
+# SALES AGENT ROUTES (Plasiyer)
+# ===============================
+@api_router.post("/salesagent/warehouse-order", response_model=Order)
+async def create_warehouse_order_for_sales_agent(
+    order_input: OrderCreate,
+    current_user: User = Depends(require_role([UserRole.SALES_AGENT]))
+):
+    """Plasiyer depoya kendi stoğu için sipariş verir"""
+    # Calculate total
+    total_amount = sum(item.get('total_price', 0) for item in order_input.products)
+    
+    order_dict = order_input.model_dump()
+    order_dict['order_number'] = f"WHS-{datetime.now().strftime('%Y%m%d')}-{str(uuid.uuid4())[:8]}"
+    order_dict['total_amount'] = total_amount
+    order_dict['sales_rep_id'] = current_user.id
+    order_dict['customer_id'] = current_user.id  # Plasiyer kendisi için alıyor
+    
+    order_obj = Order(**order_dict)
+    doc = order_obj.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    doc['updated_at'] = doc['updated_at'].isoformat()
+    
+    await db.orders.insert_one(doc)
+    
+    return order_obj
+
+@api_router.get("/salesagent/my-customers")
+async def get_my_customers(current_user: User = Depends(require_role([UserRole.SALES_AGENT]))):
+    """Plasiyerin kendi müşterilerini getir (sales_routes üzerinden)"""
+    # Get sales routes for this agent
+    routes = await db.sales_routes.find({"sales_agent_id": current_user.id, "is_active": True}, {"_id": 0}).to_list(1000)
+    
+    result = []
+    for route in routes:
+        if isinstance(route.get('created_at'), str):
+            route['created_at'] = datetime.fromisoformat(route['created_at'])
+        if isinstance(route.get('updated_at'), str):
+            route['updated_at'] = datetime.fromisoformat(route['updated_at'])
+        
+        # Get customer info
+        customer = await db.users.find_one({"id": route['customer_id']}, {"_id": 0, "password_hash": 0})
+        if customer:
+            if isinstance(customer.get('created_at'), str):
+                customer['created_at'] = datetime.fromisoformat(customer['created_at'])
+            
+            # Get customer profile
+            profile = await db.customer_profiles.find_one({"user_id": customer['id']}, {"_id": 0})
+            
+            # Get order count for this customer
+            order_count = await db.orders.count_documents({"customer_id": customer['id']})
+            
+            result.append({
+                "route": route,
+                "customer": customer,
+                "profile": profile,
+                "order_count": order_count
+            })
+    
+    return result
+
+@api_router.get("/salesagent/my-routes")
+async def get_my_routes(current_user: User = Depends(require_role([UserRole.SALES_AGENT]))):
+    """Plasiyerin rotalarını getir"""
+    routes = await db.sales_routes.find({"sales_agent_id": current_user.id, "is_active": True}, {"_id": 0}).to_list(1000)
+    
+    for route in routes:
+        if isinstance(route.get('created_at'), str):
+            route['created_at'] = datetime.fromisoformat(route['created_at'])
+        if isinstance(route.get('updated_at'), str):
+            route['updated_at'] = datetime.fromisoformat(route['updated_at'])
+    
+    return routes
+
+@api_router.get("/salesagent/stats")
+async def get_sales_agent_stats(current_user: User = Depends(require_role([UserRole.SALES_AGENT]))):
+    """Plasiyer istatistikleri"""
+    # Total assigned customers
+    my_customers_count = await db.sales_routes.count_documents({
+        "sales_agent_id": current_user.id,
+        "is_active": True
+    })
+    
+    # My warehouse orders (depoya verilen siparişler)
+    my_warehouse_orders = await db.orders.count_documents({
+        "sales_rep_id": current_user.id,
+        "customer_id": current_user.id
+    })
+    
+    # Customer orders (müşteri siparişleri - route'daki müşterilerden)
+    routes = await db.sales_routes.find({"sales_agent_id": current_user.id, "is_active": True}, {"_id": 0}).to_list(1000)
+    customer_ids = [route['customer_id'] for route in routes]
+    customer_orders = await db.orders.count_documents({"customer_id": {"$in": customer_ids}})
+    
+    return {
+        "my_customers_count": my_customers_count,
+        "my_warehouse_orders": my_warehouse_orders,
+        "customer_orders": customer_orders,
+        "total_orders": my_warehouse_orders + customer_orders
+    }
+
+
+# ===============================
+# SALES ROUTE ROUTES
+# ===============================
+class WeekDay(str, Enum):
+    MONDAY = "monday"
+    TUESDAY = "tuesday"
+    WEDNESDAY = "wednesday"
+    THURSDAY = "thursday"
+    FRIDAY = "friday"
+    SATURDAY = "saturday"
+    SUNDAY = "sunday"
+
+class SalesRoute(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    sales_agent_id: str
+    customer_id: str
+    delivery_day: WeekDay
+    route_order: int = 1
+    is_active: bool = True
+    notes: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class SalesRouteCreate(BaseModel):
+    sales_agent_id: str
+    customer_id: str
+    delivery_day: WeekDay
+    route_order: int = 1
+    notes: Optional[str] = None
+
+@api_router.post("/sales-routes", response_model=SalesRoute)
+async def create_sales_route(
+    route_input: SalesRouteCreate,
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.WAREHOUSE_MANAGER]))
+):
+    """Yeni sales route oluştur"""
+    route_obj = SalesRoute(**route_input.model_dump())
+    doc = route_obj.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    doc['updated_at'] = doc['updated_at'].isoformat()
+    
+    await db.sales_routes.insert_one(doc)
+    
+    return route_obj
+
+@api_router.get("/sales-routes", response_model=List[SalesRoute])
+async def get_sales_routes(current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.WAREHOUSE_MANAGER, UserRole.SALES_AGENT]))):
+    """Tüm sales route'ları getir"""
+    query = {}
+    if current_user.role == UserRole.SALES_AGENT:
+        query['sales_agent_id'] = current_user.id
+    
+    routes = await db.sales_routes.find(query, {"_id": 0}).to_list(1000)
+    
+    for route in routes:
+        if isinstance(route.get('created_at'), str):
+            route['created_at'] = datetime.fromisoformat(route['created_at'])
+        if isinstance(route.get('updated_at'), str):
+            route['updated_at'] = datetime.fromisoformat(route['updated_at'])
+    
+    return routes
+
+@api_router.get("/sales-routes/customer/{customer_id}")
+async def get_customer_delivery_day(
+    customer_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Müşterinin teslimat gününü getir"""
+    route = await db.sales_routes.find_one({"customer_id": customer_id, "is_active": True}, {"_id": 0})
+    
+    if not route:
+        return {"delivery_day": None, "sales_agent_id": None}
+    
+    if isinstance(route.get('created_at'), str):
+        route['created_at'] = datetime.fromisoformat(route['created_at'])
+    if isinstance(route.get('updated_at'), str):
+        route['updated_at'] = datetime.fromisoformat(route['updated_at'])
+    
+    return route
+
+@api_router.put("/sales-routes/{route_id}")
+async def update_sales_route(
+    route_id: str,
+    route_update: SalesRouteCreate,
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.WAREHOUSE_MANAGER]))
+):
+    """Sales route güncelle"""
+    route = await db.sales_routes.find_one({"id": route_id}, {"_id": 0})
+    if not route:
+        raise HTTPException(status_code=404, detail="Route not found")
+    
+    update_doc = route_update.model_dump()
+    update_doc['updated_at'] = datetime.now(timezone.utc).isoformat()
+    
+    await db.sales_routes.update_one({"id": route_id}, {"$set": update_doc})
+    
+    return {"message": "Route updated successfully"}
+
+@api_router.delete("/sales-routes/{route_id}")
+async def delete_sales_route(
+    route_id: str,
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.WAREHOUSE_MANAGER]))
+):
+    """Sales route sil (soft delete)"""
+    route = await db.sales_routes.find_one({"id": route_id}, {"_id": 0})
+    if not route:
+        raise HTTPException(status_code=404, detail="Route not found")
+    
+    await db.sales_routes.update_one(
+        {"id": route_id},
+        {"$set": {"is_active": False, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    return {"message": "Route deleted successfully"}
+
+
 # Add your routes to the router instead of directly to app
 @api_router.get("/")
 async def root():
