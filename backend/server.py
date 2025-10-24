@@ -1355,6 +1355,16 @@ async def get_all_customers_consumption(
 # Import and include invoice routes - REMOVED (fatura sistemi kaldırıldı)
 # Invoice routes have been removed - now using order-based consumption tracking
 
+# Import and include bulk import routes
+import sys
+sys.path.insert(0, '/app/backend')
+try:
+    from routes.bulk_import import router as bulk_import_router
+    api_router.include_router(bulk_import_router, tags=["Bulk Import"])
+    print("✅ Bulk import routes loaded successfully")
+except Exception as e:
+    print(f"⚠️ Could not load bulk import routes: {e}")
+
 # Include the router in the main app
 app.include_router(api_router)
 
