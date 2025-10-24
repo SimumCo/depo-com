@@ -271,6 +271,87 @@ async def get_purchase_recommendations(
         "total_recommendations": len(recommendations)
     }
 
+@router.get("/customer-stats/{customer_id}")
+async def get_customer_invoice_stats(
+    customer_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get invoice statistics for a specific customer - For Customer and Logistics"""
+    # Check permissions
+    if current_user.role not in [UserRole.CUSTOMER, UserRole.WAREHOUSE_MANAGER, UserRole.ADMIN, UserRole.SALES_AGENT]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # If customer, can only see their own stats
+    if current_user.role == UserRole.CUSTOMER and current_user.id != customer_id:
+        raise HTTPException(status_code=403, detail="Can only view your own statistics")
+    
+    # Get all invoices for this customer
+    invoices = await db.invoices.find({"customer_id": customer_id}, {"_id": 0}).to_list(1000)
+    
+    if not invoices:
+        return {
+            "customer_id": customer_id,
+            "total_invoices": 0,
+            "message": "Henüz fatura kaydı bulunmuyor"
+        }
+    
+    # Calculate statistics
+    total_amount = sum(inv.get('total_amount', 0) for inv in invoices)
+    total_count = len(invoices)
+    
+    # Get date range
+    dates = [datetime.fromisoformat(inv['invoice_date']) if isinstance(inv['invoice_date'], str) else inv['invoice_date'] 
+             for inv in invoices if inv.get('invoice_date')]
+    
+    first_invoice = min(dates) if dates else None
+    last_invoice = max(dates) if dates else None
+    
+    # Monthly breakdown
+    monthly_stats = {}
+    for invoice in invoices:
+        inv_date = invoice.get('invoice_date')
+        if isinstance(inv_date, str):
+            inv_date = datetime.fromisoformat(inv_date)
+        
+        month_key = inv_date.strftime('%Y-%m')
+        if month_key not in monthly_stats:
+            monthly_stats[month_key] = {'count': 0, 'amount': 0}
+        
+        monthly_stats[month_key]['count'] += 1
+        monthly_stats[month_key]['amount'] += invoice.get('total_amount', 0)
+    
+    # Calculate average
+    avg_invoice_amount = total_amount / total_count if total_count > 0 else 0
+    
+    # Recent invoices (last 5)
+    recent_invoices = sorted(invoices, key=lambda x: x.get('invoice_date', ''), reverse=True)[:5]
+    
+    return {
+        "customer_id": customer_id,
+        "total_invoices": total_count,
+        "total_amount": round(total_amount, 2),
+        "average_invoice_amount": round(avg_invoice_amount, 2),
+        "first_invoice_date": first_invoice.isoformat() if first_invoice else None,
+        "last_invoice_date": last_invoice.isoformat() if last_invoice else None,
+        "monthly_breakdown": [
+            {
+                "month": month,
+                "invoice_count": data['count'],
+                "total_amount": round(data['amount'], 2)
+            }
+            for month, data in sorted(monthly_stats.items())
+        ],
+        "recent_invoices": [
+            {
+                "invoice_number": inv.get('invoice_number'),
+                "invoice_date": inv.get('invoice_date'),
+                "total_amount": inv.get('total_amount', 0),
+                "supplier": inv.get('supplier_name')
+            }
+            for inv in recent_invoices
+        ]
+    }
+
 async def update_purchase_patterns(customer_id: str, items: List[InvoiceItem]):
     """Update purchase patterns based on new invoice"""
     for item in items:
