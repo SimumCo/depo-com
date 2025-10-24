@@ -78,6 +78,10 @@ const SalesAgentDashboard = () => {
             <Users className="mr-2 h-4 w-4" />
             Müşterilerim
           </TabsTrigger>
+          <TabsTrigger value="orders" data-testid="tab-orders">
+            <List className="mr-2 h-4 w-4" />
+            Siparişler
+          </TabsTrigger>
           <TabsTrigger value="warehouse-order" data-testid="tab-warehouse-order">
             <Package className="mr-2 h-4 w-4" />
             Depoya Sipariş Ver
@@ -94,6 +98,10 @@ const SalesAgentDashboard = () => {
 
         <TabsContent value="customers">
           <SalesAgentCustomers />
+        </TabsContent>
+
+        <TabsContent value="orders">
+          <SalesAgentOrders />
         </TabsContent>
 
         <TabsContent value="warehouse-order">
