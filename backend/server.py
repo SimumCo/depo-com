@@ -982,6 +982,15 @@ async def get_sales_rep_stats(current_user: User = Depends(require_role([UserRol
 async def root():
     return {"message": "Distribution Management System API"}
 
+# Import and include invoice routes
+import sys
+sys.path.insert(0, '/app/backend')
+try:
+    from routes.invoices import router as invoices_router
+    api_router.include_router(invoices_router, tags=["Invoices"])
+    logger.info("Invoice routes loaded successfully")
+except Exception as e:
+    logger.warning(f"Could not load invoice routes: {e}")
 
 # Include the router in the main app
 app.include_router(api_router)
