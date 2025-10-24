@@ -191,21 +191,51 @@ const ProductCatalog = ({ isSalesRep = false, onOrderCreated, onUpdate }) => {
                       <p><span className="text-gray-600">Mevcut:</span> {product.available_cases} koli</p>
                     </div>
 
-                    <div className="pt-2 border-t">
+                    <div className="pt-2 border-t space-y-2">
                       <div className="flex justify-between items-center">
-                        <span className="text-2xl font-bold text-blue-600">
+                        <span className="text-xl font-bold text-blue-600">
                           {product.price.toFixed(2)} TL
                         </span>
-                        <Button
-                          onClick={() => addToCart(product)}
-                          disabled={!product.in_stock}
-                          size="sm"
-                          data-testid={`add-to-cart-${product.sku}`}
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Sepete Ekle
-                        </Button>
+                        <span className="text-sm text-gray-500">/ adet</span>
                       </div>
+                      
+                      {(() => {
+                        const inCart = cart.find(item => item.product_id === product.id);
+                        return inCart ? (
+                          <div className="flex items-center justify-between bg-blue-50 p-2 rounded-lg">
+                            <Button
+                              onClick={() => updateCartQuantity(product.id, -1)}
+                              size="sm"
+                              variant="outline"
+                              className="h-8 w-8 p-0"
+                            >
+                              <Minus className="h-4 w-4" />
+                            </Button>
+                            <span className="font-semibold text-blue-900 px-4">
+                              {inCart.units} adet
+                            </span>
+                            <Button
+                              onClick={() => updateCartQuantity(product.id, 1)}
+                              size="sm"
+                              variant="outline"
+                              className="h-8 w-8 p-0"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            onClick={() => addToCart(product)}
+                            disabled={!product.in_stock}
+                            size="sm"
+                            className="w-full"
+                            data-testid={`add-to-cart-${product.sku}`}
+                          >
+                            <ShoppingCart className="h-4 w-4 mr-1" />
+                            Sepete Ekle
+                          </Button>
+                        );
+                      })()}
                     </div>
                   </CardContent>
                 </Card>
