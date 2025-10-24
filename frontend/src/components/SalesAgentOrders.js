@@ -4,8 +4,17 @@ import { Badge } from './ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Button } from './ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import api from '../services/api';
-import { Package, Calendar, User, DollarSign, Filter } from 'lucide-react';
+import { Package, Calendar, User, DollarSign, Filter, Eye, X } from 'lucide-react';
+
+const SalesAgentOrders = () => {
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
 const SalesAgentOrders = () => {
   const [orders, setOrders] = useState([]);
