@@ -79,6 +79,10 @@ const SalesRepDashboard = () => {
           <TabsTrigger value="customers" data-testid="tab-customers">Müşteriler</TabsTrigger>
           <TabsTrigger value="catalog" data-testid="tab-catalog">Ürün Kataloğu</TabsTrigger>
           <TabsTrigger value="orders" data-testid="tab-orders">Siparişlerim</TabsTrigger>
+          <TabsTrigger value="bulk-import" data-testid="tab-bulk-import">
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            Excel Veri Girişi
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="customers">
@@ -91,6 +95,10 @@ const SalesRepDashboard = () => {
 
         <TabsContent value="orders">
           <SalesRepOrders onUpdate={loadStats} />
+        </TabsContent>
+
+        <TabsContent value="bulk-import">
+          <BulkImport />
         </TabsContent>
       </Tabs>
     </Layout>
