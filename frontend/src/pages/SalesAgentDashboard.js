@@ -4,10 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Users, TrendingUp, ShoppingCart, Package, List } from 'lucide-react';
 import CustomerManagement from '../components/CustomerManagement';
-import CustomerInvoiceStats from '../components/CustomerInvoiceStats';
 import SalesAgentCustomers from '../components/SalesAgentCustomers';
 import SalesAgentWarehouseOrder from '../components/SalesAgentWarehouseOrder';
 import SalesAgentOrders from '../components/SalesAgentOrders';
+import AllCustomersConsumption from '../components/AllCustomersConsumption';
 import api from '../services/api';
 
 const SalesAgentDashboard = () => {
