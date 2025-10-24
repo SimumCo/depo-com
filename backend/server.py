@@ -1357,13 +1357,28 @@ async def get_all_customers_consumption(
 
 # Import and include bulk import routes
 import sys
+import os
 sys.path.insert(0, '/app/backend')
-try:
-    from routes.bulk_import import router as bulk_import_router
-    api_router.include_router(bulk_import_router, tags=["Bulk Import"])
-    print("✅ Bulk import routes loaded successfully")
-except Exception as e:
-    print(f"⚠️ Could not load bulk import routes: {e}")
+sys.path.insert(0, '/app/backend/routes')
+
+# Bulk import router
+@api_router.post("/bulk-import/customers/template")
+async def download_customer_template_endpoint(
+    current_user: User = Depends(require_role([UserRole.SALES_REP, UserRole.ADMIN]))
+):
+    """Müşteri Excel template"""
+    return {
+        "columns": ["isletme_id", "isletme_adi", "adres", "sehir", "telefon", "vergi_no", "kanal_tipi"],
+        "example": {
+            "isletme_id": "CUST001",
+            "isletme_adi": "ABC Market",
+            "adres": "Atatürk Cad. No:123",
+            "sehir": "İstanbul",
+            "telefon": "+90 555 123 4567",
+            "vergi_no": "1234567890",
+            "kanal_tipi": "dealer"
+        }
+    }
 
 # Include the router in the main app
 app.include_router(api_router)
