@@ -8,6 +8,8 @@ import WarehouseManagerDashboard from './pages/WarehouseManagerDashboard';
 import WarehouseStaffDashboard from './pages/WarehouseStaffDashboard';
 import SalesRepDashboard from './pages/SalesRepDashboard';
 import CustomerDashboard from './pages/CustomerDashboard';
+import AccountingDashboard from './pages/AccountingDashboard';
+import SalesAgentDashboard from './pages/SalesAgentDashboard';
 import './App.css';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
