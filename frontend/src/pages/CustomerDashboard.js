@@ -72,6 +72,7 @@ const CustomerDashboard = () => {
         <TabsList>
           <TabsTrigger value="catalog" data-testid="tab-catalog">Ürün Kataloğu</TabsTrigger>
           <TabsTrigger value="orders" data-testid="tab-my-orders">Siparişlerim</TabsTrigger>
+          <TabsTrigger value="invoices" data-testid="tab-invoices">Fatura Analizi</TabsTrigger>
           <TabsTrigger value="feedback" data-testid="tab-feedback">Geri Bildirimler</TabsTrigger>
         </TabsList>
 
@@ -81,6 +82,15 @@ const CustomerDashboard = () => {
 
         <TabsContent value="orders">
           <CustomerOrders orders={orders} onUpdate={loadOrders} />
+        </TabsContent>
+
+        <TabsContent value="invoices">
+          <div className="space-y-6">
+            <div className="flex justify-end">
+              <InvoiceUpload onInvoiceCreated={() => window.location.reload()} />
+            </div>
+            <InvoiceAnalysis />
+          </div>
         </TabsContent>
 
         <TabsContent value="feedback">
