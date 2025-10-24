@@ -3,10 +3,11 @@ import Layout from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { salesRepAPI } from '../services/api';
-import { Users, ShoppingCart, CheckCircle, TrendingUp } from 'lucide-react';
+import { Users, ShoppingCart, CheckCircle, TrendingUp, FileSpreadsheet } from 'lucide-react';
 import CustomerManagement from '../components/CustomerManagement';
 import ProductCatalog from '../components/ProductCatalog';
 import SalesRepOrders from '../components/SalesRepOrders';
+import BulkImport from '../components/BulkImport';
 
 const SalesRepDashboard = () => {
   const [stats, setStats] = useState(null);
