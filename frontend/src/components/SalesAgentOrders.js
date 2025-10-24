@@ -232,6 +232,17 @@ const SalesAgentOrders = () => {
                       <TableCell className="text-right font-semibold">
                         {order.total_amount?.toFixed(2)} ₺
                       </TableCell>
+                      <TableCell>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleViewDetail(order)}
+                          className="flex items-center gap-1"
+                        >
+                          <Eye className="h-4 w-4" />
+                          Detay
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -245,6 +256,126 @@ const SalesAgentOrders = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Order Detail Modal */}
+      <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>Sipariş Detayı: {selectedOrder?.order_number}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowDetailModal(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedOrder && (
+            <div className="space-y-6">
+              {/* Order Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-sm text-gray-600">Sipariş No</div>
+                    <div className="font-semibold">{selectedOrder.order_number}</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-sm text-gray-600">Tarih</div>
+                    <div className="font-semibold">
+                      {new Date(selectedOrder.created_at).toLocaleDateString('tr-TR', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-sm text-gray-600">Durum</div>
+                    <Badge className={statusColors[selectedOrder.status] || ''}>
+                      {statusTranslations[selectedOrder.status] || selectedOrder.status}
+                    </Badge>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-sm text-gray-600">Kanal</div>
+                    <Badge variant={selectedOrder.channel_type === 'logistics' ? 'default' : 'secondary'}>
+                      {selectedOrder.channel_type === 'logistics' ? 'Lojistik' : 'Bayi'}
+                    </Badge>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Products */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Ürünler</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Ürün Adı</TableHead>
+                        <TableHead className="text-center">Adet</TableHead>
+                        <TableHead className="text-center">Koli</TableHead>
+                        <TableHead className="text-right">Birim Fiyat</TableHead>
+                        <TableHead className="text-right">Toplam</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {selectedOrder.products?.map((product, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell className="font-medium">{product.product_name}</TableCell>
+                          <TableCell className="text-center">{product.units} adet</TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="outline">{product.cases} koli</Badge>
+                          </TableCell>
+                          <TableCell className="text-right">{product.unit_price?.toFixed(2)} ₺</TableCell>
+                          <TableCell className="text-right font-semibold text-green-600">
+                            {product.total_price?.toFixed(2)} ₺
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      <TableRow className="bg-gray-50">
+                        <TableCell colSpan={4} className="text-right font-semibold">
+                          Genel Toplam:
+                        </TableCell>
+                        <TableCell className="text-right font-bold text-green-700 text-lg">
+                          {selectedOrder.total_amount?.toFixed(2)} ₺
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+
+              {/* Notes */}
+              {selectedOrder.notes && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Notlar</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-700">{selectedOrder.notes}</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
