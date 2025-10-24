@@ -82,6 +82,10 @@ const SalesAgentDashboard = () => {
             <List className="mr-2 h-4 w-4" />
             Siparişler
           </TabsTrigger>
+          <TabsTrigger value="consumption" data-testid="tab-consumption">
+            <TrendingUp className="mr-2 h-4 w-4" />
+            Sarfiyat Analizi
+          </TabsTrigger>
           <TabsTrigger value="warehouse-order" data-testid="tab-warehouse-order">
             <Package className="mr-2 h-4 w-4" />
             Depoya Sipariş Ver
@@ -89,10 +93,6 @@ const SalesAgentDashboard = () => {
           <TabsTrigger value="management" data-testid="tab-management">
             <ShoppingCart className="mr-2 h-4 w-4" />
             Müşteri Yönetimi
-          </TabsTrigger>
-          <TabsTrigger value="stats" data-testid="tab-stats">
-            <TrendingUp className="mr-2 h-4 w-4" />
-            Fatura İstatistikleri
           </TabsTrigger>
         </TabsList>
 
@@ -104,16 +104,16 @@ const SalesAgentDashboard = () => {
           <SalesAgentOrders />
         </TabsContent>
 
+        <TabsContent value="consumption">
+          <AllCustomersConsumption />
+        </TabsContent>
+
         <TabsContent value="warehouse-order">
           <SalesAgentWarehouseOrder />
         </TabsContent>
 
         <TabsContent value="management">
           <CustomerManagement />
-        </TabsContent>
-
-        <TabsContent value="stats">
-          <CustomerInvoiceStats />
         </TabsContent>
       </Tabs>
     </Layout>
