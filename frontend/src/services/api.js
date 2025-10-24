@@ -105,4 +105,19 @@ export const salesRepAPI = {
   getStats: () => api.get('/salesrep/stats'),
 };
 
+// Invoice API
+export const invoicesAPI = {
+  upload: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/invoices/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+  create: (data) => api.post('/invoices', data),
+  getAll: () => api.get('/invoices'),
+  getAnalysis: (period = 'monthly') => api.get(`/invoices/analysis?period=${period}`),
+  getRecommendations: () => api.get('/invoices/recommendations'),
+};
+
 export default api;
