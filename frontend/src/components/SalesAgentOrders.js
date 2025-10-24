@@ -83,6 +83,11 @@ const SalesAgentOrders = () => {
 
   const stats = getOrderStats();
 
+  const handleViewDetail = (order) => {
+    setSelectedOrder(order);
+    setShowDetailModal(true);
+  };
+
   if (loading) {
     return (
       <Card>
