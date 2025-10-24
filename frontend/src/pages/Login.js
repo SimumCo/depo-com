@@ -95,14 +95,13 @@ const Login = () => {
           <div className="text-center text-sm text-gray-600">
             <p className="font-medium mb-2">Demo Hesaplar:</p>
             <div className="space-y-1 text-xs bg-gray-50 p-3 rounded-md">
-              <p><strong>Admin:</strong> admin / admin123</p>
-              <p><strong>Depo Müdürü:</strong> manager / manager123</p>
-              <p><strong>Depo Personeli:</strong> staff / staff123</p>
-              <p><strong>Satış Temsilcisi:</strong> salesrep / salesrep123</p>
-              <p><strong>Müşteri (Hotel):</strong> customer1 / customer123</p>
-              <p><strong>Müşteri (Market):</strong> customer2 / customer123</p>
-              <p><strong>Muhasebe:</strong> muhasebe / muhasebe123</p>
-              <p><strong>Plasiyer:</strong> plasiyer / plasiyer123</p>
+              <p><strong>👤 Admin:</strong> admin / admin123</p>
+              <p><strong>📦 Depo Müdürü:</strong> manager / manager123</p>
+              <p><strong>📦 Depo Personeli:</strong> staff / staff123</p>
+              <p><strong>👔 Satış Temsilcisi:</strong> satistemsilcisi / satis123</p>
+              <p><strong>🚗 Plasiyer 1:</strong> plasiyer1 / plasiyer123</p>
+              <p><strong>🛒 Müşteri 1:</strong> musteri1 / musteri123</p>
+              <p><strong>🛒 Müşteri 2:</strong> musteri2 / musteri123</p>
             </div>
           </div>
         </div>
