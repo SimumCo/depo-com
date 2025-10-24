@@ -46,6 +46,8 @@ class UserRole(str, Enum):
     WAREHOUSE_STAFF = "warehouse_staff"
     SALES_REP = "sales_rep"
     CUSTOMER = "customer"
+    ACCOUNTING = "accounting"
+    SALES_AGENT = "sales_agent"  # Plasiyer
 
 class ChannelType(str, Enum):
     LOGISTICS = "logistics"  # Hotels, Government
