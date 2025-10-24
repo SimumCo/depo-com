@@ -101,6 +101,8 @@ const Login = () => {
               <p><strong>Satış Temsilcisi:</strong> salesrep / salesrep123</p>
               <p><strong>Müşteri (Hotel):</strong> customer1 / customer123</p>
               <p><strong>Müşteri (Market):</strong> customer2 / customer123</p>
+              <p><strong>Muhasebe:</strong> muhasebe / muhasebe123</p>
+              <p><strong>Plasiyer:</strong> plasiyer / plasiyer123</p>
             </div>
           </div>
         </div>
