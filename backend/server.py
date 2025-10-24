@@ -608,6 +608,13 @@ async def get_orders(current_user: User = Depends(get_current_user)):
         query['customer_id'] = current_user.id
     elif current_user.role == UserRole.SALES_REP:
         query['sales_rep_id'] = current_user.id
+    elif current_user.role == UserRole.SALES_AGENT:
+        # Sales agent kendi depot siparişlerini ve müşterilerinin siparişlerini görsün
+        routes = await db.sales_routes.find({"sales_agent_id": current_user.id, "is_active": True}, {"_id": 0}).to_list(1000)
+        customer_ids = [route['customer_id'] for route in routes]
+        customer_ids.append(current_user.id)  # Kendi depot siparişleri
+        query['customer_id'] = {"$in": customer_ids}
+    # Admin ve Warehouse Manager tüm siparişleri görür (query boş kalır)
     
     orders = await db.orders.find(query, {"_id": 0}).to_list(1000)
     
