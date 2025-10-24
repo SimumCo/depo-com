@@ -101,3 +101,132 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: |
+  Plasiyerlerimiz (sales agents) müşterilere ürün teslim eder. Haftanın belirli günlerinde belirli müşterilere giderler.
+  
+  Gereksinimler:
+  1. Müşteriler kendi hesaplarından sipariş verebilir (her gün sipariş girebilir, sadece kendi gününde teslim alır)
+  2. Plasiyer depoya kendi stoğu için sipariş verebilir (müşteri belirtmeden)
+  3. 18 müşteri, Pazartesi-Cumartesi arası rastgele günlerde, karışık channel_type (logistics/dealer)
+  4. Müşteri sipariş ekranında teslimat günü gösterilir
+
+backend:
+  - task: "Sales Agent API'leri"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Sales Agent için warehouse order, my-customers, my-routes, stats API'leri eklendi"
+
+  - task: "Sales Route API'leri"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Sales Route CRUD API'leri eklendi (GET, POST, PUT, DELETE)"
+
+  - task: "Seed Data - 18 Müşteri ve Sales Routes"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/seed_sales_agents_data.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "18 müşteri, 3 plasiyer, sales routes ve örnek siparişler oluşturuldu"
+
+frontend:
+  - task: "SalesAgentCustomers Component"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/SalesAgentCustomers.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Plasiyerin müşterilerini günlere göre gruplu gösteriyor"
+
+  - task: "SalesAgentWarehouseOrder Component"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/SalesAgentWarehouseOrder.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Plasiyer depoya sipariş verme ekranı eklendi"
+
+  - task: "SalesAgentDashboard Güncellemesi"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/SalesAgentDashboard.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Dashboard'a müşterilerim, depoya sipariş ver, stats tabları eklendi"
+
+  - task: "CustomerDashboard Teslimat Günü Bilgisi"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/CustomerDashboard.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Müşteri dashboard'ına teslimat günü bilgisi eklendi"
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 0
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Sales Agent API'leri"
+    - "Sales Route API'leri"
+    - "SalesAgentDashboard Güncellemesi"
+    - "CustomerDashboard Teslimat Günü Bilgisi"
+  stuck_tasks: []
+  test_all: true
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      Backend ve Frontend implementasyonu tamamlandı.
+      
+      Test Bilgileri:
+      - Admin: admin / admin123
+      - Plasiyer: plasiyer1 / plasiyer123 (plasiyer2, plasiyer3 de aynı şifre)
+      - Müşteri: musteri1 / musteri123 (musteri2-18 hepsi aynı şifre)
+      
+      Test Senaryoları:
+      1. Backend API'lerin çalışması (plasiyer için warehouse order, my-customers, stats)
+      2. Sales route API'lerin çalışması
+      3. Plasiyer ile giriş yapıp müşterileri günlere göre görmek
+      4. Plasiyer ile depoya sipariş vermek
+      5. Müşteri ile giriş yapıp teslimat günü bilgisini görmek
+      6. Müşteri ile sipariş vermek
