@@ -72,3 +72,4 @@ urllib3==2.5.0
 uvicorn==0.25.0
 watchfiles==1.1.0
 wrapt==1.17.3
+openpyxl==3.1.2
