@@ -59,6 +59,26 @@ const CustomerDashboard = () => {
 
   return (
     <Layout title="Müşteri Paneli">
+      {/* Delivery Day Info */}
+      {deliveryInfo && deliveryInfo.delivery_day && (
+        <Card className="mb-6 bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Calendar className="h-6 w-6 text-blue-600" />
+              <div>
+                <div className="text-sm text-blue-600 font-medium">Teslimat Günü</div>
+                <div className="text-lg font-bold text-blue-800">
+                  {dayTranslations[deliveryInfo.delivery_day]}
+                </div>
+                <div className="text-xs text-blue-600 mt-1">
+                  Her gün sipariş verebilirsiniz. Siparişleriniz {dayTranslations[deliveryInfo.delivery_day]} günü teslim edilir.
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card data-testid="stat-total-orders">
