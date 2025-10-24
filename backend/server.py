@@ -1210,7 +1210,149 @@ async def delete_sales_route(
 async def root():
     return {"message": "Distribution Management System API"}
 
-# Import and include invoice routes
+
+# ===============================
+# CONSUMPTION STATISTICS ROUTES
+# ===============================
+@api_router.get("/consumption/customer/{customer_id}")
+async def get_customer_consumption(
+    customer_id: str,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Müşterinin dönemlik sarfiyat hesaplaması - siparişlere göre"""
+    # Default to last 30 days
+    if not end_date:
+        end_datetime = datetime.now(timezone.utc)
+    else:
+        end_datetime = datetime.fromisoformat(end_date)
+    
+    if not start_date:
+        start_datetime = end_datetime - timedelta(days=30)
+    else:
+        start_datetime = datetime.fromisoformat(start_date)
+    
+    # Get orders in date range
+    orders = await db.orders.find({
+        "customer_id": customer_id,
+        "created_at": {
+            "$gte": start_datetime.isoformat(),
+            "$lte": end_datetime.isoformat()
+        }
+    }, {"_id": 0}).to_list(1000)
+    
+    # Calculate consumption by product
+    product_consumption = {}
+    total_amount = 0.0
+    total_orders = len(orders)
+    
+    for order in orders:
+        total_amount += order.get('total_amount', 0)
+        
+        for item in order.get('products', []):
+            product_id = item.get('product_id')
+            product_name = item.get('product_name', 'Unknown')
+            units = item.get('units', 0)
+            total_price = item.get('total_price', 0)
+            
+            if product_id not in product_consumption:
+                product_consumption[product_id] = {
+                    'product_id': product_id,
+                    'product_name': product_name,
+                    'total_units': 0,
+                    'total_amount': 0,
+                    'order_count': 0
+                }
+            
+            product_consumption[product_id]['total_units'] += units
+            product_consumption[product_id]['total_amount'] += total_price
+            product_consumption[product_id]['order_count'] += 1
+    
+    # Get customer info
+    customer = await db.users.find_one({"id": customer_id}, {"_id": 0, "password_hash": 0})
+    
+    return {
+        "customer": customer,
+        "period": {
+            "start_date": start_datetime.isoformat(),
+            "end_date": end_datetime.isoformat(),
+            "days": (end_datetime - start_datetime).days
+        },
+        "summary": {
+            "total_orders": total_orders,
+            "total_amount": total_amount,
+            "average_order_amount": total_amount / total_orders if total_orders > 0 else 0
+        },
+        "products": list(product_consumption.values())
+    }
+
+@api_router.get("/consumption/all-customers")
+async def get_all_customers_consumption(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.WAREHOUSE_MANAGER, UserRole.SALES_AGENT]))
+):
+    """Tüm müşterilerin dönemlik sarfiyat özeti"""
+    # Default to last 30 days
+    if not end_date:
+        end_datetime = datetime.now(timezone.utc)
+    else:
+        end_datetime = datetime.fromisoformat(end_date)
+    
+    if not start_date:
+        start_datetime = end_datetime - timedelta(days=30)
+    else:
+        start_datetime = datetime.fromisoformat(start_date)
+    
+    # Get all customers
+    customers = await db.users.find({"role": UserRole.CUSTOMER.value}, {"_id": 0, "password_hash": 0}).to_list(1000)
+    
+    result = []
+    for customer in customers:
+        # Get customer orders in period
+        orders = await db.orders.find({
+            "customer_id": customer['id'],
+            "created_at": {
+                "$gte": start_datetime.isoformat(),
+                "$lte": end_datetime.isoformat()
+            }
+        }, {"_id": 0}).to_list(1000)
+        
+        total_amount = sum(order.get('total_amount', 0) for order in orders)
+        total_units = sum(
+            sum(item.get('units', 0) for item in order.get('products', []))
+            for order in orders
+        )
+        
+        # Get customer profile
+        profile = await db.customer_profiles.find_one({"user_id": customer['id']}, {"_id": 0})
+        
+        result.append({
+            "customer": customer,
+            "profile": profile,
+            "consumption": {
+                "order_count": len(orders),
+                "total_amount": total_amount,
+                "total_units": total_units,
+                "average_order_amount": total_amount / len(orders) if len(orders) > 0 else 0
+            }
+        })
+    
+    # Sort by total amount descending
+    result.sort(key=lambda x: x['consumption']['total_amount'], reverse=True)
+    
+    return {
+        "period": {
+            "start_date": start_datetime.isoformat(),
+            "end_date": end_datetime.isoformat(),
+            "days": (end_datetime - start_datetime).days
+        },
+        "customers": result
+    }
+
+
+# Import and include invoice routes - REMOVED (fatura sistemi kaldırıldı)
 import sys
 sys.path.insert(0, '/app/backend')
 try:
