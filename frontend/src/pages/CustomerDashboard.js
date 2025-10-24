@@ -2,20 +2,36 @@ import React, { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Badge } from '../components/ui/badge';
 import { ordersAPI, dashboardAPI } from '../services/api';
-import { ShoppingCart, Package, MessageSquare } from 'lucide-react';
+import { ShoppingCart, Package, MessageSquare, Calendar } from 'lucide-react';
 import ProductCatalog from '../components/ProductCatalog';
 import CustomerOrders from '../components/CustomerOrders';
 import CustomerFeedback from '../components/CustomerFeedback';
 import InvoiceUpload from '../components/InvoiceUpload';
 import InvoiceAnalysis from '../components/InvoiceAnalysis';
+import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
 
 const CustomerDashboard = () => {
+  const { user } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deliveryInfo, setDeliveryInfo] = useState(null);
+
+  const dayTranslations = {
+    monday: 'Pazartesi',
+    tuesday: 'Salı',
+    wednesday: 'Çarşamba',
+    thursday: 'Perşembe',
+    friday: 'Cuma',
+    saturday: 'Cumartesi',
+    sunday: 'Pazar'
+  };
 
   useEffect(() => {
     loadOrders();
+    loadDeliveryInfo();
   }, []);
 
   const loadOrders = async () => {
@@ -26,6 +42,15 @@ const CustomerDashboard = () => {
       console.error('Failed to load orders:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadDeliveryInfo = async () => {
+    try {
+      const response = await api.get(`/sales-routes/customer/${user.id}`);
+      setDeliveryInfo(response.data);
+    } catch (error) {
+      console.error('Failed to load delivery info:', error);
     }
   };
 
