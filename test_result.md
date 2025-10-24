@@ -194,17 +194,53 @@ frontend:
         agent: "main"
         comment: "Dashboard'a müşterilerim, depoya sipariş ver, stats tabları eklendi"
 
-  - task: "CustomerDashboard Teslimat Günü Bilgisi"
+  - task: "ProductCatalog - Adet Seçimi ve Sepet"
     implemented: true
     working: "NA"
-    file: "/app/frontend/src/pages/CustomerDashboard.js"
+    file: "/app/frontend/src/components/ProductCatalog.js"
     stuck_count: 0
     priority: "high"
     needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "Müşteri dashboard'ına teslimat günü bilgisi eklendi"
+        comment: "Ürün kartlarına direkt adet seçimi eklendi. Sepetteyken +/- butonları gösteriliyor"
+
+  - task: "Orders API - Plasiyer ve Manager Görünürlüğü"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "GET /api/orders endpoint'i güncellendi. Sales agent kendi müşterilerinin siparişlerini görür, warehouse manager ve admin tüm siparişleri görür"
+
+  - task: "Haftalık Siparişler - 120 Sipariş"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/seed_weekly_orders.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Plasiyer1'in 6 müşterisi için her birine 20'şer sipariş (toplam 120) oluşturuldu. Son 7 güne dağıtıldı"
+
+  - task: "SalesAgentOrders Component"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/SalesAgentOrders.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Plasiyer siparişleri görebilir. Status filtresi ve istatistikler eklendi"
 
 metadata:
   created_by: "main_agent"
