@@ -7,6 +7,8 @@ import { ShoppingCart, Package, MessageSquare } from 'lucide-react';
 import ProductCatalog from '../components/ProductCatalog';
 import CustomerOrders from '../components/CustomerOrders';
 import CustomerFeedback from '../components/CustomerFeedback';
+import InvoiceUpload from '../components/InvoiceUpload';
+import InvoiceAnalysis from '../components/InvoiceAnalysis';
 
 const CustomerDashboard = () => {
   const [orders, setOrders] = useState([]);
