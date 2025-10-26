@@ -6,7 +6,7 @@ import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import api from '../services/api';
-import { TrendingUp, Package, DollarSign, ShoppingCart, Calendar, BarChart3, PieChart, Activity, Week, Month } from 'lucide-react';
+import { TrendingUp, Package, DollarSign, ShoppingCart, Calendar, BarChart3, PieChart, Activity, CalendarDays } from 'lucide-react';
 
 const CustomerConsumption = ({ customerId = null }) => {
   const [consumption, setConsumption] = useState(null);
