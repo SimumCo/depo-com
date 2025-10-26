@@ -495,11 +495,11 @@ const CustomerConsumption = ({ customerId = null }) => {
               <TabsList>
                 <TabsTrigger value="basic">Günlük</TabsTrigger>
                 <TabsTrigger value="weekly" className="flex items-center gap-1">
-                  <Week className="h-3 w-3" />
+                  <Calendar className="h-3 w-3" />
                   Haftalık
                 </TabsTrigger>
                 <TabsTrigger value="monthly" className="flex items-center gap-1">
-                  <Month className="h-3 w-3" />
+                  <Calendar className="h-3 w-3" />
                   Aylık
                 </TabsTrigger>
                 <TabsTrigger value="seasonal">Mevsimsel</TabsTrigger>
@@ -926,8 +926,8 @@ const CustomerConsumption = ({ customerId = null }) => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                {analysisType === 'weekly' && <Week className="h-5 w-5" />}
-                {analysisType === 'monthly' && <Month className="h-5 w-5" />}
+                {analysisType === 'weekly' && <Calendar className="h-5 w-5" />}
+                {analysisType === 'monthly' && <Calendar className="h-5 w-5" />}
                 {analysisType === 'seasonal' && <Calendar className="h-5 w-5" />}
                 {analysisType === 'weekly' ? 'Haftalık Performans' :
                  analysisType === 'monthly' ? 'Aylık Performans' : 'Mevsimsel Performans'}
