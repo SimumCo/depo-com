@@ -341,3 +341,38 @@ agent_communication:
       - ✅ musteri1/musteri123 - Giriş başarılı
       
       Backend servisi düzgün çalışıyor, tüm API endpoint'leri doğru veri döndürüyor.
+  - agent: "testing"
+    message: |
+      ✅ Invoice & Consumption Features Testing Tamamlandı - 80% başarı oranı!
+      
+      🆕 Yeni Test Edilen Özellikler:
+      
+      📄 Invoice Management (100% başarılı):
+      1. ✅ POST /api/invoices/upload - HTML fatura yükleme (muhasebe rolü)
+      2. ✅ GET /api/invoices/all/list - Tüm faturaları listeleme (muhasebe)
+      3. ✅ GET /api/invoices/my-invoices - Müşteri kendi faturaları
+      4. ✅ GET /api/invoices/{id} - Fatura detayı (HTML içeriği ile)
+      
+      📊 Consumption Tracking (100% başarılı):
+      1. ✅ POST /api/consumption/calculate - Tüketim hesaplama tetikleme
+      2. ✅ GET /api/consumption/my-consumption - Müşteri tüketim verileri
+      3. ✅ GET /api/consumption/customer/{id} - Admin/plasiyer müşteri tüketimi
+      
+      🔐 Authentication (100% başarılı):
+      1. ✅ POST /api/auth/login - Tüm roller için giriş (admin, muhasebe, plasiyer, müşteri)
+      2. ✅ GET /api/auth/me - Kullanıcı bilgileri
+      
+      ⚠️ Legacy API Issues (3 failed):
+      - Sales Agent warehouse order, customers, stats API'leri 404 hatası veriyor
+      - Bu API'ler server_old.py'den geliyor ve routing sorunu var
+      - Yeni özellikler için kritik değil
+      
+      Test Sonuçları: 12/15 test başarılı (80% başarı oranı)
+      
+      Kullanılan Test Kullanıcıları:
+      - ✅ admin/admin123 - Giriş başarılı
+      - ✅ muhasebe/muhasebe123 - Giriş başarılı (yeni)
+      - ✅ plasiyer1/plasiyer123 - Giriş başarılı
+      - ✅ musteri1/musteri123 - Giriş başarılı
+      
+      🎯 Yeni özellikler tamamen çalışıyor: Invoice yükleme, HTML parsing, tüketim hesaplama, rol tabanlı erişim kontrolü.
