@@ -1,3 +1,4 @@
+# User models for authentication and user management
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import Optional
 from datetime import datetime, timezone
@@ -14,8 +15,8 @@ class UserRole(str, Enum):
     SALES_AGENT = "sales_agent"  # Plasiyer
 
 class ChannelType(str, Enum):
-    LOGISTICS = "logistics"
-    DEALER = "dealer"
+    LOGISTICS = "logistics"  # Hotels, Government
+    DEALER = "dealer"  # Supermarkets, End-users
 
 class User(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -25,7 +26,20 @@ class User(BaseModel):
     email: Optional[EmailStr] = None
     full_name: str
     role: UserRole
-    customer_number: Optional[str] = None
-    channel_type: Optional[ChannelType] = None
+    customer_number: Optional[str] = None  # For customers only
+    channel_type: Optional[ChannelType] = None  # For customers/sales reps
     is_active: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class UserCreate(BaseModel):
+    username: str
+    password: str
+    email: Optional[EmailStr] = None
+    full_name: str
+    role: UserRole
+    customer_number: Optional[str] = None
+    channel_type: Optional[ChannelType] = None
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
