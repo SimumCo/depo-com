@@ -80,7 +80,7 @@ const InvoiceUpload = () => {
         {/* File Upload */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            HTML Fatura Dosyası
+            HTML Fatura Dosyası *
           </label>
           <input
             id="file-input"
@@ -94,6 +94,9 @@ const InvoiceUpload = () => {
               file:bg-blue-50 file:text-blue-700
               hover:file:bg-blue-100"
           />
+          <p className="text-xs text-gray-500 mt-1">
+            ✓ E-fatura HTML dosyasını seçin (.html veya .htm)
+          </p>
         </div>
 
         {/* Preview */}
@@ -105,19 +108,9 @@ const InvoiceUpload = () => {
             <div className="border rounded-lg p-4 max-h-64 overflow-y-auto bg-gray-50">
               <div dangerouslySetInnerHTML={{ __html: htmlContent.substring(0, 500) + '...' }} />
             </div>
-          </div>
-        )}
-
-        {/* Messages */}
-        {message && (
-          <div className="mb-4 p-4 bg-green-50 border-l-4 border-green-500 text-green-700">
-            <p>{message}</p>
-          </div>
-        )}
-
-        {error && (
-          <div className="mb-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700">
-            <p>{error}</p>
+            <p className="text-xs text-green-600 mt-1">
+              ✓ Dosya hazır, yüklemek için aşağıdaki butona tıklayın
+            </p>
           </div>
         )}
 
