@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends
 from typing import List, Dict, Optional
 from datetime import datetime, timedelta, timezone
-from ..models.consumption import ConsumptionRecord, ConsumptionSummary
-from ..models.user import User, UserRole
-from ..utils.auth import get_current_user
+from models.consumption import ConsumptionRecord, ConsumptionSummary
+from models.user import User, UserRole
+from utils.auth import get_current_user
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 from collections import defaultdict
