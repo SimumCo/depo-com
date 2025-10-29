@@ -87,6 +87,12 @@ const InvoiceFormWithDropdown = ({ onSuccess }) => {
 
     try {
       const token = localStorage.getItem('access_token');
+      
+      if (!token) {
+        toast.error('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+        return;
+      }
+
       const customer = customers.find(c => c.id === formData.customer_id);
       
       if (!customer) {
@@ -155,7 +161,12 @@ const InvoiceFormWithDropdown = ({ onSuccess }) => {
       const response = await axios.post(
         `${BACKEND_URL}/api/invoices/upload`,
         { html_content: htmlContent },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { 
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          } 
+        }
       );
 
       toast.success('Fatura başarıyla kaydedildi!');
@@ -167,7 +178,12 @@ const InvoiceFormWithDropdown = ({ onSuccess }) => {
       });
       if (onSuccess) onSuccess();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Fatura kaydedilemedi');
+      console.error('Hata detayı:', err.response?.data || err.message);
+      if (err.response?.status === 401) {
+        toast.error('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+      } else {
+        toast.error(err.response?.data?.detail || 'Fatura kaydedilemedi');
+      }
     } finally {
       setLoading(false);
     }
