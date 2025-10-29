@@ -1,12 +1,13 @@
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, List
 from datetime import datetime
-from models.user import User, UserCreate, UserLogin
+from models.user import User, UserCreate, UserLogin, UserRole
 from utils.auth import (
     hash_password, 
     verify_password, 
     create_access_token,
-    get_current_user
+    get_current_user,
+    require_role
 )
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
@@ -36,7 +37,48 @@ async def register(user_input: UserCreate):
     
     await db.users.insert_one(doc)
     
-    return {"message": "User registered successfully", "user_id": user_obj.id}
+    return {"message": "User registered successfully", "user_id": user_obj.id, "username": user_obj.username}
+
+@router.post("/create-user", response_model=Dict[str, str])
+async def create_user(
+    user_input: UserCreate,
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.SALES_REP]))
+):
+    """
+    Satış temsilcisi veya admin tarafından yeni kullanıcı oluşturma.
+    Satış temsilcisi sadece müşteri (customer) hesabı oluşturabilir.
+    Admin tüm rol türlerinde kullanıcı oluşturabilir.
+    """
+    # Satış temsilcisi sadece müşteri oluşturabilir
+    if current_user.role == UserRole.SALES_REP:
+        if user_input.role != UserRole.CUSTOMER:
+            raise HTTPException(
+                status_code=403, 
+                detail="Satış temsilcisi sadece müşteri hesabı oluşturabilir"
+            )
+    
+    # Check if username exists
+    existing_user = await db.users.find_one({"username": user_input.username}, {"_id": 0})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Bu kullanıcı adı zaten kullanılıyor")
+    
+    # Create user
+    user_dict = user_input.model_dump()
+    password = user_dict.pop("password")
+    user_dict["password_hash"] = hash_password(password)
+    
+    user_obj = User(**user_dict)
+    doc = user_obj.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    
+    await db.users.insert_one(doc)
+    
+    return {
+        "message": "Kullanıcı başarıyla oluşturuldu",
+        "user_id": user_obj.id,
+        "username": user_obj.username,
+        "role": user_obj.role.value
+    }
 
 @router.post("/login")
 async def login(credentials: UserLogin):
