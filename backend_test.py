@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Backend API Test Suite for Sales Agent System
-Tests all Sales Agent and Sales Route APIs
+Backend API Test Suite for Distribution Management System
+Tests Invoice Management and Consumption Tracking APIs
 """
 
 import requests
@@ -16,6 +16,7 @@ BASE_URL = "https://review-portal-13.preview.emergentagent.com/api"
 # Test Users
 TEST_USERS = {
     "admin": {"username": "admin", "password": "admin123"},
+    "accounting": {"username": "muhasebe", "password": "muhasebe123"},
     "plasiyer": {"username": "plasiyer1", "password": "plasiyer123"},
     "customer": {"username": "musteri1", "password": "musteri123"}
 }
