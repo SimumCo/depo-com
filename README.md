@@ -246,6 +246,26 @@ python seed_sales_agents_data.py
 python seed_20_products_orders.py
 ```
 
+### 📥 Demo Kullanıcıları Import Etme
+
+Eğer sadece demo kullanıcıları güncellemek veya eklemek isterseniz:
+
+```bash
+# Python script ile import
+cd /app
+python import_demo_users.py
+
+# Veya MongoDB import komutu ile
+mongoimport --db distribution_db --collection users --file /app/demo_users.json --jsonArray --mode upsert
+```
+
+**Demo Kullanıcılar:**
+- Admin, Depo Müdürü, Satış Temsilcisi
+- Muhasebe, Plasiyer (2 adet)
+- Müşteri (3 adet)
+
+**Not:** `import_demo_users.py` scripti hem veritabanına import eder hem de `/app/demo_users.json` dosyasını oluşturur.
+
 ---
 
 ## 🔧 Yaygın Sorunlar
