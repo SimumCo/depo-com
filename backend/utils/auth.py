@@ -21,7 +21,7 @@ db = client[os.environ['DB_NAME']]
 
 # Import User model
 try:
-    from ..models.user import User, UserRole
+    from models.user import User, UserRole
 except:
     # Fallback for when models are not yet available
     from pydantic import BaseModel
