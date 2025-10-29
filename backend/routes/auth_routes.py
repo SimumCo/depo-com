@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, List
 from datetime import datetime
-from ..models.user import User, UserCreate, UserLogin
-from ..utils.auth import (
+from models.user import User, UserCreate, UserLogin
+from utils.auth import (
     hash_password, 
     verify_password, 
     create_access_token,
