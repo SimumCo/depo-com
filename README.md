@@ -1,10 +1,28 @@
-# Dağıtım Yönetim Sistemi - Kurulum Rehberi
+# 🚛 Dağıtım Yönetim Sistemi (B2B Distribution Management System)
+
+Modern B2B dağıtım ve satış yönetim platformu - FastAPI + React + MongoDB
+
+## ✨ Özellikler
+
+### 🎯 Temel Özellikler
+- ✅ **Multi-Role Sistem** - Admin, Depo, Satış Temsilcisi, Plasiyer, Müşteri, Muhasebe
+- ✅ **Sipariş Yönetimi** - Müşteri ve plasiyer siparişleri
+- ✅ **Stok Takibi** - Gerçek zamanlı envanter yönetimi
+- ✅ **Rota Planlaması** - Haftalık teslimat rotaları
+- ✅ **Excel Toplu Veri Girişi** - Hızlı sipariş oluşturma
+
+### 🆕 Yeni Özellikler (v2.0)
+- ✅ **Fatura Yönetimi** - HTML e-fatura yükleme ve görüntüleme
+- ✅ **Tüketim Analizi** - Otomatik sarfiyat hesaplama ve tahmin
+- ✅ **Kullanıcı Yönetimi** - Satış temsilcisi müşteri/kullanıcı kaydı
+- ✅ **Modüler Backend** - Organize edilmiş API yapısı
+- ✅ **Dropdown Formlar** - Veritabanından dinamik seçim
+
+---
 
 ## 📋 Gereksinimler
 
-Projeyi çalıştırmak için bilgisayarınızda şunlar kurulu olmalı:
-
-### 1. Python 3.10 veya üzeri
+### 1. Python 3.10+
 ```bash
 python --version
 ```
@@ -14,56 +32,53 @@ python --version
 ```bash
 node --version
 npm install -g yarn
-yarn --version
 ```
 **İndirme:** https://nodejs.org/
 
 ### 3. MongoDB
-**Önerilen: MongoDB Compass**
+**MongoDB Compass (Önerilen)**
 - İndir: https://www.mongodb.com/try/download/compass
-- Otomatik `mongodb://localhost:27017` üzerinde çalışır
+- Varsayılan: `mongodb://localhost:27017`
 
 ---
 
 ## 🚀 Hızlı Kurulum
 
-### 1️⃣ Backend Kurulumu
+### 1️⃣ Backend
 ```bash
 cd backend
 
-# Virtual environment oluştur
+# Virtual environment
 python -m venv venv
-
-# Aktive et
 source venv/bin/activate  # macOS/Linux
-venv\Scripts\activate     # Windows
+# venv\Scripts\activate   # Windows
 
-# Paketleri yükle
+# Bağımlılıklar
 pip install -r requirements.txt
 
-# .env dosyası oluştur
+# Konfigürasyon
 cat > .env << EOF
 MONGO_URL=mongodb://localhost:27017
 DB_NAME=distribution_db
-SECRET_KEY=your-super-secret-key-change-this
+SECRET_KEY=your-secret-key-change-in-production
 HOST=0.0.0.0
 PORT=8001
 EOF
 
-# Demo verileri oluştur
+# Demo Verileri
 python seed_data.py
 python seed_sales_agents_data.py
 python seed_20_products_orders.py
 ```
 
-### 2️⃣ Frontend Kurulumu
+### 2️⃣ Frontend
 ```bash
-cd ../frontend
+cd frontend
 
-# Paketleri yükle
+# Bağımlılıklar
 yarn install
 
-# .env dosyası oluştur
+# Konfigürasyon
 echo "REACT_APP_BACKEND_URL=http://localhost:8001" > .env
 ```
 
@@ -71,33 +86,34 @@ echo "REACT_APP_BACKEND_URL=http://localhost:8001" > .env
 
 ## ▶️ Çalıştırma
 
-### Terminal 1 - Backend:
+### Backend (Terminal 1):
 ```bash
 cd backend
-source venv/bin/activate  # veya venv\Scripts\activate (Windows)
+source venv/bin/activate
 uvicorn server:app --host 0.0.0.0 --port 8001 --reload
 ```
-✅ Backend: http://localhost:8001
-📖 API Docs: http://localhost:8001/docs
+- 🌐 Backend: http://localhost:8001
+- 📖 API Docs: http://localhost:8001/docs
 
-### Terminal 2 - Frontend:
+### Frontend (Terminal 2):
 ```bash
 cd frontend
 yarn start
 ```
-✅ Frontend: http://localhost:3000
+- 🌐 Frontend: http://localhost:3000
 
 ---
 
 ## 🔐 Demo Hesaplar
 
-| Rol | Username | Password |
-|-----|----------|----------|
-| 👤 Admin | `admin` | `admin123` |
-| 📦 Depo Müdürü | `manager` | `manager123` |
-| 👔 Satış Temsilcisi | `satistemsilcisi` | `satis123` |
-| 🚗 Plasiyer | `plasiyer1` | `plasiyer123` |
-| 🛒 Müşteri | `musteri1` | `musteri123` |
+| Rol | Kullanıcı Adı | Şifre | Yetkiler |
+|-----|---------------|-------|----------|
+| 👤 **Admin** | `admin` | `admin123` | Tüm sistem yönetimi |
+| 📦 **Depo Müdürü** | `manager` | `manager123` | Stok, sevkiyat yönetimi |
+| 💼 **Satış Temsilcisi** | `satistemsilcisi` | `satis123` | Müşteri/ürün/fatura kaydı |
+| 🚗 **Plasiyer** | `plasiyer1` | `plasiyer123` | Müşteri rotaları, sipariş |
+| 🛒 **Müşteri** | `musteri1` | `musteri123` | Sipariş verme, fatura görüntüleme |
+| 💰 **Muhasebe** | `muhasebe` | `muhasebe123` | Fatura yükleme |
 
 ---
 
