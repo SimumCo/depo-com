@@ -5,14 +5,10 @@ from pathlib import Path
 import os
 import logging
 
-# Import route modules directly
-import sys
-import os
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'routes'))
-
-from auth_routes import router as auth_router
-from invoice_routes import router as invoice_router
-from consumption_routes import router as consumption_router
+# Import route modules
+from routes.auth_routes import router as auth_router
+from routes.invoice_routes import router as invoice_router
+from routes.consumption_routes import router as consumption_router
 
 # Import old routes temporarily (will be refactored)
 import server_old as old_server
