@@ -117,87 +117,117 @@ yarn start
 
 ---
 
-## 🔧 Yaygın Sorunlar
+## 🎯 Özellikler Detayı
 
-### MongoDB bağlanamıyor?
-```bash
-# MongoDB'nin çalıştığını kontrol edin
-mongosh
+### 👤 Admin
+- ✅ Tüm kullanıcı yönetimi
+- ✅ Sistem geneli raporlar
+- ✅ Tüketim analizi tetikleme
 
-# Çalışmıyorsa başlatın
-mongod --dbpath /path/to/data
-```
+### 💼 Satış Temsilcisi
+- ✅ **Müşteri Kaydı** - Kullanıcı adı ve şifre oluşturma
+- ✅ **Ürün Kaydı** - Kategori, fiyat, stok yönetimi
+- ✅ **Fatura Oluşturma** - Dropdown ile müşteri/ürün seçimi
+- ✅ **Excel Toplu Veri Girişi** - Hızlı sipariş yükleme
+- ✅ Tüm müşterileri görüntüleme
 
-### Port zaten kullanımda?
-```bash
-# Windows
-netstat -ano | findstr :8001
-taskkill /PID <PID> /F
+### 🚗 Plasiyer (Sales Agent)
+- ✅ Müşterilerimi görme (günlere göre gruplu)
+- ✅ Rotalarım (Pazartesi-Cumartesi)
+- ✅ Depoya sipariş verme
+- ✅ Müşteri siparişleri
+- ✅ İstatistikler ve raporlar
 
-# macOS/Linux
-lsof -ti:8001 | xargs kill -9
-```
+### 🛒 Müşteri
+- ✅ **Faturalarım** - HTML fatura görüntüleme
+- ✅ **Tüketim İstatistikleri** - Haftalık/aylık sarfiyat
+- ✅ Ürün kataloğu ve sipariş
+- ✅ Teslimat günü bilgisi
+- ✅ Büyüme oranı ve tahminler
 
-### Module not found?
-```bash
-# Backend
-pip install -r requirements.txt
+### 💰 Muhasebe
+- ✅ **HTML E-Fatura Yükleme** - Otomatik parse
+- ✅ Fatura listeleme
+- ✅ Müşteri bazlı raporlar
 
-# Frontend
-rm -rf node_modules && yarn install
-```
+---
+
+## 📊 Sistem Özellikleri
+
+### 🆕 Fatura Yönetimi (v2.0)
+- HTML e-fatura yükleme ve otomatik parsing
+- Fatura numarası, vergi no, ürün bilgileri otomatik çıkarma
+- Vergi numarasına göre müşteri eşleştirme
+- Müşteri fatura görüntüleme arayüzü
+
+### 📈 Tüketim Analizi (v2.0)
+- Sipariş geçmişinden otomatik hesaplama
+- Günlük/haftalık/aylık sarfiyat metrikleri
+- Yıl bazlı karşılaştırma ve büyüme oranı
+- Gelecek dönem tahminleri
+- Ürün bazlı tüketim takibi
+
+### 🔧 Teknik Özellikler
+- **Modüler Backend** - Organize API yapısı (routes/, models/, utils/)
+- **Role-Based Access Control** - Rol bazlı yetkilendirme
+- **JWT Authentication** - Güvenli kimlik doğrulama
+- **MongoDB** - NoSQL veritabanı
+- **React + Tailwind** - Modern UI
+- **FastAPI** - Yüksek performanslı backend
 
 ---
 
 ## 📦 Proje İçeriği
 
-✅ **41 Müşteri**
-✅ **25 Ürün**
-✅ **544 Sipariş**
-✅ **3 Plasiyer**
-✅ **Excel Toplu Veri Girişi**
-✅ **Sarfiyat Analizi**
-✅ **Sipariş Yönetimi**
+✅ **41 Müşteri**  
+✅ **25 Ürün**  
+✅ **544+ Sipariş**  
+✅ **3 Plasiyer**  
+✅ **Haftalık Rota Sistemi**  
+✅ **Fatura Yönetimi**  
+✅ **Tüketim Analizi**  
 
 ---
 
-## 🎯 Özellikler
+## 📁 Proje Yapısı (v2.0)
 
-### Plasiyer (plasiyer1)
-- ✅ Müşterilerimi görme (günlere göre)
-- ✅ 544 sipariş ve detayları
-- ✅ Depoya sipariş verme
-- ✅ Sarfiyat analizi
-
-### Müşteri (musteri1)
-- ✅ 25 ürün kataloğu
-- ✅ Sepet ile sipariş
-- ✅ Kendi siparişleri
-- ✅ Dönemlik sarfiyat
-
-### Satış Temsilcisi (satistemsilcisi)
-- ✅ **Excel ile toplu veri girişi**
-- ✅ Müşteri, ürün, sipariş yükleme
-- ✅ Template indirme
-
----
-
-## 📱 Ekran Görüntüleri
-
-### Login Ekranı
-Demo hesaplar otomatik listelenir
-
-### Plasiyer Dashboard
-- Müşterilerim (günlere göre)
-- Siparişler (detaylı görünüm)
-- Depoya Sipariş Ver
-- Sarfiyat Analizi
-
-### Müşteri Dashboard
-- Ürün Kataloğu (+/- sepet)
-- Siparişlerim
-- Sarfiyat Analizi
-- Teslimat günü bilgisi
+```
+├── backend/
+│   ├── routes/                   # API Endpoints (Modüler)
+│   │   ├── auth_routes.py       # Kimlik doğrulama
+│   │   ├── invoice_routes.py    # Fatura yönetimi
+│   │   └── consumption_routes.py # Tüketim takibi
+│   ├── models/                   # Data Models
+│   │   ├── user.py
+│   │   ├── invoice.py
+│   │   └── consumption.py
+│   ├── utils/                    # Helper Functions
+│   │   ├── auth.py              # JWT, password hashing
+│   │   └── helpers.py
+│   ├── server.py                # Ana application
+│   ├── server_old.py            # Legacy routes
+│   ├── seed_*.py                # Demo data generators
+│   └── requirements.txt
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/          # React Components
+│   │   │   ├── CustomerForm.js         # Müşteri kayıt
+│   │   │   ├── ProductForm.js          # Ürün kayıt
+│   │   │   ├── InvoiceFormWithDropdown.js # Fatura oluşturma
+│   │   │   ├── CustomerInvoices.js     # Fatura görüntüleme
+│   │   │   ├── CustomerConsumptionStats.js # Tüketim analizi
+│   │   │   └── ...
+│   │   ├── pages/               # Dashboard Pages
+│   │   │   ├── CustomerDashboard.js
+│   │   │   ├── SalesRepDashboard.js
+│   │   │   ├── AccountingDashboard.js
+│   │   │   └── ...
+│   │   └── services/api.js     # API calls
+│   └── package.json
+│
+└── README.md
+```
 
 ---
 
@@ -214,29 +244,6 @@ cd backend
 python seed_data.py
 python seed_sales_agents_data.py
 python seed_20_products_orders.py
-```
-
----
-
-## 📁 Proje Yapısı
-
-```
-├── backend/
-│   ├── config/constants.py      # Sabitler, enum'lar
-│   ├── utils/helpers.py         # Yardımcı fonksiyonlar
-│   ├── models/                  # Database modelleri
-│   ├── routes/                  # API routes
-│   ├── server.py               # Ana uygulama (1757 satır)
-│   └── seed_*.py               # Demo data
-│
-├── frontend/
-│   ├── src/
-│   │   ├── components/         # React bileşenler
-│   │   ├── pages/             # Dashboard'lar
-│   │   └── services/          # API çağrıları
-│   └── package.json
-│
-└── README.md
 ```
 
 ---
