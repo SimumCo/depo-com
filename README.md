@@ -248,6 +248,108 @@ python seed_20_products_orders.py
 
 ---
 
+## 🔧 Yaygın Sorunlar
+
+### MongoDB bağlanamıyor?
+```bash
+# MongoDB'nin çalıştığını kontrol edin
+mongosh
+
+# Çalışmıyorsa başlatın
+mongod --dbpath /path/to/data
+```
+
+### Port zaten kullanımda?
+```bash
+# Windows
+netstat -ano | findstr :8001
+taskkill /PID <PID> /F
+
+# macOS/Linux
+lsof -ti:8001 | xargs kill -9
+```
+
+### Module not found?
+```bash
+# Backend
+pip install -r requirements.txt
+
+# Frontend
+rm -rf node_modules && yarn install
+```
+
+---
+
+## 📚 API Endpoints
+
+### Authentication
+- `POST /api/auth/register` - Yeni kullanıcı kaydı
+- `POST /api/auth/login` - Giriş yap
+- `GET /api/auth/me` - Kullanıcı bilgileri
+
+### Invoices (Faturalar)
+- `POST /api/invoices/upload` - HTML fatura yükle
+- `GET /api/invoices/my-invoices` - Faturalarım
+- `GET /api/invoices/{id}` - Fatura detayı
+- `GET /api/invoices/all/list` - Tüm faturalar (muhasebe)
+
+### Consumption (Tüketim)
+- `POST /api/consumption/calculate` - Tüketim hesapla
+- `GET /api/consumption/my-consumption` - Tüketimim
+- `GET /api/consumption/customer/{id}` - Müşteri tüketimi
+
+### Products & Orders
+- `GET /api/products` - Ürün listesi
+- `POST /api/products` - Ürün ekle
+- `POST /api/orders` - Sipariş oluştur
+- `GET /api/orders` - Sipariş listesi
+
+**📖 Tam API Dokümantasyonu:** http://localhost:8001/docs
+
+---
+
+## 🚀 Deployment
+
+### Production Build
+```bash
+# Frontend
+cd frontend
+yarn build
+
+# Backend
+cd backend
+pip install gunicorn
+gunicorn server:app -w 4 -k uvicorn.workers.UvicornWorker
+```
+
+---
+
+## 🤝 Katkıda Bulunma
+
+1. Fork yapın
+2. Feature branch oluşturun (`git checkout -b feature/amazing`)
+3. Commit yapın (`git commit -m 'Add amazing feature'`)
+4. Push edin (`git push origin feature/amazing`)
+5. Pull Request açın
+
+---
+
+## 📝 Lisans
+
+MIT License - Detaylar için [LICENSE](LICENSE) dosyasına bakın
+
+---
+
+## 📧 İletişim
+
+Sorularınız için issue açabilir veya pull request gönderebilirsiniz.
+
+**API Docs:** http://localhost:8001/docs
+
+İyi çalışmalar! 🚀
+
+---
+
 ## 🛑 Projeyi Durdurma
 
 1. Her iki terminalde `Ctrl + C`
