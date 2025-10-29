@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { toast } from 'sonner';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
 
 const InvoiceUpload = () => {
   const [htmlContent, setHtmlContent] = useState('');
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
 
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
@@ -15,8 +14,7 @@ const InvoiceUpload = () => {
       const reader = new FileReader();
       reader.onload = (event) => {
         setHtmlContent(event.target.result);
-        setMessage('');
-        setError('');
+        toast.success('Dosya yüklendi, şimdi "Faturayı Yükle" butonuna tıklayın');
       };
       reader.readAsText(file);
     }
@@ -24,28 +22,48 @@ const InvoiceUpload = () => {
 
   const handleUpload = async () => {
     if (!htmlContent) {
-      setError('Lütfen bir HTML dosyası seçin');
+      toast.error('Lütfen bir HTML dosyası seçin');
       return;
     }
 
     try {
       setLoading(true);
-      setError('');
       const token = localStorage.getItem('access_token');
+      
+      if (!token) {
+        toast.error('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+        return;
+      }
+
+      console.log('Token:', token ? 'Var' : 'Yok');
+      console.log('HTML Content Length:', htmlContent.length);
       
       const response = await axios.post(
         `${BACKEND_URL}/api/invoices/upload`,
         { html_content: htmlContent },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { 
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          } 
+        }
       );
 
-      setMessage('Fatura başarıyla yüklendi!');
+      toast.success('Fatura başarıyla yüklendi!');
       setHtmlContent('');
       // Reset file input
       document.getElementById('file-input').value = '';
     } catch (err) {
       console.error('Error uploading invoice:', err);
-      setError(err.response?.data?.detail || 'Fatura yüklenirken hata oluştu');
+      console.error('Error response:', err.response?.data);
+      
+      if (err.response?.status === 401) {
+        toast.error('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+      } else if (err.response?.status === 403) {
+        toast.error('Bu işlem için yetkiniz yok. Muhasebe hesabı ile giriş yapın.');
+      } else {
+        toast.error(err.response?.data?.detail || 'Fatura yüklenirken hata oluştu');
+      }
     } finally {
       setLoading(false);
     }
