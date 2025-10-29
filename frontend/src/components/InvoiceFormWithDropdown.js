@@ -22,7 +22,7 @@ const InvoiceFormWithDropdown = ({ onSuccess }) => {
 
   const loadDropdownData = async () => {
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       
       // Load customers
       const customersResponse = await axios.get(
@@ -86,7 +86,7 @@ const InvoiceFormWithDropdown = ({ onSuccess }) => {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       
       if (!token) {
         toast.error('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');

@@ -16,7 +16,7 @@ const CustomerConsumptionStats = () => {
   const fetchConsumption = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       const response = await axios.get(
         `${BACKEND_URL}/api/consumption/my-consumption?period_type=${periodType}`,
         { headers: { Authorization: `Bearer ${token}` } }

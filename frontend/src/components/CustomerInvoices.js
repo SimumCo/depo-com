@@ -17,7 +17,7 @@ const CustomerInvoices = () => {
   const fetchInvoices = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       const response = await axios.get(`${BACKEND_URL}/api/invoices/my-invoices`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -33,7 +33,7 @@ const CustomerInvoices = () => {
 
   const viewInvoiceDetail = async (invoiceId) => {
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       const response = await axios.get(`${BACKEND_URL}/api/invoices/${invoiceId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
