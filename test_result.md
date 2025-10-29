@@ -114,10 +114,10 @@ user_problem_statement: |
 backend:
   - task: "Sales Agent API'leri"
     implemented: true
-    working: true
-    file: "/app/backend/server.py"
-    stuck_count: 0
-    priority: "high"
+    working: false
+    file: "/app/backend/server_old.py"
+    stuck_count: 1
+    priority: "medium"
     needs_retesting: false
     status_history:
       - working: "NA"
@@ -126,6 +126,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "Tüm Sales Agent API'leri test edildi ve başarılı: POST /api/salesagent/warehouse-order (depot siparişi oluşturuldu: WHS-20251024-74e44e6e), GET /api/salesagent/my-customers (6 müşteri bulundu), GET /api/salesagent/my-routes (6 route bulundu), GET /api/salesagent/stats (istatistikler doğru: 6 müşteri, 2 depot siparişi, 2 müşteri siparişi)"
+      - working: false
+        agent: "testing"
+        comment: "Legacy Sales Agent API'leri 404 hatası veriyor. server_old.py routes'ları server.py'ye dahil edilmiş ama routing çalışmıyor. GET /api/salesagent/my-customers, /api/salesagent/stats, POST /api/salesagent/warehouse-order endpoint'leri erişilemiyor. Kubernetes ingress veya FastAPI router konfigürasyonu sorunu olabilir."
 
   - task: "Sales Route API'leri"
     implemented: true
