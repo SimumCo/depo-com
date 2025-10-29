@@ -8,7 +8,7 @@ import logging
 # Import route modules directly
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), 'routes'))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'routes'))
 
 from auth_routes import router as auth_router
 from invoice_routes import router as invoice_router
