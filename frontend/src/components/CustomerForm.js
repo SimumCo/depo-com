@@ -138,9 +138,13 @@ const CustomerForm = ({ onSuccess }) => {
               value={formData.full_name}
               onChange={handleChange}
               required
+              minLength="3"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Ahmet Yılmaz"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              ✓ Firma veya kişi adı
+            </p>
           </div>
 
           <div>
@@ -155,6 +159,9 @@ const CustomerForm = ({ onSuccess }) => {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="ahmet@example.com"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              ✓ İletişim için e-posta (opsiyonel)
+            </p>
           </div>
 
           <div>
@@ -167,9 +174,15 @@ const CustomerForm = ({ onSuccess }) => {
               value={formData.customer_number}
               onChange={handleChange}
               required
+              minLength="10"
+              maxLength="11"
+              pattern="[0-9]*"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="1234567890"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              ✓ 10-11 haneli vergi numarası (sadece rakam)
+            </p>
           </div>
 
           <div>
@@ -186,6 +199,9 @@ const CustomerForm = ({ onSuccess }) => {
               <option value="dealer">Dealer (Market, Perakende)</option>
               <option value="logistics">Logistics (Otel, Kamu)</option>
             </select>
+            <p className="text-xs text-gray-500 mt-1">
+              ✓ Müşteri tipi - fiyatlandırmayı etkiler
+            </p>
           </div>
         </div>
 
