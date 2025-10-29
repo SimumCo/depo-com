@@ -76,7 +76,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     
     # Import User class dynamically
     try:
-        from ..models.user import User as UserModel
+        from models.user import User as UserModel
         return UserModel(**user_doc)
     except:
         # Return dict if model not available
