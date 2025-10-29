@@ -80,6 +80,18 @@ const SalesRepDashboard = () => {
       <Tabs defaultValue="customers" className="space-y-4">
         <TabsList>
           <TabsTrigger value="customers" data-testid="tab-customers">Müşteriler</TabsTrigger>
+          <TabsTrigger value="add-customer" data-testid="tab-add-customer">
+            <UserPlus className="mr-2 h-4 w-4" />
+            Müşteri Ekle
+          </TabsTrigger>
+          <TabsTrigger value="add-product" data-testid="tab-add-product">
+            <Package className="mr-2 h-4 w-4" />
+            Ürün Ekle
+          </TabsTrigger>
+          <TabsTrigger value="add-invoice" data-testid="tab-add-invoice">
+            <FileText className="mr-2 h-4 w-4" />
+            Fatura Oluştur
+          </TabsTrigger>
           <TabsTrigger value="catalog" data-testid="tab-catalog">Ürün Kataloğu</TabsTrigger>
           <TabsTrigger value="orders" data-testid="tab-orders">Siparişlerim</TabsTrigger>
           <TabsTrigger value="bulk-import" data-testid="tab-bulk-import">
@@ -90,6 +102,18 @@ const SalesRepDashboard = () => {
 
         <TabsContent value="customers">
           <CustomerManagement onUpdate={loadStats} />
+        </TabsContent>
+
+        <TabsContent value="add-customer">
+          <CustomerForm onSuccess={loadStats} />
+        </TabsContent>
+
+        <TabsContent value="add-product">
+          <ProductForm onSuccess={loadStats} />
+        </TabsContent>
+
+        <TabsContent value="add-invoice">
+          <InvoiceFormWithDropdown onSuccess={loadStats} />
         </TabsContent>
 
         <TabsContent value="catalog">
