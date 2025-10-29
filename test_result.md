@@ -157,6 +157,51 @@ backend:
         agent: "testing"
         comment: "Seed data başarılı şekilde çalışıyor. Test kullanıcıları (plasiyer1/plasiyer123, musteri1/musteri123, admin/admin123) ile giriş yapılabildi. Sales routes ve müşteri verileri doğru şekilde oluşturulmuş."
 
+  - task: "Invoice Management APIs"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/invoice_routes.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "HTML fatura yükleme, fatura listesi ve detay API'leri eklendi. Muhasebe personeli HTML fatura yükleyebilir, müşteriler kendi faturalarını görebilir"
+      - working: true
+        agent: "testing"
+        comment: "Tüm Invoice API'leri test edildi ve başarılı: POST /api/invoices/upload (HTML fatura yüklendi: 9c931e22-b9bd-4285-a0ab-3422c554916e), GET /api/invoices/all/list (1 fatura listelendi), GET /api/invoices/my-invoices (müşteri faturaları), GET /api/invoices/{id} (fatura detayı: EE12025000004134). HTML parsing ve rol tabanlı erişim kontrolü çalışıyor."
+
+  - task: "Consumption Tracking APIs"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/consumption_routes.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Müşteri tüketim hesaplama ve raporlama API'leri eklendi. Sipariş geçmişine göre günlük/haftalık/aylık tüketim hesaplanır, büyüme oranı ve tahmin yapılır"
+      - working: true
+        agent: "testing"
+        comment: "Tüm Consumption API'leri test edildi ve başarılı: POST /api/consumption/calculate (tüketim hesaplama tetiklendi), GET /api/consumption/my-consumption (müşteri tüketim verileri), GET /api/consumption/customer/{id} (admin/plasiyer müşteri tüketimi). API'ler doğru yapıda veri döndürüyor."
+
+  - task: "Authentication System Refactor"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/auth_routes.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Authentication sistemi modüler yapıya çevrildi. JWT token tabanlı kimlik doğrulama ve rol tabanlı erişim kontrolü"
+      - working: true
+        agent: "testing"
+        comment: "Authentication API'leri test edildi ve başarılı: POST /api/auth/login (admin, muhasebe, plasiyer, müşteri girişleri), GET /api/auth/me (kullanıcı bilgileri). Tüm roller için token oluşturma ve doğrulama çalışıyor."
+
 frontend:
   - task: "SalesAgentCustomers Component"
     implemented: true
