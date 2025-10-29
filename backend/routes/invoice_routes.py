@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from typing import List, Dict, Any
 from datetime import datetime
-from ..models.invoice import Invoice, InvoiceCreate, InvoiceResponse, InvoiceProduct
-from ..models.user import User, UserRole
-from ..utils.auth import get_current_user, require_role
+from models.invoice import Invoice, InvoiceCreate, InvoiceResponse, InvoiceProduct
+from models.user import User, UserRole
+from utils.auth import get_current_user, require_role
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import re
