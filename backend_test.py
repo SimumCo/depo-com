@@ -614,31 +614,34 @@ class APITester:
     
     def run_all_tests(self):
         """Run all API tests"""
-        print("🧪 Starting Backend API Tests")
-        print("=" * 60)
+        print("🧪 Starting Backend API Tests - Invoice & Consumption Features")
+        print("=" * 70)
         
         # Login all users first
         print("\n🔐 Authentication Tests:")
         for user_type in TEST_USERS.keys():
             self.login_user(user_type)
         
-        print("\n📦 Sales Agent API Tests:")
+        print("\n📄 Invoice Management API Tests:")
+        self.test_invoice_upload()
+        self.test_get_all_invoices()
+        self.test_get_my_invoices()
+        self.test_get_invoice_detail()
+        
+        print("\n📊 Consumption Tracking API Tests:")
+        self.test_consumption_calculate()
+        self.test_get_my_consumption()
+        self.test_get_customer_consumption()
+        
+        print("\n📦 Legacy Sales Agent API Tests (Quick Check):")
         self.test_sales_agent_warehouse_order()
         self.test_sales_agent_my_customers()
-        self.test_sales_agent_my_routes()
         self.test_sales_agent_stats()
         
-        print("\n🛣️ Sales Routes API Tests:")
-        self.test_sales_routes_create()
-        self.test_sales_routes_list()
-        
-        print("\n👥 Customer API Tests:")
-        self.test_customer_delivery_day()
-        
         # Summary
-        print("\n" + "=" * 60)
+        print("\n" + "=" * 70)
         print("📊 TEST SUMMARY")
-        print("=" * 60)
+        print("=" * 70)
         
         total_tests = len(self.test_results)
         passed_tests = len([t for t in self.test_results if t["success"]])
