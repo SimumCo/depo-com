@@ -103,138 +103,87 @@ const AccountingDashboard = () => {
 
   return (
     <Layout title="Muhasebe Paneli">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Upload Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Upload className="mr-2 h-5 w-5" />
-              Fatura Yükleme
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="customer">Müşteri Seçin *</Label>
-              <Select value={selectedCustomer} onValueChange={setSelectedCustomer}>
-                <SelectTrigger data-testid="customer-select">
-                  <SelectValue placeholder="Müşteri seçin" />
-                </SelectTrigger>
-                <SelectContent>
-                  {customers.map((customer) => (
-                    <SelectItem key={customer.id} value={customer.id}>
-                      {customer.full_name} ({customer.customer_number})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      <Tabs defaultValue="invoice-upload" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="invoice-upload">
+            <FileCode className="mr-2 h-4 w-4" />
+            Fatura Yükleme (HTML)
+          </TabsTrigger>
+          <TabsTrigger value="stats">
+            <CheckCircle className="mr-2 h-4 w-4" />
+            İstatistikler
+          </TabsTrigger>
+        </TabsList>
 
-            <div className="space-y-2">
-              <Label htmlFor="file-input">Fatura Dosyası (PDF/Resim) *</Label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
-                <Input
-                  id="file-input"
-                  type="file"
-                  accept=".pdf,image/*"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-                <label htmlFor="file-input" className="cursor-pointer">
+        <TabsContent value="invoice-upload">
+          <InvoiceUpload />
+        </TabsContent>
+
+        <TabsContent value="stats">
+          {/* Stats Overview */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Özet İstatistikler</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <p className="text-2xl font-bold text-blue-600">{uploadHistory.length}</p>
+                  <p className="text-sm text-gray-600">Yüklenen Fatura</p>
+                </div>
+                <div className="p-4 bg-green-50 rounded-lg">
+                  <p className="text-2xl font-bold text-green-600">{customers.length}</p>
+                  <p className="text-sm text-gray-600">Toplam Müşteri</p>
+                </div>
+                <div className="p-4 bg-purple-50 rounded-lg">
+                  <p className="text-2xl font-bold text-purple-600">
+                    {new Set(uploadHistory.map(h => h.customer_name)).size}
+                  </p>
+                  <p className="text-sm text-gray-600">Aktif Müşteri</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Upload History */}
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <CheckCircle className="mr-2 h-5 w-5" />
+                Yükleme Geçmişi
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {uploadHistory.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
                   <FileText className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-                  {file ? (
-                    <div>
-                      <p className="text-sm font-medium text-blue-600">{file.name}</p>
-                      <p className="text-xs text-gray-500">{(file.size / 1024).toFixed(2)} KB</p>
-                    </div>
-                  ) : (
-                    <div>
-                      <p className="text-sm font-medium">Fatura yüklemek için tıklayın</p>
-                      <p className="text-xs text-gray-500">PDF, JPG veya PNG</p>
-                    </div>
-                  )}
-                </label>
-              </div>
-            </div>
-
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
-              <p className="font-medium mb-1">ℹ️ Bilgilendirme:</p>
-              <p>Faturada "SAYIN" yazan kısmın altındaki müşteri bilgileri otomatik olarak sisteme kaydedilecektir.</p>
-            </div>
-
-            <Button
-              onClick={handleUpload}
-              disabled={uploading || !selectedCustomer || !file}
-              className="w-full"
-              data-testid="upload-button"
-            >
-              {uploading ? 'Yükleniyor...' : 'Faturayı Yükle'}
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Upload History */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <CheckCircle className="mr-2 h-5 w-5" />
-              Yükleme Geçmişi
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {uploadHistory.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <FileText className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-                <p>Henüz fatura yüklenmedi</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {uploadHistory.map((item, index) => (
-                  <div
-                    key={index}
-                    className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <p className="font-medium">{item.customer_name}</p>
-                        <p className="text-sm text-gray-600">{item.filename}</p>
+                  <p>Henüz fatura yüklenmedi</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {uploadHistory.map((item, index) => (
+                    <div
+                      key={index}
+                      className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <p className="font-medium">{item.customer_name}</p>
+                          <p className="text-sm text-gray-600">{item.filename}</p>
+                        </div>
+                        <CheckCircle className="h-5 w-5 text-green-500" />
                       </div>
-                      <CheckCircle className="h-5 w-5 text-green-500" />
+                      <div className="text-xs text-gray-500">
+                        {item.date} • {(item.size / 1024).toFixed(2)} KB
+                      </div>
                     </div>
-                    <div className="text-xs text-gray-500">
-                      {item.date} • {(item.size / 1024).toFixed(2)} KB
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Stats Overview */}
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Özet İstatistikler</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <p className="text-2xl font-bold text-blue-600">{uploadHistory.length}</p>
-              <p className="text-sm text-gray-600">Yüklenen Fatura</p>
-            </div>
-            <div className="p-4 bg-green-50 rounded-lg">
-              <p className="text-2xl font-bold text-green-600">{customers.length}</p>
-              <p className="text-sm text-gray-600">Toplam Müşteri</p>
-            </div>
-            <div className="p-4 bg-purple-50 rounded-lg">
-              <p className="text-2xl font-bold text-purple-600">
-                {new Set(uploadHistory.map(h => h.customer_name)).size}
-              </p>
-              <p className="text-sm text-gray-600">Aktif Müşteri</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </Layout>
   );
 };
