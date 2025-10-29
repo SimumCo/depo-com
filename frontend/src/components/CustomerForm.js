@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
+import { Eye, EyeOff } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
 
@@ -14,6 +15,7 @@ const CustomerForm = ({ onSuccess }) => {
     channel_type: 'dealer'
   });
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -25,13 +27,27 @@ const CustomerForm = ({ onSuccess }) => {
 
     try {
       const token = localStorage.getItem('access_token');
+      
+      if (!token) {
+        toast.error('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+        return;
+      }
+
+      console.log('Token:', token ? 'Var' : 'Yok');
+      console.log('Form Data:', formData);
+
       const response = await axios.post(
         `${BACKEND_URL}/api/auth/create-user`,
         {
           ...formData,
           role: 'customer'
         },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { 
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          } 
+        }
       );
 
       toast.success(`Müşteri başarıyla kaydedildi! Kullanıcı adı: ${response.data.username}`);
@@ -45,7 +61,12 @@ const CustomerForm = ({ onSuccess }) => {
       });
       if (onSuccess) onSuccess();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Müşteri kaydedilemedi');
+      console.error('Hata detayı:', err.response?.data || err.message);
+      if (err.response?.status === 401) {
+        toast.error('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+      } else {
+        toast.error(err.response?.data?.detail || 'Müşteri kaydedilemedi');
+      }
     } finally {
       setLoading(false);
     }
