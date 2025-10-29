@@ -220,6 +220,9 @@ const InvoiceFormWithDropdown = ({ onSuccess }) => {
                 </option>
               ))}
             </select>
+            <p className="text-xs text-gray-500 mt-1">
+              ✓ Fatura kesilecek müşteri
+            </p>
           </div>
 
           <div>
@@ -231,9 +234,13 @@ const InvoiceFormWithDropdown = ({ onSuccess }) => {
               value={formData.invoice_number}
               onChange={(e) => setFormData({ ...formData, invoice_number: e.target.value })}
               required
+              minLength="10"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="EE12025000001234"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              ✓ E-fatura numarası (ör: EE12025000001234)
+            </p>
           </div>
 
           <div>
@@ -245,8 +252,12 @@ const InvoiceFormWithDropdown = ({ onSuccess }) => {
               value={formData.invoice_date}
               onChange={(e) => setFormData({ ...formData, invoice_date: e.target.value })}
               required
+              max={new Date().toISOString().split('T')[0]}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              ✓ Fatura kesim tarihi
+            </p>
           </div>
         </div>
 
