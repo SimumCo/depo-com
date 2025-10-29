@@ -1735,24 +1735,6 @@ async def upload_orders_endpoint(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Dosya işlenirken hata: {str(e)}")
 
-# Include the router in the main app
-app.include_router(api_router)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
-
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
+# This file is now used as a module
+# Routes are imported in server.py
+# Do not include router here to avoid duplication
