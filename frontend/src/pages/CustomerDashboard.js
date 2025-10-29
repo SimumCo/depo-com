@@ -4,11 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Badge } from '../components/ui/badge';
 import { ordersAPI, dashboardAPI } from '../services/api';
-import { ShoppingCart, Package, MessageSquare, Calendar, TrendingUp } from 'lucide-react';
+import { ShoppingCart, Package, MessageSquare, Calendar, TrendingUp, FileText, BarChart3 } from 'lucide-react';
 import ProductCatalog from '../components/ProductCatalog';
 import CustomerOrders from '../components/CustomerOrders';
 import CustomerFeedback from '../components/CustomerFeedback';
 import CustomerConsumption from '../components/CustomerConsumption';
+import CustomerInvoices from '../components/CustomerInvoices';
+import CustomerConsumptionStats from '../components/CustomerConsumptionStats';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
