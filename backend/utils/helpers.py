@@ -55,3 +55,11 @@ def calculate_cases_from_units(units: int, units_per_case: int) -> int:
     if units_per_case <= 0:
         return 0
     return units // units_per_case
+
+
+
+def serialize_datetime(obj):
+    """Convert datetime objects to ISO format strings for MongoDB"""
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    return obj
