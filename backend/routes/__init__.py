@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from .auth import router as auth_router
+from .auth_routes import router as auth_router
 from .products import router as products_router
 from .inventory import router as inventory_router
 from .shipments import router as shipments_router
