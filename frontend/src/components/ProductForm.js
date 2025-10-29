@@ -26,6 +26,12 @@ const ProductForm = ({ onSuccess }) => {
 
     try {
       const token = localStorage.getItem('access_token');
+      
+      if (!token) {
+        toast.error('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+        return;
+      }
+
       const productData = {
         ...formData,
         logistics_price: parseFloat(formData.logistics_price),
@@ -37,7 +43,12 @@ const ProductForm = ({ onSuccess }) => {
       const response = await axios.post(
         `${BACKEND_URL}/api/products`,
         productData,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { 
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          } 
+        }
       );
 
       toast.success('Ürün başarıyla kaydedildi!');
@@ -52,7 +63,12 @@ const ProductForm = ({ onSuccess }) => {
       });
       if (onSuccess) onSuccess();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Ürün kaydedilemedi');
+      console.error('Hata detayı:', err.response?.data || err.message);
+      if (err.response?.status === 401) {
+        toast.error('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+      } else {
+        toast.error(err.response?.data?.detail || 'Ürün kaydedilemedi');
+      }
     } finally {
       setLoading(false);
     }
