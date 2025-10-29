@@ -26,6 +26,7 @@ class APITester:
         self.tokens = {}
         self.test_results = []
         self.failed_tests = []
+        self.uploaded_invoice_id = None
         
     def log_test(self, test_name, success, details=""):
         """Log test result"""
