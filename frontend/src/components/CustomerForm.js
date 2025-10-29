@@ -26,15 +26,12 @@ const CustomerForm = ({ onSuccess }) => {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token'); // DEĞİŞTİRİLDİ
       
       if (!token) {
         toast.error('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
         return;
       }
-
-      console.log('Token:', token ? 'Var' : 'Yok');
-      console.log('Form Data:', formData);
 
       const response = await axios.post(
         `${BACKEND_URL}/api/auth/create-user`,
