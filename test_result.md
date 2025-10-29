@@ -295,9 +295,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "SalesAgentDashboard Güncellemesi"
-    - "CustomerDashboard Teslimat Günü Bilgisi"
-  stuck_tasks: []
+    - "Invoice Management APIs"
+    - "Consumption Tracking APIs"
+    - "Authentication System Refactor"
+  stuck_tasks:
+    - "Sales Agent API'leri"
   test_all: false
   test_priority: "high_first"
 
