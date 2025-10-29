@@ -26,7 +26,7 @@ const CustomerForm = ({ onSuccess }) => {
     try {
       const token = localStorage.getItem('access_token');
       const response = await axios.post(
-        `${BACKEND_URL}/api/auth/register`,
+        `${BACKEND_URL}/api/auth/create-user`,
         {
           ...formData,
           role: 'customer'
@@ -34,7 +34,7 @@ const CustomerForm = ({ onSuccess }) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      toast.success('Müşteri başarıyla kaydedildi!');
+      toast.success(`Müşteri başarıyla kaydedildi! Kullanıcı adı: ${response.data.username}`);
       setFormData({
         username: '',
         password: '',
