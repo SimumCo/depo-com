@@ -89,9 +89,13 @@ const ProductForm = ({ onSuccess }) => {
               value={formData.name}
               onChange={handleChange}
               required
+              minLength="3"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Ayran 170ml"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              ✓ Açıklayıcı ürün adı (minimum 3 karakter)
+            </p>
           </div>
 
           <div>
@@ -104,9 +108,13 @@ const ProductForm = ({ onSuccess }) => {
               value={formData.sku}
               onChange={handleChange}
               required
+              minLength="2"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="AYR-170"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              ✓ Benzersiz ürün kodu
+            </p>
           </div>
 
           <div>
@@ -122,6 +130,9 @@ const ProductForm = ({ onSuccess }) => {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Süt Ürünleri"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              ✓ Ürün kategorisi (ör: Süt, İçecek, Atıştırmalık)
+            </p>
           </div>
 
           <div>
@@ -138,6 +149,9 @@ const ProductForm = ({ onSuccess }) => {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="24"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              ✓ Bir kolide kaç adet ürün var
+            </p>
           </div>
 
           <div>
@@ -155,6 +169,9 @@ const ProductForm = ({ onSuccess }) => {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="5.50"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              ✓ Otel, kamu kuruluşları için fiyat
+            </p>
           </div>
 
           <div>
@@ -172,6 +189,9 @@ const ProductForm = ({ onSuccess }) => {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="6.00"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              ✓ Market, perakende için fiyat
+            </p>
           </div>
 
           <div className="md:col-span-2">
@@ -188,6 +208,9 @@ const ProductForm = ({ onSuccess }) => {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="1000"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              ✓ Depodaki mevcut stok miktarı
+            </p>
           </div>
         </div>
 
