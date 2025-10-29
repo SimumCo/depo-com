@@ -353,6 +353,265 @@ class APITester:
         except Exception as e:
             self.log_test("Customer Delivery Day", False, f"Exception: {str(e)}")
     
+    # ========== NEW INVOICE API TESTS ==========
+    
+    def test_invoice_upload(self):
+        """Test POST /api/invoices/upload"""
+        headers = self.get_headers("accounting")
+        if not headers:
+            self.log_test("Invoice Upload", False, "No accounting token")
+            return
+        
+        # Sample HTML invoice content
+        sample_html = """
+        <html>
+        <body>
+            <h1>FATURA</h1>
+            <p>Fatura No: EE12025000004134</p>
+            <p>Tarih: 15 01 2025</p>
+            <p>Vergi No: 1234567890</p>
+            <table>
+                <tr><td>Ürün</td><td>Miktar</td><td>Fiyat</td></tr>
+                <tr><td>Coca Cola 330ml</td><td>24</td><td>120,00 TL</td></tr>
+                <tr><td>Fanta 330ml</td><td>12</td><td>60,00 TL</td></tr>
+            </table>
+            <p>Toplam: 180,00 TL</p>
+        </body>
+        </html>
+        """
+        
+        try:
+            invoice_data = {
+                "html_content": sample_html
+            }
+            
+            response = requests.post(
+                f"{BASE_URL}/invoices/upload",
+                json=invoice_data,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                if result.get("invoice_id"):
+                    self.log_test("Invoice Upload", True, f"Invoice uploaded: {result.get('invoice_id')}")
+                    # Store invoice ID for later tests
+                    self.uploaded_invoice_id = result.get("invoice_id")
+                else:
+                    self.log_test("Invoice Upload", False, "No invoice_id in response")
+            else:
+                self.log_test("Invoice Upload", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Invoice Upload", False, f"Exception: {str(e)}")
+    
+    def test_get_all_invoices(self):
+        """Test GET /api/invoices/all/list"""
+        headers = self.get_headers("accounting")
+        if not headers:
+            self.log_test("Get All Invoices", False, "No accounting token")
+            return
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/invoices/all/list",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                invoices = response.json()
+                if isinstance(invoices, list):
+                    self.log_test("Get All Invoices", True, f"Found {len(invoices)} invoices")
+                    
+                    # Check structure if invoices exist
+                    if invoices:
+                        invoice = invoices[0]
+                        required_fields = ["id", "invoice_number", "invoice_date", "grand_total"]
+                        missing_fields = [field for field in required_fields if field not in invoice]
+                        if missing_fields:
+                            self.log_test("Get All Invoices Structure", False, f"Missing fields: {missing_fields}")
+                        else:
+                            self.log_test("Get All Invoices Structure", True, "All required fields present")
+                else:
+                    self.log_test("Get All Invoices", False, "Response is not a list")
+            else:
+                self.log_test("Get All Invoices", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Get All Invoices", False, f"Exception: {str(e)}")
+    
+    def test_get_my_invoices(self):
+        """Test GET /api/invoices/my-invoices"""
+        headers = self.get_headers("customer")
+        if not headers:
+            self.log_test("Get My Invoices", False, "No customer token")
+            return
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/invoices/my-invoices",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                invoices = response.json()
+                if isinstance(invoices, list):
+                    self.log_test("Get My Invoices", True, f"Customer has {len(invoices)} invoices")
+                else:
+                    self.log_test("Get My Invoices", False, "Response is not a list")
+            else:
+                self.log_test("Get My Invoices", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Get My Invoices", False, f"Exception: {str(e)}")
+    
+    def test_get_invoice_detail(self):
+        """Test GET /api/invoices/{invoice_id}"""
+        if not hasattr(self, 'uploaded_invoice_id'):
+            self.log_test("Get Invoice Detail", False, "No uploaded invoice ID available")
+            return
+            
+        headers = self.get_headers("accounting")
+        if not headers:
+            self.log_test("Get Invoice Detail", False, "No accounting token")
+            return
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/invoices/{self.uploaded_invoice_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                invoice = response.json()
+                if isinstance(invoice, dict):
+                    required_fields = ["id", "invoice_number", "html_content", "grand_total"]
+                    missing_fields = [field for field in required_fields if field not in invoice]
+                    if missing_fields:
+                        self.log_test("Get Invoice Detail", False, f"Missing fields: {missing_fields}")
+                    else:
+                        self.log_test("Get Invoice Detail", True, f"Invoice detail retrieved: {invoice.get('invoice_number')}")
+                else:
+                    self.log_test("Get Invoice Detail", False, "Response is not a dict")
+            else:
+                self.log_test("Get Invoice Detail", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Get Invoice Detail", False, f"Exception: {str(e)}")
+    
+    # ========== NEW CONSUMPTION API TESTS ==========
+    
+    def test_consumption_calculate(self):
+        """Test POST /api/consumption/calculate"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Consumption Calculate", False, "No admin token")
+            return
+        
+        try:
+            response = requests.post(
+                f"{BASE_URL}/consumption/calculate",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                if isinstance(result, dict):
+                    if "records_processed" in result:
+                        self.log_test("Consumption Calculate", True, f"Processed {result.get('records_processed')} records")
+                    else:
+                        self.log_test("Consumption Calculate", False, "No records_processed field")
+                else:
+                    self.log_test("Consumption Calculate", False, "Response is not a dict")
+            else:
+                self.log_test("Consumption Calculate", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Consumption Calculate", False, f"Exception: {str(e)}")
+    
+    def test_get_my_consumption(self):
+        """Test GET /api/consumption/my-consumption"""
+        headers = self.get_headers("customer")
+        if not headers:
+            self.log_test("Get My Consumption", False, "No customer token")
+            return
+        
+        try:
+            # Test monthly consumption
+            response = requests.get(
+                f"{BASE_URL}/consumption/my-consumption?period_type=monthly",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                consumption = response.json()
+                if isinstance(consumption, list):
+                    self.log_test("Get My Consumption", True, f"Customer has {len(consumption)} consumption records")
+                    
+                    # Check structure if records exist
+                    if consumption:
+                        record = consumption[0]
+                        required_fields = ["product_name", "weekly_avg", "monthly_avg", "last_order_date"]
+                        missing_fields = [field for field in required_fields if field not in record]
+                        if missing_fields:
+                            self.log_test("Get My Consumption Structure", False, f"Missing fields: {missing_fields}")
+                        else:
+                            self.log_test("Get My Consumption Structure", True, "All required fields present")
+                else:
+                    self.log_test("Get My Consumption", False, "Response is not a list")
+            else:
+                self.log_test("Get My Consumption", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Get My Consumption", False, f"Exception: {str(e)}")
+    
+    def test_get_customer_consumption(self):
+        """Test GET /api/consumption/customer/{customer_id}"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Get Customer Consumption", False, "No admin token")
+            return
+        
+        try:
+            # First get a customer ID
+            customer_headers = self.get_headers("customer")
+            if customer_headers:
+                me_response = requests.get(f"{BASE_URL}/auth/me", headers=customer_headers, timeout=30)
+                if me_response.status_code == 200:
+                    customer_info = me_response.json()
+                    customer_id = customer_info.get("id")
+                    
+                    if customer_id:
+                        response = requests.get(
+                            f"{BASE_URL}/consumption/customer/{customer_id}?period_type=weekly",
+                            headers=headers,
+                            timeout=30
+                        )
+                        
+                        if response.status_code == 200:
+                            consumption = response.json()
+                            if isinstance(consumption, list):
+                                self.log_test("Get Customer Consumption", True, f"Customer has {len(consumption)} consumption records")
+                            else:
+                                self.log_test("Get Customer Consumption", False, "Response is not a list")
+                        else:
+                            self.log_test("Get Customer Consumption", False, f"Status: {response.status_code}, Response: {response.text}")
+                    else:
+                        self.log_test("Get Customer Consumption", False, "No customer ID found")
+                else:
+                    self.log_test("Get Customer Consumption", False, "Could not get customer info")
+            else:
+                self.log_test("Get Customer Consumption", False, "No customer token for ID lookup")
+                
+        except Exception as e:
+            self.log_test("Get Customer Consumption", False, f"Exception: {str(e)}")
+    
     def run_all_tests(self):
         """Run all API tests"""
         print("🧪 Starting Backend API Tests")
