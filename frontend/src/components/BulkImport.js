@@ -14,30 +14,54 @@ const BulkImport = () => {
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
 
-  const downloadTemplate = async (type) => {
-    try {
-      const response = await api.post(`/bulk-import/${type}/template`);
-      
-      // Create sample Excel data
-      const data = response.data;
-      const csvContent = [
-        Object.keys(data.example).join(','),
-        Object.values(data.example).join(',')
-      ].join('\n');
-      
-      const blob = new Blob([csvContent], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${type}_template.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      setError('Template indirilemedi');
-      console.error(err);
+  const downloadTemplate = (type) => {
+    // Template verileri
+    const templates = {
+      customers: {
+        headers: ['işletme_id', 'işletme_adi', 'adres', 'sehir', 'telefon', 'vergi_no', 'kanal_tipi'],
+        example: ['ISLT001', 'Örnek Market A.Ş.', 'Atatürk Cad. No:123', 'İstanbul', '05551234567', '1234567890', 'dealer'],
+        example2: ['ISLT002', 'Otel Grand', 'Cumhuriyet Mah. 456 Sk.', 'Ankara', '05559876543', '0987654321', 'logistics']
+      },
+      products: {
+        headers: ['urun_id', 'urun_adi', 'urun_turu', 'stok', 'kasa_ici_adet', 'lojistik_fiyat', 'bayi_fiyat', 'skt_omru'],
+        example: ['URN001', 'Ayran 170ml', 'Süt Ürünleri', '1000', '24', '5.50', '6.00', '21_gun'],
+        example2: ['URN002', 'Süt 1L', 'Süt Ürünleri', '500', '12', '15.00', '17.50', '28_gun']
+      },
+      orders: {
+        headers: ['siparis_id', 'musteri_id', 'urun_id_1', 'adet_1', 'urun_id_2', 'adet_2', 'siparis_tarihi', 'siparis_durumu'],
+        example: ['SIP001', 'ISLT001', 'URN001', '50', 'URN002', '30', '2025-10-30', 'pending'],
+        example2: ['SIP002', 'ISLT002', 'URN001', '100', '', '', '2025-10-30', 'approved']
+      }
+    };
+
+    const template = templates[type];
+    if (!template) {
+      alert('Template bulunamadı');
+      return;
     }
+
+    // CSV içeriği oluştur
+    const csvContent = [
+      template.headers.join(','),
+      template.example.join(','),
+      template.example2.join(',')
+    ].join('\n');
+
+    // BOM ekle (Excel'de Türkçe karakterler için)
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${type}_template_örnek.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+    // Başarı mesajı
+    setError('');
+    alert(`✅ ${type} template başarıyla indirildi!\n\nDosya: ${type}_template_örnek.csv\n\n2 örnek satır içerir, kendi verilerinizi ekleyerek kullanabilirsiniz.`);
   };
 
   const handleFileUpload = async (event, type) => {
