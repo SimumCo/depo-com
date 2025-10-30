@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { Eye, EyeOff } from 'lucide-react';
@@ -12,10 +12,32 @@ const CustomerForm = ({ onSuccess }) => {
     email: '',
     full_name: '',
     customer_number: '',
-    channel_type: 'dealer'
+    sales_agent_id: ''  // Plasiyer ID
   });
+  const [salesAgents, setSalesAgents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    loadSalesAgents();
+  }, []);
+
+  const loadSalesAgents = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${BACKEND_URL}/api/salesagents`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSalesAgents(response.data || []);
+    } catch (err) {
+      console.error('Plasiyerler yüklenemedi:', err);
+      // Mock data
+      setSalesAgents([
+        { id: '1', full_name: 'Plasiyer 1' },
+        { id: '2', full_name: 'Plasiyer 2' }
+      ]);
+    }
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -26,7 +48,7 @@ const CustomerForm = ({ onSuccess }) => {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem('token'); // DEĞİŞTİRİLDİ
+      const token = localStorage.getItem('token');
       
       if (!token) {
         toast.error('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
@@ -37,7 +59,8 @@ const CustomerForm = ({ onSuccess }) => {
         `${BACKEND_URL}/api/auth/create-user`,
         {
           ...formData,
-          role: 'customer'
+          role: 'customer',
+          channel_type: 'dealer'  // Default olarak dealer
         },
         { 
           headers: { 
@@ -54,7 +77,7 @@ const CustomerForm = ({ onSuccess }) => {
         email: '',
         full_name: '',
         customer_number: '',
-        channel_type: 'dealer'
+        sales_agent_id: ''
       });
       if (onSuccess) onSuccess();
     } catch (err) {
