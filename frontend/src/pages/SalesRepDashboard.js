@@ -35,7 +35,7 @@ const SalesRepDashboard = () => {
   return (
     <Layout title="Satış Temsilcisi Paneli">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card data-testid="stat-customers">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Toplam Müşteri</CardTitle>
@@ -46,41 +46,46 @@ const SalesRepDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card data-testid="stat-my-orders">
+        <Card data-testid="stat-tasks">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Oluşturduğum Siparişler</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Günlük Görevler</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.my_orders || 0}</div>
+            <div className="text-2xl font-bold">5</div>
           </CardContent>
         </Card>
 
-        <Card data-testid="stat-pending">
+        <Card data-testid="stat-assigned">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Bekleyen</CardTitle>
-            <TrendingUp className="h-4 w-4 text-orange-500" />
+            <CardTitle className="text-sm font-medium">Verilen Görevler</CardTitle>
+            <UserCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-500">{stats?.pending_orders || 0}</div>
-          </CardContent>
-        </Card>
-
-        <Card data-testid="stat-delivered">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Teslim Edildi</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-500">{stats?.delivered_orders || 0}</div>
+            <div className="text-2xl font-bold">8</div>
           </CardContent>
         </Card>
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="customers" className="space-y-4">
+      <Tabs defaultValue="agenda" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="customers" data-testid="tab-customers">Müşteriler</TabsTrigger>
+          <TabsTrigger value="agenda" data-testid="tab-agenda">
+            <Calendar className="mr-2 h-4 w-4" />
+            Ajanda & Yapılacaklar
+          </TabsTrigger>
+          <TabsTrigger value="catalog" data-testid="tab-catalog">
+            <Package className="mr-2 h-4 w-4" />
+            Ürün Kataloğu
+          </TabsTrigger>
+          <TabsTrigger value="tasks" data-testid="tab-tasks">
+            <UserCheck className="mr-2 h-4 w-4" />
+            Görev Yönetimi
+          </TabsTrigger>
+          <TabsTrigger value="customers" data-testid="tab-customers">
+            <Users className="mr-2 h-4 w-4" />
+            Müşteriler
+          </TabsTrigger>
           <TabsTrigger value="add-customer" data-testid="tab-add-customer">
             <UserPlus className="mr-2 h-4 w-4" />
             Müşteri Ekle
@@ -93,13 +98,23 @@ const SalesRepDashboard = () => {
             <FileText className="mr-2 h-4 w-4" />
             Fatura Oluştur
           </TabsTrigger>
-          <TabsTrigger value="catalog" data-testid="tab-catalog">Ürün Kataloğu</TabsTrigger>
-          <TabsTrigger value="orders" data-testid="tab-orders">Siparişlerim</TabsTrigger>
           <TabsTrigger value="bulk-import" data-testid="tab-bulk-import">
             <FileSpreadsheet className="mr-2 h-4 w-4" />
             Excel Veri Girişi
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="agenda">
+          <PersonalAgenda />
+        </TabsContent>
+
+        <TabsContent value="catalog">
+          <ProductCatalogDetail />
+        </TabsContent>
+
+        <TabsContent value="tasks">
+          <TaskManagement />
+        </TabsContent>
 
         <TabsContent value="customers">
           <CustomerManagement onUpdate={loadStats} />
@@ -115,14 +130,6 @@ const SalesRepDashboard = () => {
 
         <TabsContent value="add-invoice">
           <InvoiceFormWithDropdown onSuccess={loadStats} />
-        </TabsContent>
-
-        <TabsContent value="catalog">
-          <ProductCatalog isSalesRep={true} onUpdate={loadStats} />
-        </TabsContent>
-
-        <TabsContent value="orders">
-          <SalesRepOrders onUpdate={loadStats} />
         </TabsContent>
 
         <TabsContent value="bulk-import">
