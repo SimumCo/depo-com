@@ -3,14 +3,15 @@ import Layout from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { salesRepAPI } from '../services/api';
-import { Users, ShoppingCart, CheckCircle, TrendingUp, FileSpreadsheet, UserPlus, Package, FileText } from 'lucide-react';
+import { Users, Calendar, UserCheck, Package, FileSpreadsheet, UserPlus, FileText } from 'lucide-react';
 import CustomerManagement from '../components/CustomerManagement';
-import ProductCatalog from '../components/ProductCatalog';
-import SalesRepOrders from '../components/SalesRepOrders';
 import BulkImport from '../components/BulkImport';
 import CustomerForm from '../components/CustomerForm';
 import ProductForm from '../components/ProductForm';
 import InvoiceFormWithDropdown from '../components/InvoiceFormWithDropdown';
+import PersonalAgenda from '../components/PersonalAgenda';
+import ProductCatalogDetail from '../components/ProductCatalogDetail';
+import TaskManagement from '../components/TaskManagement';
 
 const SalesRepDashboard = () => {
   const [stats, setStats] = useState(null);
