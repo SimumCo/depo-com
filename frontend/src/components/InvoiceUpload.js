@@ -218,60 +218,6 @@ const InvoiceUpload = ({ onSuccess }) => {
       console.log('Toplam ürün sayısı:', products.length);
       console.log('Ürünler:', products);
       
-      // Eğer ürün bulunamadıysa, basit metin tabanlı parsing dene
-      if (products.length === 0) {
-        console.log('Table parsing başarısız, metin tabanlı parsing deneniyor...');
-        
-        // Satırlara böl ve ürün satırlarını bul
-        const lines = textContent.split('\n').map(l => l.trim()).filter(l => l.length > 5);
-        
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i];
-          
-          // Ürün satırı pattern: [Ürün Adı] [Sayı] [Fiyat] [Toplam]
-          // Örnek: "Ayran 170ml 50 5.50 275.00"
-          const numbers = line.match(/\d+[\.,]?\d*/g);
-          
-          if (numbers && numbers.length >= 2) {
-            // İlk kelimeler ürün adı, sonra sayılar
-            const words = line.split(/\s+/);
-            let productNameParts = [];
-            let foundNumbers = [];
-            
-            for (const word of words) {
-              if (/\d/.test(word)) {
-                foundNumbers.push(word);
-              } else if (foundNumbers.length === 0) {
-                productNameParts.push(word);
-              }
-            }
-            
-            if (productNameParts.length > 0 && foundNumbers.length >= 2) {
-              const productName = productNameParts.join(' ');
-              
-              // Sayıları sınıflandır
-              const quantity = foundNumbers[0];
-              const unitPrice = foundNumbers[1] || '-';
-              const total = foundNumbers[2] || '-';
-              
-              // Geçerli ürün adı kontrolü (en az 3 karakter, sadece sayı değil)
-              if (productName.length >= 3 && !/^\d+$/.test(productName)) {
-                products.push({
-                  product_name: productName,
-                  quantity: quantity,
-                  unit_price: unitPrice,
-                  total: total
-                });
-                
-                console.log('Metin parsing - Ürün eklendi:', { productName, quantity, unitPrice, total });
-              }
-            }
-          }
-        }
-        
-        console.log('Metin parsing sonrası toplam ürün:', products.length);
-      }
-
       setUploadedInvoiceDetails({
         invoice_id: invoiceData.invoice_id || 'N/A',
         invoice_number: invoiceNumber,
