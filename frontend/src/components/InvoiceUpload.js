@@ -171,54 +171,93 @@ const InvoiceUpload = ({ onSuccess }) => {
         
         console.log('Toplam text eleman sayısı:', texts.length);
         
-        // Pattern: Ürün Kodu -> Mal/Hizmet -> Miktar -> Birim Fiyat -> Tutar
-        // Örnek: "15211034", "1000 GR VAKUMLU TEREYAGI", "10 Adet", "433,17 TL", "4.331,70 TL"
+        // Boşlukları temizlenmiş metinlerde arama yap
+        // Pattern: Ürün Kodu (8-10 haneli) ardından ürün adı, miktar, fiyat
         
-        let i = 0;
-        while (i < texts.length) {
+        for (let i = 0; i < texts.length - 4; i++) {
           const current = texts[i];
           
-          // Ürün kodu pattern (8-10 haneli sayı)
+          // Ürün kodu pattern (sadece 8-10 haneli sayı)
           if (/^\d{8,10}$/.test(current)) {
             const productCode = current;
             
-            // Sonraki 5 elemanı kontrol et
-            if (i + 4 < texts.length) {
-              const productName = texts[i + 1];
-              const quantityText = texts[i + 2];
-              const unitPriceText = texts[i + 3];
-              const totalText = texts[i + 4];
-              
-              // Miktar pattern (sayı + Adet/KG/etc)
-              const quantityMatch = quantityText.match(/^(\d+(?:[,\.]\d+)?)\s*(Adet|KG|Gr|Lt|ml)?/i);
-              // Fiyat pattern (sayı + TL)
-              const unitPriceMatch = unitPriceText.match(/([\d\.,]+)\s*TL/i);
-              const totalMatch = totalText.match(/([\d\.,]+)\s*TL/i);
-              
-              if (productName && productName.length > 3 && quantityMatch) {
-                products.push({
-                  product_name: productName,
-                  quantity: quantityMatch ? quantityMatch[0] : quantityText,
-                  unit_price: unitPriceMatch ? unitPriceMatch[1] + ' TL' : unitPriceText,
-                  total: totalMatch ? totalMatch[1] + ' TL' : totalText
-                });
-                
-                console.log('PDF2HTML - Ürün eklendi:', {
-                  productCode,
-                  productName,
-                  quantity: quantityMatch ? quantityMatch[0] : quantityText,
-                  unitPrice: unitPriceMatch ? unitPriceMatch[1] + ' TL' : unitPriceText,
-                  total: totalMatch ? totalMatch[1] + ' TL' : totalText
-                });
-                
-                // 5 eleman atla (ürün kodu, ürün adı, miktar, birim fiyat, toplam)
-                i += 5;
-                continue;
+            // Sonraki elemanları kontrol et
+            const next1 = texts[i + 1] || '';
+            const next2 = texts[i + 2] || '';
+            const next3 = texts[i + 3] || '';
+            const next4 = texts[i + 4] || '';
+            
+            // Ürün adı: uzun text, sayı veya TL içermemeli (boşluksuz olabilir: "1000GRVAKUMLU")
+            let productName = '';
+            let startIdx = i + 1;
+            
+            // Ürün adını bul (birden fazla parça olabilir)
+            for (let j = i + 1; j < i + 5 && j < texts.length; j++) {
+              const text = texts[j];
+              // Eğer Adet, TL, rakam içermiyorsa ürün adının parçasıdır
+              if (text.length > 2 && !/(Adet|TL|\d{1,2}\s*Adet|\d+,\d+|%|\d+\.\d+)/i.test(text)) {
+                productName += (productName ? ' ' : '') + text;
+                startIdx = j + 1;
+              } else {
+                break;
               }
             }
+            
+            if (!productName || productName.length < 3) {
+              continue;
+            }
+            
+            // Miktar ve fiyat bul
+            let quantity = '-';
+            let unitPrice = '-';
+            let total = '-';
+            
+            // Sonraki birkaç elemanı tara
+            for (let j = startIdx; j < Math.min(startIdx + 6, texts.length); j++) {
+              const text = texts[j];
+              
+              // Miktar pattern: "10Adet" veya "10 Adet"
+              const qtyMatch = text.match(/^(\d+)\s*(Adet|KG|Gr|Lt|ml)/i);
+              if (qtyMatch && quantity === '-') {
+                quantity = text;
+                continue;
+              }
+              
+              // Fiyat pattern: "433,17TL" veya "433,17 TL"
+              const priceMatch = text.match(/([\d\.,]+)\s*TL/i);
+              if (priceMatch) {
+                if (unitPrice === '-') {
+                  unitPrice = text;
+                } else if (total === '-') {
+                  // Toplam satır genelde başka yerde, son büyük rakam olabilir
+                  total = text;
+                }
+              }
+              
+              // Toplam pattern: "4.331,70" gibi noktalı rakam
+              if (/^\d{1,3}\.\d{3},\d{2}$/.test(text) && total === '-') {
+                total = text + ' TL';
+              }
+            }
+            
+            products.push({
+              product_name: productName,
+              quantity: quantity,
+              unit_price: unitPrice,
+              total: total
+            });
+            
+            console.log('PDF2HTML - Ürün eklendi:', {
+              productCode,
+              productName,
+              quantity,
+              unitPrice,
+              total
+            });
+            
+            // Bir sonraki ürüne geç
+            i = startIdx + 5;
           }
-          
-          i++;
         }
       }
       
