@@ -50,58 +50,6 @@ const AccountingDashboard = () => {
       toast.error('Fatura görüntülenemedi');
     }
   };
-    if (!selectedCustomer) {
-      toast.error('Lütfen müşteri seçin');
-      return;
-    }
-    if (!file) {
-      toast.error('Lütfen fatura dosyası seçin');
-      return;
-    }
-
-    setUploading(true);
-
-    try {
-      const token = localStorage.getItem('token');
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      const response = await axios.post(
-        `${BACKEND_URL}/api/invoices/upload?customer_id=${selectedCustomer}`,
-        formData,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          }
-        }
-      );
-
-      toast.success('Fatura başarıyla yüklendi');
-      
-      // Add to history
-      const customer = customers.find(c => c.id === selectedCustomer);
-      setUploadHistory([
-        {
-          id: response.data.invoice_id,
-          customer_name: customer?.full_name,
-          filename: file.name,
-          date: new Date().toLocaleString('tr-TR'),
-          size: response.data.size
-        },
-        ...uploadHistory
-      ]);
-
-      // Reset
-      setFile(null);
-      setSelectedCustomer('');
-      document.getElementById('file-input').value = '';
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Fatura yüklenemedi');
-    } finally {
-      setUploading(false);
-    }
-  };
 
   return (
     <Layout title="Muhasebe Paneli">
