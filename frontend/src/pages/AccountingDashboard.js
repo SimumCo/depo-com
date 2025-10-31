@@ -2,52 +2,54 @@ import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
-import { Upload, FileText, CheckCircle, FileCode } from 'lucide-react';
-import { salesRepAPI } from '../services/api';
+import { Upload, FileText, CheckCircle, FileCode, Eye } from 'lucide-react';
 import InvoiceUpload from '../components/InvoiceUpload';
 import axios from 'axios';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 const AccountingDashboard = () => {
-  const [customers, setCustomers] = useState([]);
-  const [selectedCustomer, setSelectedCustomer] = useState('');
-  const [file, setFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
   const [uploadHistory, setUploadHistory] = useState([]);
+  const [myInvoices, setMyInvoices] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    loadCustomers();
+    loadMyInvoices();
   }, []);
 
-  const loadCustomers = async () => {
+  const loadMyInvoices = async () => {
     try {
-      const response = await salesRepAPI.getCustomers();
-      setCustomers(response.data);
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${BACKEND_URL}/api/invoices/all/list`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setMyInvoices(response.data || []);
     } catch (error) {
-      toast.error('Müşteriler yüklenemedi');
+      console.error('Faturalar yüklenemedi:', error);
+      toast.error('Faturalar yüklenemedi');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    if (selectedFile) {
-      // Check file type
-      const validTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
-      if (!validTypes.includes(selectedFile.type)) {
-        toast.error('Sadece PDF veya resim dosyaları yükleyebilirsiniz');
-        return;
-      }
-      setFile(selectedFile);
+  const viewInvoice = async (invoiceId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${BACKEND_URL}/api/invoices/${invoiceId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      // Yeni pencerede HTML'i göster
+      const newWindow = window.open('', '_blank');
+      newWindow.document.write(response.data.html_content);
+      newWindow.document.close();
+    } catch (error) {
+      console.error('Fatura görüntülenemedi:', error);
+      toast.error('Fatura görüntülenemedi');
     }
   };
-
-  const handleUpload = async () => {
     if (!selectedCustomer) {
       toast.error('Lütfen müşteri seçin');
       return;
