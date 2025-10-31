@@ -129,18 +129,20 @@ const AccountingDashboard = () => {
             <CardContent>
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div className="p-4 bg-blue-50 rounded-lg">
-                  <p className="text-2xl font-bold text-blue-600">{uploadHistory.length}</p>
+                  <p className="text-2xl font-bold text-blue-600">{myInvoices.length}</p>
                   <p className="text-sm text-gray-600">Yüklenen Fatura</p>
                 </div>
                 <div className="p-4 bg-green-50 rounded-lg">
-                  <p className="text-2xl font-bold text-green-600">{customers.length}</p>
-                  <p className="text-sm text-gray-600">Toplam Müşteri</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    {new Set(myInvoices.map(inv => inv.customer_tax_id)).size}
+                  </p>
+                  <p className="text-sm text-gray-600">Farklı Müşteri</p>
                 </div>
                 <div className="p-4 bg-purple-50 rounded-lg">
                   <p className="text-2xl font-bold text-purple-600">
-                    {new Set(uploadHistory.map(h => h.customer_name)).size}
+                    {myInvoices.reduce((sum, inv) => sum + (inv.product_count || 0), 0)}
                   </p>
-                  <p className="text-sm text-gray-600">Aktif Müşteri</p>
+                  <p className="text-sm text-gray-600">Toplam Ürün</p>
                 </div>
               </div>
             </CardContent>
