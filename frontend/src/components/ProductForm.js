@@ -12,7 +12,8 @@ const ProductForm = ({ onSuccess }) => {
     logistics_price: '',
     dealer_price: '',
     units_per_case: '',
-    stock_quantity: ''
+    stock_quantity: '',
+    shelf_life: '21_gun'  // SKT ömrü eklendi
   });
   const [loading, setLoading] = useState(false);
 
