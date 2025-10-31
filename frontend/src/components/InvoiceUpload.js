@@ -4,9 +4,10 @@ import { toast } from 'sonner';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
 
-const InvoiceUpload = () => {
+const InvoiceUpload = ({ onSuccess }) => {
   const [htmlContent, setHtmlContent] = useState('');
   const [loading, setLoading] = useState(false);
+  const [uploadedInvoiceDetails, setUploadedInvoiceDetails] = useState(null);
 
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
@@ -14,6 +15,7 @@ const InvoiceUpload = () => {
       const reader = new FileReader();
       reader.onload = (event) => {
         setHtmlContent(event.target.result);
+        setUploadedInvoiceDetails(null);  // Reset details
         toast.success('Dosya yüklendi, şimdi "Faturayı Yükle" butonuna tıklayın');
       };
       reader.readAsText(file);
@@ -49,10 +51,37 @@ const InvoiceUpload = () => {
         }
       );
 
+      // Başarılı yükleme sonrası detayları göster
+      const invoiceData = response.data;
+      setUploadedInvoiceDetails({
+        invoice_id: invoiceData.invoice_id,
+        message: invoiceData.message
+      });
+
+      // Fatura detayını getir
+      try {
+        const detailResponse = await axios.get(
+          `${BACKEND_URL}/api/invoices/${invoiceData.invoice_id}`,
+          { headers: { 'Authorization': `Bearer ${token}` } }
+        );
+        
+        setUploadedInvoiceDetails({
+          invoice_id: invoiceData.invoice_id,
+          invoice_number: detailResponse.data.invoice_number,
+          invoice_date: detailResponse.data.invoice_date,
+          customer_tax_id: detailResponse.data.customer_tax_id,
+          products: detailResponse.data.products || [],
+          grand_total: detailResponse.data.grand_total
+        });
+      } catch (detailErr) {
+        console.error('Detay alınamadı:', detailErr);
+      }
+
       toast.success('Fatura başarıyla yüklendi!');
       setHtmlContent('');
-      // Reset file input
       document.getElementById('file-input').value = '';
+      
+      if (onSuccess) onSuccess();
     } catch (err) {
       console.error('Error uploading invoice:', err);
       console.error('Error response:', err.response?.data);
