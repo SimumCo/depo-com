@@ -61,17 +61,29 @@ const InvoiceUpload = ({ onSuccess }) => {
       const doc = parser.parseFromString(htmlContent, 'text/html');
       const textContent = doc.body.textContent || '';
       
-      // Fatura numarasını bul (EE ile başlayan)
-      const invoiceNumMatch = textContent.match(/EE\d+/);
-      const invoiceNumber = invoiceNumMatch ? invoiceNumMatch[0] : 'Fatura No Bulunamadı';
+      // Fatura numarasını bul (EE ile başlayan veya diğer formatlar)
+      const invoiceNumMatch = textContent.match(/(?:Fatura\s*No\s*[:\-]?\s*)?([A-Z]{2,3}\d{10,})/i) || 
+                              textContent.match(/(?:ETTN\s*[:\-]?\s*)?([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+      const invoiceNumber = invoiceNumMatch ? invoiceNumMatch[1] : 'Fatura No Bulunamadı';
       
-      // Vergi numarasını bul (10-11 haneli sayı)
-      const taxIdMatch = textContent.match(/\b\d{10,11}\b/);
-      const taxId = taxIdMatch ? taxIdMatch[0] : 'Vergi No Bulunamadı';
+      // Vergi numarasını bul (10-11 haneli sayı, VKN ile başlayabilir)
+      const taxIdMatch = textContent.match(/(?:VKN|Vergi\s*No)[:\s]*(\d{10,11})/i) || 
+                        textContent.match(/\b(\d{10,11})\b/);
+      const taxId = taxIdMatch ? taxIdMatch[1] : 'Vergi No Bulunamadı';
       
-      // Tarih bul (DD MM YYYY formatı)
-      const dateMatch = textContent.match(/(\d{1,2})\s+(\d{1,2})\s+(\d{4})/);
-      const invoiceDate = dateMatch ? `${dateMatch[1]}/${dateMatch[2]}/${dateMatch[3]}` : 'Tarih Bulunamadı';
+      // Tarih bul (çeşitli formatları dene)
+      let invoiceDate = 'Tarih Bulunamadı';
+      // DD/MM/YYYY veya DD.MM.YYYY formatı
+      const dateMatch1 = textContent.match(/(?:Fatura\s*Tarihi|Tarih)[:\s]*(\d{1,2})[\/\.\-](\d{1,2})[\/\.\-](\d{4})/i);
+      if (dateMatch1) {
+        invoiceDate = `${dateMatch1[1]}/${dateMatch1[2]}/${dateMatch1[3]}`;
+      } else {
+        // DD MM YYYY formatı (boşluklarla)
+        const dateMatch2 = textContent.match(/(\d{1,2})\s+(\d{1,2})\s+(\d{4})/);
+        if (dateMatch2) {
+          invoiceDate = `${dateMatch2[1]}/${dateMatch2[2]}/${dateMatch2[3]}`;
+        }
+      }
       
       // Tutarları bul (TL ile biten)
       const amounts = textContent.match(/[\d\.,]+\s*TL/g);
