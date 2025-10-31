@@ -51,31 +51,67 @@ const InvoiceUpload = ({ onSuccess }) => {
         }
       );
 
+      console.log('Upload response:', response.data);
+
       // Başarılı yükleme sonrası detayları göster
       const invoiceData = response.data;
-      setUploadedInvoiceDetails({
-        invoice_id: invoiceData.invoice_id,
-        message: invoiceData.message
+      
+      // HTML'den basit parse yaparak bilgileri çıkar
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlContent, 'text/html');
+      const textContent = doc.body.textContent || '';
+      
+      // Fatura numarasını bul (EE ile başlayan)
+      const invoiceNumMatch = textContent.match(/EE\d+/);
+      const invoiceNumber = invoiceNumMatch ? invoiceNumMatch[0] : 'Fatura No Bulunamadı';
+      
+      // Vergi numarasını bul (10-11 haneli sayı)
+      const taxIdMatch = textContent.match(/\b\d{10,11}\b/);
+      const taxId = taxIdMatch ? taxIdMatch[0] : 'Vergi No Bulunamadı';
+      
+      // Tarih bul (DD MM YYYY formatı)
+      const dateMatch = textContent.match(/(\d{1,2})\s+(\d{1,2})\s+(\d{4})/);
+      const invoiceDate = dateMatch ? `${dateMatch[1]}/${dateMatch[2]}/${dateMatch[3]}` : 'Tarih Bulunamadı';
+      
+      // Tutarları bul (TL ile biten)
+      const amounts = textContent.match(/[\d\.,]+\s*TL/g);
+      const grandTotal = amounts && amounts.length > 0 ? amounts[amounts.length - 1] : 'Tutar Bulunamadı';
+      
+      // Tablolardan ürün bilgilerini çıkar
+      const tables = doc.querySelectorAll('table');
+      const products = [];
+      
+      tables.forEach(table => {
+        const rows = table.querySelectorAll('tr');
+        rows.forEach((row, idx) => {
+          if (idx === 0) return; // Header row atla
+          const cells = row.querySelectorAll('td');
+          if (cells.length >= 4) {
+            const productName = cells[0]?.textContent?.trim();
+            const quantity = cells[1]?.textContent?.trim();
+            const unitPrice = cells[2]?.textContent?.trim();
+            const total = cells[3]?.textContent?.trim();
+            
+            if (productName && quantity) {
+              products.push({
+                product_name: productName,
+                quantity: quantity,
+                unit_price: unitPrice || '-',
+                total: total || '-'
+              });
+            }
+          }
+        });
       });
 
-      // Fatura detayını getir
-      try {
-        const detailResponse = await axios.get(
-          `${BACKEND_URL}/api/invoices/${invoiceData.invoice_id}`,
-          { headers: { 'Authorization': `Bearer ${token}` } }
-        );
-        
-        setUploadedInvoiceDetails({
-          invoice_id: invoiceData.invoice_id,
-          invoice_number: detailResponse.data.invoice_number,
-          invoice_date: detailResponse.data.invoice_date,
-          customer_tax_id: detailResponse.data.customer_tax_id,
-          products: detailResponse.data.products || [],
-          grand_total: detailResponse.data.grand_total
-        });
-      } catch (detailErr) {
-        console.error('Detay alınamadı:', detailErr);
-      }
+      setUploadedInvoiceDetails({
+        invoice_id: invoiceData.invoice_id || 'N/A',
+        invoice_number: invoiceNumber,
+        invoice_date: invoiceDate,
+        customer_tax_id: taxId,
+        products: products,
+        grand_total: grandTotal
+      });
 
       toast.success('Fatura başarıyla yüklendi!');
       setHtmlContent('');
