@@ -89,80 +89,131 @@ const InvoiceUpload = ({ onSuccess }) => {
       const amounts = textContent.match(/[\d\.,]+\s*TL/g);
       const grandTotal = amounts && amounts.length > 0 ? amounts[amounts.length - 1] : 'Tutar Bulunamadı';
       
-      // Tablolardan ürün bilgilerini çıkar - GELİŞMİŞ PARSING
-      const tables = doc.querySelectorAll('table');
+      // Ürün bilgilerini çıkar - HEM TABLE HEM PDF2HTMLEX DESTEĞİ
       const products = [];
       
+      // Önce normal table yapısını dene
+      const tables = doc.querySelectorAll('table');
       console.log('Toplam tablo sayısı:', tables.length);
       
-      tables.forEach((table, tableIdx) => {
-        const rows = table.querySelectorAll('tr');
-        console.log(`Tablo ${tableIdx + 1} - Satır sayısı:`, rows.length);
-        
-        rows.forEach((row, rowIdx) => {
-          const cells = row.querySelectorAll('td, th');
+      if (tables.length > 0) {
+        tables.forEach((table, tableIdx) => {
+          const rows = table.querySelectorAll('tr');
+          console.log(`Tablo ${tableIdx + 1} - Satır sayısı:`, rows.length);
           
-          // Boş satırları atla
-          if (cells.length === 0) return;
-          
-          // Header satırlarını algıla ve atla (Ürün, Adet, Fiyat gibi kelimeler içeriyorsa)
-          const rowText = row.textContent.toLowerCase();
-          const isHeader = rowText.includes('ürün') || 
-                          rowText.includes('adet') || 
-                          rowText.includes('miktar') ||
-                          rowText.includes('fiyat') ||
-                          rowText.includes('toplam') ||
-                          (rowIdx === 0 && cells.length >= 3);
-          
-          if (isHeader) {
-            console.log(`Header satır atlandı (row ${rowIdx}):`, rowText);
-            return;
-          }
-          
-          // En az 2 hücre olmalı (ürün adı + miktar)
-          if (cells.length >= 2) {
-            const cellValues = Array.from(cells).map(c => c.textContent?.trim() || '');
+          rows.forEach((row, rowIdx) => {
+            const cells = row.querySelectorAll('td, th');
+            if (cells.length === 0) return;
             
-            // Sayısal bir değer varsa (miktar olabilir) bu bir ürün satırıdır
-            const hasNumber = cellValues.some(val => /\d+/.test(val));
+            const rowText = row.textContent.toLowerCase();
+            const isHeader = rowText.includes('ürün') || 
+                            rowText.includes('adet') || 
+                            rowText.includes('miktar') ||
+                            rowText.includes('fiyat') ||
+                            rowText.includes('toplam') ||
+                            (rowIdx === 0 && cells.length >= 3);
             
-            if (hasNumber && cellValues[0] && cellValues[0].length > 2) {
-              // Hücreleri düzenle
-              const productName = cellValues[0];
-              let quantity = '-';
-              let unitPrice = '-';
-              let total = '-';
+            if (isHeader) {
+              console.log(`Header satır atlandı (row ${rowIdx}):`, rowText);
+              return;
+            }
+            
+            if (cells.length >= 2) {
+              const cellValues = Array.from(cells).map(c => c.textContent?.trim() || '');
+              const hasNumber = cellValues.some(val => /\d+/.test(val));
               
-              // Sayısal değerleri bul
-              for (let i = 1; i < cellValues.length; i++) {
-                const val = cellValues[i];
-                if (/^\d+$/.test(val)) {
-                  // Sadece sayı ise miktar olabilir
-                  if (quantity === '-') {
-                    quantity = val;
-                  }
-                } else if (/[\d\.,]+/.test(val)) {
-                  // Noktalı/virgüllü sayı ise fiyat/tutar
-                  if (unitPrice === '-') {
-                    unitPrice = val;
-                  } else if (total === '-') {
-                    total = val;
+              if (hasNumber && cellValues[0] && cellValues[0].length > 2) {
+                const productName = cellValues[0];
+                let quantity = '-';
+                let unitPrice = '-';
+                let total = '-';
+                
+                for (let i = 1; i < cellValues.length; i++) {
+                  const val = cellValues[i];
+                  if (/^\d+$/.test(val)) {
+                    if (quantity === '-') quantity = val;
+                  } else if (/[\d\.,]+/.test(val)) {
+                    if (unitPrice === '-') unitPrice = val;
+                    else if (total === '-') total = val;
                   }
                 }
+                
+                products.push({
+                  product_name: productName,
+                  quantity: quantity,
+                  unit_price: unitPrice,
+                  total: total
+                });
+                
+                console.log('Table - Ürün eklendi:', { productName, quantity, unitPrice, total });
               }
+            }
+          });
+        });
+      }
+      
+      // Eğer table parsing başarısızsa, pdf2htmlEX formatını dene
+      if (products.length === 0) {
+        console.log('Table parsing başarısız, pdf2htmlEX format parsing deneniyor...');
+        
+        // Tüm text içeriğini al
+        const allSpans = doc.querySelectorAll('span, div');
+        const texts = Array.from(allSpans)
+          .map(el => el.textContent?.trim())
+          .filter(text => text && text.length > 0);
+        
+        console.log('Toplam text eleman sayısı:', texts.length);
+        
+        // Pattern: Ürün Kodu -> Mal/Hizmet -> Miktar -> Birim Fiyat -> Tutar
+        // Örnek: "15211034", "1000 GR VAKUMLU TEREYAGI", "10 Adet", "433,17 TL", "4.331,70 TL"
+        
+        let i = 0;
+        while (i < texts.length) {
+          const current = texts[i];
+          
+          // Ürün kodu pattern (8-10 haneli sayı)
+          if (/^\d{8,10}$/.test(current)) {
+            const productCode = current;
+            
+            // Sonraki 5 elemanı kontrol et
+            if (i + 4 < texts.length) {
+              const productName = texts[i + 1];
+              const quantityText = texts[i + 2];
+              const unitPriceText = texts[i + 3];
+              const totalText = texts[i + 4];
               
-              products.push({
-                product_name: productName,
-                quantity: quantity,
-                unit_price: unitPrice,
-                total: total
-              });
+              // Miktar pattern (sayı + Adet/KG/etc)
+              const quantityMatch = quantityText.match(/^(\d+(?:[,\.]\d+)?)\s*(Adet|KG|Gr|Lt|ml)?/i);
+              // Fiyat pattern (sayı + TL)
+              const unitPriceMatch = unitPriceText.match(/([\d\.,]+)\s*TL/i);
+              const totalMatch = totalText.match(/([\d\.,]+)\s*TL/i);
               
-              console.log('Ürün eklendi:', { productName, quantity, unitPrice, total });
+              if (productName && productName.length > 3 && quantityMatch) {
+                products.push({
+                  product_name: productName,
+                  quantity: quantityMatch ? quantityMatch[0] : quantityText,
+                  unit_price: unitPriceMatch ? unitPriceMatch[1] + ' TL' : unitPriceText,
+                  total: totalMatch ? totalMatch[1] + ' TL' : totalText
+                });
+                
+                console.log('PDF2HTML - Ürün eklendi:', {
+                  productCode,
+                  productName,
+                  quantity: quantityMatch ? quantityMatch[0] : quantityText,
+                  unitPrice: unitPriceMatch ? unitPriceMatch[1] + ' TL' : unitPriceText,
+                  total: totalMatch ? totalMatch[1] + ' TL' : totalText
+                });
+                
+                // 5 eleman atla (ürün kodu, ürün adı, miktar, birim fiyat, toplam)
+                i += 5;
+                continue;
+              }
             }
           }
-        });
-      });
+          
+          i++;
+        }
+      }
       
       console.log('Toplam ürün sayısı:', products.length);
       console.log('Ürünler:', products);
