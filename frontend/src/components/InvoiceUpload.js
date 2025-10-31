@@ -161,6 +161,63 @@ const InvoiceUpload = ({ onSuccess }) => {
             'Faturayı Yükle'
           )}
         </button>
+
+        {/* Yüklenen Fatura Detayları (Test Amaçlı) */}
+        {uploadedInvoiceDetails && (
+          <div className="mt-6 border-t pt-6">
+            <h3 className="text-lg font-semibold mb-4 text-green-700">
+              ✅ Fatura Başarıyla Yüklendi - Test Detayları
+            </h3>
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-3">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <span className="font-medium text-gray-700">Fatura No:</span>
+                  <p className="text-gray-900">{uploadedInvoiceDetails.invoice_number || 'N/A'}</p>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700">Fatura Tarihi:</span>
+                  <p className="text-gray-900">{uploadedInvoiceDetails.invoice_date || 'N/A'}</p>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700">Vergi No:</span>
+                  <p className="text-gray-900">{uploadedInvoiceDetails.customer_tax_id || 'N/A'}</p>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700">Toplam Tutar:</span>
+                  <p className="text-gray-900 font-semibold">{uploadedInvoiceDetails.grand_total || 'N/A'}</p>
+                </div>
+              </div>
+
+              {uploadedInvoiceDetails.products && uploadedInvoiceDetails.products.length > 0 && (
+                <div className="mt-4">
+                  <span className="font-medium text-gray-700 block mb-2">Ürünler:</span>
+                  <div className="bg-white rounded border p-3 max-h-48 overflow-y-auto">
+                    <table className="w-full text-sm">
+                      <thead className="border-b">
+                        <tr>
+                          <th className="text-left pb-2">Ürün Adı</th>
+                          <th className="text-right pb-2">Adet</th>
+                          <th className="text-right pb-2">Birim Fiyat</th>
+                          <th className="text-right pb-2">Toplam</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {uploadedInvoiceDetails.products.map((product, idx) => (
+                          <tr key={idx} className="border-b last:border-0">
+                            <td className="py-2">{product.product_name}</td>
+                            <td className="text-right">{product.quantity}</td>
+                            <td className="text-right">{product.unit_price}</td>
+                            <td className="text-right font-medium">{product.total}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Info Box */}
