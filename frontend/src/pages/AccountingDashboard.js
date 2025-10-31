@@ -10,7 +10,6 @@ import axios from 'axios';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 const AccountingDashboard = () => {
-  const [uploadHistory, setUploadHistory] = useState([]);
   const [myInvoices, setMyInvoices] = useState([]);
   const [loading, setLoading] = useState(false);
 
