@@ -214,6 +214,28 @@ const ProductForm = ({ onSuccess }) => {
               ✓ Depodaki mevcut stok miktarı
             </p>
           </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              SKT Ömrü (Son Kullanma Tarihi) *
+            </label>
+            <select
+              name="shelf_life"
+              value={formData.shelf_life}
+              onChange={handleChange}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="21_gun">21 Gün</option>
+              <option value="28_gun">28 Gün</option>
+              <option value="45_gun">45 Gün</option>
+              <option value="3_ay">3 Ay</option>
+              <option value="6_ay">6 Ay</option>
+            </select>
+            <p className="text-xs text-gray-500 mt-1">
+              ✓ Ürünün raf ömrü süresi
+            </p>
+          </div>
         </div>
 
         <div className="flex justify-end space-x-3 pt-4">
