@@ -148,36 +148,36 @@ const AccountingDashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Upload History */}
+          {/* Upload History - Son 10 Fatura */}
           <Card className="mt-6">
             <CardHeader>
               <CardTitle className="flex items-center">
                 <CheckCircle className="mr-2 h-5 w-5" />
-                Yükleme Geçmişi
+                Son Yüklenen Faturalar
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {uploadHistory.length === 0 ? (
+              {myInvoices.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <FileText className="h-12 w-12 mx-auto mb-2 text-gray-400" />
                   <p>Henüz fatura yüklenmedi</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {uploadHistory.map((item, index) => (
+                  {myInvoices.slice(0, 10).map((invoice) => (
                     <div
-                      key={index}
+                      key={invoice.id}
                       className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
                     >
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <p className="font-medium">{item.customer_name}</p>
-                          <p className="text-sm text-gray-600">{item.filename}</p>
+                          <p className="font-medium">{invoice.invoice_number}</p>
+                          <p className="text-sm text-gray-600">Tutar: {invoice.grand_total}</p>
                         </div>
                         <CheckCircle className="h-5 w-5 text-green-500" />
                       </div>
                       <div className="text-xs text-gray-500">
-                        {item.date} • {(item.size / 1024).toFixed(2)} KB
+                        {new Date(invoice.uploaded_at).toLocaleString('tr-TR')} • {invoice.product_count} ürün
                       </div>
                     </div>
                   ))}
