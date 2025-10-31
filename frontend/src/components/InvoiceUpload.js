@@ -73,15 +73,22 @@ const InvoiceUpload = ({ onSuccess }) => {
       
       // Tarih bul (çeşitli formatları dene)
       let invoiceDate = 'Tarih Bulunamadı';
-      // DD/MM/YYYY veya DD.MM.YYYY formatı
+      
+      // Format 1: DD/MM/YYYY veya DD.MM.YYYY formatı
       const dateMatch1 = textContent.match(/(?:Fatura\s*Tarihi|Tarih)[:\s]*(\d{1,2})[\/\.\-](\d{1,2})[\/\.\-](\d{4})/i);
       if (dateMatch1) {
         invoiceDate = `${dateMatch1[1]}/${dateMatch1[2]}/${dateMatch1[3]}`;
       } else {
-        // DD MM YYYY formatı (boşluklarla)
-        const dateMatch2 = textContent.match(/(\d{1,2})\s+(\d{1,2})\s+(\d{4})/);
+        // Format 2: DDMMYYYY (boşluksuz 8 haneli)
+        const dateMatch2 = textContent.match(/(?:Fatura\s*Tarihi|FaturaTarihi)[:\s]*(\d{2})(\d{2})(\d{4})/i);
         if (dateMatch2) {
           invoiceDate = `${dateMatch2[1]}/${dateMatch2[2]}/${dateMatch2[3]}`;
+        } else {
+          // Format 3: DD MM YYYY formatı (boşluklarla)
+          const dateMatch3 = textContent.match(/(\d{1,2})\s+(\d{1,2})\s+(\d{4})/);
+          if (dateMatch3) {
+            invoiceDate = `${dateMatch3[1]}/${dateMatch3[2]}/${dateMatch3[3]}`;
+          }
         }
       }
       
