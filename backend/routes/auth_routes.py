@@ -83,13 +83,22 @@ async def create_user(
 @router.post("/login")
 async def login(credentials: UserLogin):
     # Find user
+    print(f"[DEBUG] Login attempt for username: {credentials.username}")
     user_doc = await db.users.find_one({"username": credentials.username}, {"_id": 0})
+    print(f"[DEBUG] User found: {user_doc is not None}")
     if not user_doc:
+        print("[DEBUG] User not found")
         raise HTTPException(status_code=401, detail="Invalid username or password")
+    
+    print(f"[DEBUG] User doc keys: {list(user_doc.keys())}")
+    print(f"[DEBUG] Has password_hash: {'password_hash' in user_doc}")
     
     # Verify password
     if not verify_password(credentials.password, user_doc["password_hash"]):
+        print("[DEBUG] Password verification failed")
         raise HTTPException(status_code=401, detail="Invalid username or password")
+    
+    print("[DEBUG] Password verified successfully")
     
     # Check if active
     if not user_doc.get("is_active", True):
