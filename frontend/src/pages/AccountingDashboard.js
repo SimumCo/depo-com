@@ -111,6 +111,10 @@ const AccountingDashboard = () => {
             <FileCode className="mr-2 h-4 w-4" />
             Fatura Yükleme (HTML)
           </TabsTrigger>
+          <TabsTrigger value="my-invoices">
+            <FileText className="mr-2 h-4 w-4" />
+            Yüklediğim Faturalar
+          </TabsTrigger>
           <TabsTrigger value="stats">
             <CheckCircle className="mr-2 h-4 w-4" />
             İstatistikler
@@ -118,7 +122,54 @@ const AccountingDashboard = () => {
         </TabsList>
 
         <TabsContent value="invoice-upload">
-          <InvoiceUpload />
+          <InvoiceUpload onSuccess={loadMyInvoices} />
+        </TabsContent>
+
+        <TabsContent value="my-invoices">
+          <Card>
+            <CardHeader>
+              <CardTitle>Yüklediğim Faturalar</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : myInvoices.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <FileText className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+                  <p>Henüz fatura yüklenmedi</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {myInvoices.map((invoice) => (
+                    <div
+                      key={invoice.id}
+                      className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-lg">{invoice.invoice_number}</h4>
+                          <p className="text-sm text-gray-600">Tarih: {invoice.invoice_date}</p>
+                          <p className="text-sm text-gray-600">Tutar: {invoice.grand_total}</p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {invoice.product_count} ürün • Yükleme: {new Date(invoice.uploaded_at).toLocaleString('tr-TR')}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => viewInvoice(invoice.id)}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center"
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          Görüntüle
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="stats">
