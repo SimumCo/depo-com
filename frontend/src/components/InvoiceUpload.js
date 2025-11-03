@@ -134,150 +134,37 @@ const InvoiceUpload = ({ onSuccess }) => {
       const amounts = textContent.match(/[\d\.,]+\s*TL/g);
       const grandTotal = amounts && amounts.length > 0 ? amounts[amounts.length - 1] : 'Tutar Bulunamadı';
       
-      // Ürün bilgilerini çıkar - HEM TABLE HEM PDF2HTMLEX DESTEĞİ
+      // Ürün bilgilerini çıkar - lineTable formatı için optimize edildi
       const products = [];
       
-      // Önce normal table yapısını dene
-      const tables = doc.querySelectorAll('table');
-      console.log('Toplam tablo sayısı:', tables.length);
+      // lineTable'ı bul (SED formatı)
+      const lineTable = doc.querySelector('#lineTable');
       
-      if (tables.length > 0) {
-        tables.forEach((table, tableIdx) => {
-          const rows = table.querySelectorAll('tr');
-          console.log(`Tablo ${tableIdx + 1} - Satır sayısı:`, rows.length);
+      if (lineTable) {
+        console.log('lineTable bulundu');
+        const rows = lineTable.querySelectorAll('tr');
+        console.log('Toplam satır sayısı:', rows.length);
+        
+        rows.forEach((row, rowIdx) => {
+          const cells = row.querySelectorAll('td');
+          if (cells.length < 6) return;
           
-          rows.forEach((row, rowIdx) => {
-            const cells = row.querySelectorAll('td, th');
-            if (cells.length === 0) return;
-            
-            const rowText = row.textContent.toLowerCase();
-            const isHeader = rowText.includes('ürün') || 
-                            rowText.includes('adet') || 
-                            rowText.includes('miktar') ||
-                            rowText.includes('fiyat') ||
-                            rowText.includes('toplam') ||
-                            (rowIdx === 0 && cells.length >= 3);
-            
-            if (isHeader) {
-              console.log(`Header satır atlandı (row ${rowIdx}):`, rowText);
-              return;
-            }
-            
-            if (cells.length >= 2) {
-              const cellValues = Array.from(cells).map(c => c.textContent?.trim() || '');
-              const hasNumber = cellValues.some(val => /\d+/.test(val));
-              
-              if (hasNumber && cellValues[0] && cellValues[0].length > 2) {
-                const productName = cellValues[0];
-                let quantity = '-';
-                let unitPrice = '-';
-                let total = '-';
-                
-                for (let i = 1; i < cellValues.length; i++) {
-                  const val = cellValues[i];
-                  if (/^\d+$/.test(val)) {
-                    if (quantity === '-') quantity = val;
-                  } else if (/[\d\.,]+/.test(val)) {
-                    if (unitPrice === '-') unitPrice = val;
-                    else if (total === '-') total = val;
-                  }
-                }
-                
-                products.push({
-                  product_name: productName,
-                  quantity: quantity,
-                  unit_price: unitPrice,
-                  total: total
-                });
-                
-                console.log('Table - Ürün eklendi:', { productName, quantity, unitPrice, total });
-              }
-            }
-          });
-        });
-      }
-      
-      // Eğer table parsing başarısızsa, pdf2htmlEX formatını dene
-      if (products.length === 0) {
-        console.log('Table parsing başarısız, pdf2htmlEX format parsing deneniyor...');
-        
-        // Tüm text içeriğini al
-        const allSpans = doc.querySelectorAll('span, div');
-        const texts = Array.from(allSpans)
-          .map(el => el.textContent?.trim())
-          .filter(text => text && text.length > 0);
-        
-        console.log('Toplam text eleman sayısı:', texts.length);
-        
-        // Boşlukları temizlenmiş metinlerde arama yap
-        // Pattern: Ürün Kodu (8-10 haneli) ardından ürün adı, miktar, fiyat
-        
-        for (let i = 0; i < texts.length - 4; i++) {
-          const current = texts[i];
+          const rowText = row.textContent.toLowerCase();
+          const isHeader = rowText.includes('ürün') && rowText.includes('hizmet') && rowText.includes('kod');
           
-          // Ürün kodu pattern (sadece 8-10 haneli sayı)
-          if (/^\d{8,10}$/.test(current)) {
-            const productCode = current;
-            
-            // Sonraki elemanları kontrol et
-            const next1 = texts[i + 1] || '';
-            const next2 = texts[i + 2] || '';
-            const next3 = texts[i + 3] || '';
-            const next4 = texts[i + 4] || '';
-            
-            // Ürün adı: uzun text, sayı veya TL içermemeli (boşluksuz olabilir: "1000GRVAKUMLU")
-            let productName = '';
-            let startIdx = i + 1;
-            
-            // Ürün adını bul (birden fazla parça olabilir)
-            for (let j = i + 1; j < i + 5 && j < texts.length; j++) {
-              const text = texts[j];
-              // Eğer Adet, TL, rakam içermiyorsa ürün adının parçasıdır
-              if (text.length > 2 && !/(Adet|TL|\d{1,2}\s*Adet|\d+,\d+|%|\d+\.\d+)/i.test(text)) {
-                productName += (productName ? ' ' : '') + text;
-                startIdx = j + 1;
-              } else {
-                break;
-              }
-            }
-            
-            if (!productName || productName.length < 3) {
-              continue;
-            }
-            
-            // Miktar ve fiyat bul
-            let quantity = '-';
-            let unitPrice = '-';
-            let total = '-';
-            
-            // Sonraki birkaç elemanı tara
-            for (let j = startIdx; j < Math.min(startIdx + 6, texts.length); j++) {
-              const text = texts[j];
-              
-              // Miktar pattern: "10Adet" veya "10 Adet"
-              const qtyMatch = text.match(/^(\d+)\s*(Adet|KG|Gr|Lt|ml)/i);
-              if (qtyMatch && quantity === '-') {
-                quantity = text;
-                continue;
-              }
-              
-              // Fiyat pattern: "433,17TL" veya "433,17 TL"
-              const priceMatch = text.match(/([\d\.,]+)\s*TL/i);
-              if (priceMatch) {
-                if (unitPrice === '-') {
-                  unitPrice = text;
-                } else if (total === '-') {
-                  // Toplam satır genelde başka yerde, son büyük rakam olabilir
-                  total = text;
-                }
-              }
-              
-              // Toplam pattern: "4.331,70" gibi noktalı rakam
-              if (/^\d{1,3}\.\d{3},\d{2}$/.test(text) && total === '-') {
-                total = text + ' TL';
-              }
-            }
-            
+          if (isHeader) {
+            console.log(`Header satır atlandı (row ${rowIdx})`);
+            return;
+          }
+          
+          // SED formatı: Sıra No | Ürün Kodu | Ürün Adı | Miktar | Birim | Birim Fiyat | ... | Tutar | ...
+          const productCode = cells[1]?.textContent?.trim() || '';
+          const productName = cells[2]?.textContent?.trim() || '';
+          const quantity = cells[3]?.textContent?.trim() || '-';
+          const unitPrice = cells[5]?.textContent?.trim() || '-';
+          const total = cells[8]?.textContent?.trim() || '-';
+          
+          if (productName && productName.length > 2) {
             products.push({
               product_name: productName,
               quantity: quantity,
@@ -285,18 +172,9 @@ const InvoiceUpload = ({ onSuccess }) => {
               total: total
             });
             
-            console.log('PDF2HTML - Ürün eklendi:', {
-              productCode,
-              productName,
-              quantity,
-              unitPrice,
-              total
-            });
-            
-            // Bir sonraki ürüne geç
-            i = startIdx + 5;
+            console.log('SED - Ürün eklendi:', { productName, quantity, unitPrice, total });
           }
-        }
+        });
       }
       
       console.log('Toplam ürün sayısı:', products.length);
