@@ -39,6 +39,7 @@ class InvoiceResponse(BaseModel):
     id: str
     invoice_number: str
     invoice_date: str
+    customer_name: Optional[str] = None
     grand_total: str
     product_count: int
     uploaded_at: datetime
