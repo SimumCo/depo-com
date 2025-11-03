@@ -389,6 +389,44 @@ agent_communication:
       SED fatura parsing artık tamamen çalışıyor!
   - agent: "testing"
     message: |
+      ❌ SED Fatura Frontend Display Bug Bulundu - Kritik Düzeltme Gerekli
+      
+      **Test Sonuçları (SED2025000000078.html):**
+      
+      ✅ **Backend API Tamamen Çalışıyor:**
+      - POST /api/invoices/upload başarılı (invoice_id: 73e57750-49f1-41be-965c-130103c73bca)
+      - Vergi No: 9830366087 ✓
+      - Fatura No: SED2025000000078 ✓  
+      - Fatura Tarihi: 27/10/2025 ✓
+      - Toplam Tutar: 47.395,61TL ✓
+      - Tüm 9 ürün doğru parse edildi ✓
+      - Ürün miktarları doğru: 9,5,3,2,9,36,72,3,6 ✓
+      - Türkçe karakterler doğru (SÜZME, PEYNİRİ, KAŞAR, PİŞİRMELİK, TEREYAĞ) ✓
+      
+      ❌ **Frontend Display Bug:**
+      - Müşteri adı yanlış gösteriliyor: "SAYIN" (yanlış) 
+      - Olması gereken: "YÖRÜKOĞLU SÜT VE ÜRÜNLERİ SANAYİ TİCARET ANONİM ŞİRKETİ"
+      
+      **Root Cause:** 
+      - Backend doğru: `bold_spans[1]` (ikinci bold span)
+      - Frontend yanlış: `querySelector` (ilk bold span)
+      - Fix: InvoiceUpload.js line 68 -> `querySelectorAll` + `[1]` index kullan
+      
+      **Kod Değişikliği:**
+      ```javascript
+      // YANLIŞ (line 68):
+      const boldSpan = customerIdTable.querySelector('span[style*="font-weight:bold"]');
+      
+      // DOĞRU:
+      const boldSpans = customerIdTable.querySelectorAll('span[style*="font-weight:bold"]');
+      if (boldSpans.length >= 2) {
+        customerName = boldSpans[1].textContent.trim(); // İkinci span
+      }
+      ```
+      
+      Diğer tüm özellikler mükemmel çalışıyor, sadece bu tek satır düzeltilmeli.
+  - agent: "testing"
+    message: |
       ✅ Backend API Testing Tamamlandı - Tüm testler başarılı!
       
       Test Edilen API'ler:
