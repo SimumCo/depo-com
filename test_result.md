@@ -311,20 +311,33 @@ test_plan:
 agent_communication:
   - agent: "main"
     message: |
-      Backend ve Frontend implementasyonu tamamlandı.
+      🔄 SED Fatura Formatı Desteği Eklendi (Aşama 1)
       
-      Test Bilgileri:
-      - Admin: admin / admin123
-      - Plasiyer: plasiyer1 / plasiyer123 (plasiyer2, plasiyer3 de aynı şifre)
-      - Müşteri: musteri1 / musteri123 (musteri2-18 hepsi aynı şifre)
+      **Backend Güncellemeleri:**
+      1. ✅ Invoice model'e customer_name field eklendi
+      2. ✅ parse_invoice_html() fonksiyonu SED formatı için güçlendirildi:
+         - customerIDTable'dan müşteri adı çıkarma
+         - despatchTable'dan fatura no ve tarih
+         - lineTable'dan ürün bilgileri (kod, ad, miktar, fiyat, toplam)
+         - budgetContainerTable'dan toplam tutarlar
+      3. ✅ InvoiceResponse'a customer_name field eklendi
       
-      Test Senaryoları:
-      1. Backend API'lerin çalışması (plasiyer için warehouse order, my-customers, stats)
-      2. Sales route API'lerin çalışması
-      3. Plasiyer ile giriş yapıp müşterileri günlere göre görmek
-      4. Plasiyer ile depoya sipariş vermek
-      5. Müşteri ile giriş yapıp teslimat günü bilgisini görmek
-      6. Müşteri ile sipariş vermek
+      **Frontend Güncellemeleri:**
+      1. ✅ InvoiceUpload.js - SED formatı için parsing optimize edildi
+      2. ✅ Müşteri adı gösterimi eklendi
+      3. ✅ lineTable id'sine özel ürün parsing
+      
+      **Test Talebi:**
+      Lütfen SED2025000000078.html faturasını test edin:
+      - Muhasebe hesabı (muhasebe/muhasebe123) ile giriş
+      - HTML fatura yükleme
+      - Beklenen sonuçlar:
+        * Müşteri Adı: YÖRÜKOĞLU SÜT VE ÜRÜNLERİ SANAYİ TİCARET ANONİM ŞİRKETİ
+        * Vergi No: 9830366087
+        * Fatura No: SED2025000000078
+        * Fatura Tarihi: 27-10-2025
+        * 9 ürün parse edilmeli (SÜZME YOĞURT, YARIM YAĞLI YOĞURT, vb.)
+        * Toplam Tutar: 47.395,61 TL
   - agent: "testing"
     message: |
       ✅ Backend API Testing Tamamlandı - Tüm testler başarılı!
