@@ -162,11 +162,11 @@ backend:
 
   - task: "Invoice Management APIs"
     implemented: true
-    working: true
+    working: false
     file: "/app/backend/routes/invoice_routes.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
@@ -177,6 +177,9 @@ backend:
       - working: "NA"
         agent: "main"
         comment: "SED fatura formatı desteği eklendi. Parsing fonksiyonu güçlendirildi: Müşteri adı (customerIDTable'dan), Vergi No (VKN pattern), Fatura No (SED format), Tarih (despatchTable), Ürün bilgileri (lineTable id'li tablodan). Invoice model'e customer_name field eklendi. Frontend'de SED formatına özel parsing ve müşteri adı gösterimi eklendi."
+      - working: false
+        agent: "testing"
+        comment: "SED2025000000078.html fatura testi yapıldı. BAŞARISIZ: 1) Müşteri adı yanlış parse ediliyor ('SAYIN' yerine 'YÖRÜKOĞLU SÜT VE ÜRÜNLERİ SANAYİ TİCARET ANONİM ŞİRKETİ' olmalı), 2) Ürün parsing'de karakter encoding sorunu (Türkçe karakterler bozuk), 3) Ürün miktarları 0.0 olarak parse ediliyor (9, 5, 3 olmalı), 4) Header satırı ürün olarak parse ediliyor (10 ürün yerine 9 olmalı). Vergi No, Fatura No, Tarih ve Toplam Tutar doğru parse ediliyor."
 
   - task: "Consumption Tracking APIs"
     implemented: true
