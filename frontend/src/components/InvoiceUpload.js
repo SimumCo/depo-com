@@ -284,6 +284,14 @@ const InvoiceUpload = ({ onSuccess }) => {
             <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-3">
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
+                  <span className="font-medium text-gray-700">Müşteri Adı:</span>
+                  <p className="text-gray-900">{uploadedInvoiceDetails.customer_name || 'N/A'}</p>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700">Vergi No:</span>
+                  <p className="text-gray-900">{uploadedInvoiceDetails.customer_tax_id || 'N/A'}</p>
+                </div>
+                <div>
                   <span className="font-medium text-gray-700">Fatura No:</span>
                   <p className="text-gray-900">{uploadedInvoiceDetails.invoice_number || 'N/A'}</p>
                 </div>
@@ -291,13 +299,9 @@ const InvoiceUpload = ({ onSuccess }) => {
                   <span className="font-medium text-gray-700">Fatura Tarihi:</span>
                   <p className="text-gray-900">{uploadedInvoiceDetails.invoice_date || 'N/A'}</p>
                 </div>
-                <div>
-                  <span className="font-medium text-gray-700">Vergi No:</span>
-                  <p className="text-gray-900">{uploadedInvoiceDetails.customer_tax_id || 'N/A'}</p>
-                </div>
-                <div>
+                <div className="col-span-2">
                   <span className="font-medium text-gray-700">Toplam Tutar:</span>
-                  <p className="text-gray-900 font-semibold">{uploadedInvoiceDetails.grand_total || 'N/A'}</p>
+                  <p className="text-gray-900 font-semibold text-lg">{uploadedInvoiceDetails.grand_total || 'N/A'}</p>
                 </div>
               </div>
 
