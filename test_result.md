@@ -166,7 +166,7 @@ backend:
     file: "/app/backend/routes/invoice_routes.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
@@ -174,6 +174,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "Tüm Invoice API'leri test edildi ve başarılı: POST /api/invoices/upload (HTML fatura yüklendi: 9c931e22-b9bd-4285-a0ab-3422c554916e), GET /api/invoices/all/list (1 fatura listelendi), GET /api/invoices/my-invoices (müşteri faturaları), GET /api/invoices/{id} (fatura detayı: EE12025000004134). HTML parsing ve rol tabanlı erişim kontrolü çalışıyor."
+      - working: "NA"
+        agent: "main"
+        comment: "SED fatura formatı desteği eklendi. Parsing fonksiyonu güçlendirildi: Müşteri adı (customerIDTable'dan), Vergi No (VKN pattern), Fatura No (SED format), Tarih (despatchTable), Ürün bilgileri (lineTable id'li tablodan). Invoice model'e customer_name field eklendi. Frontend'de SED formatına özel parsing ve müşteri adı gösterimi eklendi."
 
   - task: "Consumption Tracking APIs"
     implemented: true
