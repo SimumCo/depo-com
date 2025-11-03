@@ -370,6 +370,35 @@ agent_communication:
       3. Tüm backend endpoint'leri erişilebilir
       
       **Backend Durumu:** Tamamen çalışır durumda, frontend test için hazır!
+  - agent: "main"
+    message: |
+      🔄 SED Fatura Formatı Desteği Eklendi (Aşama 1)
+      
+      **Backend Güncellemeleri:**
+      1. ✅ Invoice model'e customer_name field eklendi
+      2. ✅ parse_invoice_html() fonksiyonu SED formatı için güçlendirildi:
+         - customerIDTable'dan müşteri adı çıkarma
+         - despatchTable'dan fatura no ve tarih
+         - lineTable'dan ürün bilgileri (kod, ad, miktar, fiyat, toplam)
+         - budgetContainerTable'dan toplam tutarlar
+      3. ✅ InvoiceResponse'a customer_name field eklendi
+      
+      **Frontend Güncellemeleri:**
+      1. ✅ InvoiceUpload.js - SED formatı için parsing optimize edildi
+      2. ✅ Müşteri adı gösterimi eklendi
+      3. ✅ lineTable id'sine özel ürün parsing
+      
+      **Test Talebi:**
+      Lütfen SED2025000000078.html faturasını test edin:
+      - Muhasebe hesabı (muhasebe/muhasebe123) ile giriş
+      - HTML fatura yükleme
+      - Beklenen sonuçlar:
+        * Müşteri Adı: YÖRÜKOĞLU SÜT VE ÜRÜNLERİ SANAYİ TİCARET ANONİM ŞİRKETİ
+        * Vergi No: 9830366087
+        * Fatura No: SED2025000000078
+        * Fatura Tarihi: 27-10-2025
+        * 9 ürün parse edilmeli (SÜZME YOĞURT, YARIM YAĞLI YOĞURT, vb.)
+        * Toplam Tutar: 47.395,61 TL
   - agent: "testing"
     message: |
       ✅ SED Fatura HTML Parsing Bug Fix - BAŞARILI!
