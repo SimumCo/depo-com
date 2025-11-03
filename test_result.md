@@ -364,6 +364,36 @@ agent_communication:
       Backend servisi düzgün çalışıyor, tüm API endpoint'leri doğru veri döndürüyor.
   - agent: "testing"
     message: |
+      ❌ SED Invoice Parsing Test FAILED - Critical Issues Found
+      
+      **Test Results for SED2025000000078.html:**
+      
+      ✅ **Working Correctly:**
+      - Authentication (muhasebe/muhasebe123)
+      - Invoice upload API (POST /api/invoices/upload)
+      - Invoice retrieval API (GET /api/invoices/{id})
+      - Tax ID parsing: 9830366087 ✓
+      - Invoice number parsing: SED2025000000078 ✓
+      - Invoice date parsing: 27 10 2025 ✓
+      - Grand total parsing: 47.395,61 ✓
+      
+      ❌ **Critical Issues:**
+      1. **Customer Name Parsing**: Getting 'SAYIN' instead of 'YÖRÜKOĞLU SÜT VE ÜRÜNLERİ SANAYİ TİCARET ANONİM ŞİRKETİ'
+      2. **Product Parsing Problems**:
+         - Character encoding issues (Turkish characters corrupted: Ã, Ä, etc.)
+         - All product quantities parsing as 0.0 instead of actual values (9, 5, 3, etc.)
+         - Header row being parsed as a product (10 products instead of 9)
+         - Product names corrupted: "SÜZME YOĞURT" becomes "SÃZME YOÄURT"
+      
+      **Root Cause**: The parse_invoice_html() function in /app/backend/routes/invoice_routes.py has bugs in:
+      - Customer name extraction from customerIDTable
+      - Product quantity parsing from lineTable cells
+      - Character encoding handling for Turkish characters
+      - Header row filtering in product table
+      
+      **Recommendation**: Main agent needs to fix the HTML parsing logic before this feature can be considered working.
+  - agent: "testing"
+    message: |
       ✅ Invoice & Consumption Features Testing Tamamlandı - 80% başarı oranı!
       
       🆕 Yeni Test Edilen Özellikler:
