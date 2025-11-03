@@ -325,6 +325,7 @@ metadata:
 
 test_plan:
   current_focus:
+    - "InvoiceUpload Component - SED Fatura Parsing"
     - "Sales Agent API'leri"
   stuck_tasks:
     - "Sales Agent API'leri"
