@@ -194,6 +194,7 @@ async def upload_invoice(
     invoice_obj = Invoice(
         invoice_number=invoice_data["invoice_number"],
         invoice_date=invoice_data["invoice_date"],
+        customer_name=invoice_data.get("customer_name", ""),
         customer_tax_id=invoice_data["customer_tax_id"],
         customer_id=customer["id"] if customer else None,
         html_content=invoice_input.html_content,
