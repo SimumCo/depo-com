@@ -18,6 +18,17 @@ db = client[os.environ['DB_NAME']]
 
 def parse_invoice_html(html_content: str) -> Dict[str, Any]:
     """HTML faturadan verileri çıkarır - SED ve EE formatlarını destekler"""
+    # Fix encoding issues - try to decode properly
+    try:
+        # If content is bytes, decode it properly
+        if isinstance(html_content, bytes):
+            html_content = html_content.decode('utf-8')
+        # Fix common encoding issues
+        html_content = html_content.encode('latin1').decode('utf-8')
+    except (UnicodeDecodeError, UnicodeEncodeError):
+        # If encoding fix fails, use original content
+        pass
+    
     soup = BeautifulSoup(html_content, 'html.parser')
     
     # Extract invoice data
