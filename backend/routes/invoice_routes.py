@@ -119,9 +119,11 @@ def parse_invoice_html(html_content: str) -> Dict[str, Any]:
             if len(cells) < 6:
                 continue
             
-            # Header kontrolü
+            # Header kontrolü - daha kapsamlı
             row_text = row.get_text().lower()
-            if 'ürün' in row_text and 'hizmet' in row_text and 'kod' in row_text:
+            if ('ürün' in row_text and ('hizmet' in row_text or 'kod' in row_text)) or \
+               ('miktar' in row_text and ('birim' in row_text or 'fiyat' in row_text)) or \
+               ('product' in row_text and 'code' in row_text):
                 continue
             
             # Ürün bilgilerini çıkar
