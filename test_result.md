@@ -302,8 +302,7 @@ metadata:
 test_plan:
   current_focus:
     - "Invoice Management APIs"
-    - "Consumption Tracking APIs"
-    - "Authentication System Refactor"
+    - "Invoice HTML Parsing - SED Format"
   stuck_tasks:
     - "Sales Agent API'leri"
   test_all: false
