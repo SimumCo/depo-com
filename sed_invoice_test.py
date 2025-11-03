@@ -98,6 +98,9 @@ def test_sed_invoice():
         
         all_passed = True
         
+        # Get products first
+        products = invoice.get("products", [])
+        
         # Validate each field
         for field, expected in expected_values.items():
             actual = invoice.get(field)
@@ -114,7 +117,6 @@ def test_sed_invoice():
         print()
         
         # Validate product count
-        products = invoice.get("products", [])
         if len(products) == 9:
             print(f"✅ Product count: {len(products)}")
         else:
