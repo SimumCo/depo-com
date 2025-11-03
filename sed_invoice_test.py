@@ -107,6 +107,12 @@ def test_sed_invoice():
                 print(f"❌ {field}: Expected '{expected}', Got '{actual}'")
                 all_passed = False
         
+        # Debug: Print all products found
+        print(f"\n🔍 Debug - All products found ({len(products)}):")
+        for i, product in enumerate(products, 1):
+            print(f"  {i}. {product.get('product_name', 'N/A')} - Qty: {product.get('quantity', 'N/A')}")
+        print()
+        
         # Validate product count
         products = invoice.get("products", [])
         if len(products) == 9:
