@@ -162,9 +162,9 @@ backend:
 
   - task: "Invoice Management APIs"
     implemented: true
-    working: true
+    working: false
     file: "/app/backend/routes/invoice_routes.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: false
     status_history:
@@ -186,6 +186,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "SED fatura parsing bug fix başarılı! Tüm kritik sorunlar çözüldü: 1) Müşteri adı doğru parse ediliyor: 'YÖRÜKOĞLU SÜT VE ÜRÜNLERİ SANAYİ TİCARET ANONİM ŞİRKETİ', 2) Karakter encoding sorunu çözüldü (Türkçe karakterler doğru), 3) Ürün miktarları doğru parse ediliyor (9, 5, 3, 2, 9, 36, 72, 3, 6), 4) Header satırı filtrelendi (9 ürün doğru). Vergi No: 9830366087, Fatura No: SED2025000000078, Tarih: 27 10 2025, Toplam: 47.395,61 - hepsi doğru. Invoice Management API'leri %100 çalışıyor."
+      - working: false
+        agent: "testing"
+        comment: "SED fatura frontend test tamamlandı. BACKEND ÇALIŞIYOR ama FRONTEND DISPLAY SORUNU: 1) ✅ Backend API başarılı (invoice_id: 73e57750-49f1-41be-965c-130103c73bca), 2) ✅ Tüm 9 ürün doğru parse edildi (SÜZME YOĞURT, YARIM YAĞLI YOĞURT, KÖY PEYNİRİ, vb.), 3) ✅ Ürün miktarları doğru (9,5,3,2,9,36,72,3,6), 4) ✅ Türkçe karakterler doğru, 5) ✅ Vergi No: 9830366087, Fatura No: SED2025000000078, Tarih: 27/10/2025, Toplam: 47.395,61TL doğru. ❌ SORUN: Frontend InvoiceUpload.js'de müşteri adı yanlış gösteriliyor ('SAYIN' yerine 'YÖRÜKOĞLU SÜT...' olmalı). Frontend querySelector ilk bold span alıyor, ikincisini almalı (backend doğru yapıyor)."
 
   - task: "Consumption Tracking APIs"
     implemented: true
