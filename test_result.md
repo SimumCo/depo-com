@@ -305,6 +305,18 @@ frontend:
         agent: "main"
         comment: "Plasiyer siparişleri görebilir. Status filtresi ve istatistikler eklendi"
 
+  - task: "InvoiceUpload Component - SED Fatura Parsing"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/components/InvoiceUpload.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "SED fatura frontend parsing testi tamamlandı. SORUN: Müşteri adı yanlış parse ediliyor. Frontend InvoiceUpload.js line 68'de querySelector ilk bold span'i alıyor ('SAYIN'), ama ikinci bold span'i almalı ('YÖRÜKOĞLU SÜT VE ÜRÜNLERİ SANAYİ TİCARET ANONİM ŞİRKETİ'). Backend doğru çalışıyor (bold_spans[1] kullanıyor), frontend querySelectorAll kullanıp [1] index almalı. Diğer tüm parsing doğru: 9 ürün, miktarlar, Türkçe karakterler, vergi no, fatura no, tarih, toplam tutar."
+
 metadata:
   created_by: "main_agent"
   version: "2.0"
