@@ -104,24 +104,29 @@ const InvoiceUpload = ({ onSuccess }) => {
         }
       }
       
-      // Tarih bul (çeşitli formatları dene)
+      // Tarih bul (despatchTable'dan veya text'ten)
       let invoiceDate = 'Tarih Bulunamadı';
-      
-      // Format 1: DD/MM/YYYY veya DD.MM.YYYY formatı
-      const dateMatch1 = textContent.match(/(?:Fatura\s*Tarihi|Tarih)[:\s]*(\d{1,2})[\/\.\-](\d{1,2})[\/\.\-](\d{4})/i);
-      if (dateMatch1) {
-        invoiceDate = `${dateMatch1[1]}/${dateMatch1[2]}/${dateMatch1[3]}`;
-      } else {
-        // Format 2: DDMMYYYY (boşluksuz 8 haneli)
-        const dateMatch2 = textContent.match(/(?:Fatura\s*Tarihi|FaturaTarihi)[:\s]*(\d{2})(\d{2})(\d{4})/i);
-        if (dateMatch2) {
-          invoiceDate = `${dateMatch2[1]}/${dateMatch2[2]}/${dateMatch2[3]}`;
-        } else {
-          // Format 3: DD MM YYYY formatı (boşluklarla)
-          const dateMatch3 = textContent.match(/(\d{1,2})\s+(\d{1,2})\s+(\d{4})/);
-          if (dateMatch3) {
-            invoiceDate = `${dateMatch3[1]}/${dateMatch3[2]}/${dateMatch3[3]}`;
+      const despatchTable = doc.querySelector('#despatchTable');
+      if (despatchTable) {
+        const dateCells = Array.from(despatchTable.querySelectorAll('td'));
+        const dateLabel = dateCells.find(td => td.textContent.includes('Fatura Tarihi'));
+        if (dateLabel) {
+          const dateIndex = dateCells.indexOf(dateLabel);
+          if (dateIndex >= 0 && dateIndex + 1 < dateCells.length) {
+            const dateText = dateCells[dateIndex + 1].textContent.trim();
+            const dateMatch = dateText.match(/(\d{1,2})[-/\.](\d{1,2})[-/\.](\d{4})/);
+            if (dateMatch) {
+              invoiceDate = `${dateMatch[1]}/${dateMatch[2]}/${dateMatch[3]}`;
+            }
           }
+        }
+      }
+      
+      // Alternatif tarih arama
+      if (invoiceDate === 'Tarih Bulunamadı') {
+        const dateMatch1 = textContent.match(/(?:Fatura\s*Tarihi|Tarih)[:\s]*(\d{1,2})[\/\.\-](\d{1,2})[\/\.\-](\d{4})/i);
+        if (dateMatch1) {
+          invoiceDate = `${dateMatch1[1]}/${dateMatch1[2]}/${dateMatch1[3]}`;
         }
       }
       
