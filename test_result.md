@@ -114,7 +114,7 @@ user_problem_statement: |
 backend:
   - task: "Sales Agent API'leri"
     implemented: true
-    working: false
+    working: true
     file: "/app/backend/server_old.py"
     stuck_count: 1
     priority: "medium"
@@ -129,6 +129,9 @@ backend:
       - working: false
         agent: "testing"
         comment: "Legacy Sales Agent API'leri 404 hatası veriyor. server_old.py routes'ları server.py'ye dahil edilmiş ama routing çalışmıyor. GET /api/salesagent/my-customers, /api/salesagent/stats, POST /api/salesagent/warehouse-order endpoint'leri erişilemiyor. Kubernetes ingress veya FastAPI router konfigürasyonu sorunu olabilir."
+      - working: true
+        agent: "testing"
+        comment: "ROUTER PREFIX SORUNU ÇÖZÜLDİ! server_old.py'deki api_router prefix'i kaldırıldı (çifte /api/api/ sorunu). Tüm Sales Agent API'leri artık çalışıyor: POST /api/salesagent/warehouse-order (WHS-20251103-37090dcf oluşturuldu), GET /api/salesagent/my-customers (6 müşteri), GET /api/salesagent/stats (9 toplam sipariş). Test başarı oranı: %100 (25/25 test geçti)."
 
   - task: "Sales Route API'leri"
     implemented: true
