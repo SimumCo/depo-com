@@ -11,7 +11,7 @@ from datetime import datetime
 import uuid
 
 # Configuration
-BASE_URL = "https://fatura-katalog.preview.emergentagent.com/api"
+BASE_URL = "https://fatura-analyzer.preview.emergentagent.com/api"
 
 # Test Users
 TEST_USERS = {
