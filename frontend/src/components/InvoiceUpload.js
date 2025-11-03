@@ -83,10 +83,26 @@ const InvoiceUpload = ({ onSuccess }) => {
       const invoiceNumMatch = textContent.match(/(?:Fatura\s*No\s*[:\-]?\s*)?([A-Z]{2,3}\d{10,})/i);
       const invoiceNumber = invoiceNumMatch ? invoiceNumMatch[1] : 'Fatura No Bulunamadı';
       
-      // Vergi numarasını bul (10-11 haneli sayı, VKN ile başlayabilir)
-      const taxIdMatch = textContent.match(/(?:VKN|Vergi\s*No)[:\s]*(\d{10,11})/i) || 
-                        textContent.match(/\b(\d{10,11})\b/);
-      const taxId = taxIdMatch ? taxIdMatch[1] : 'Vergi No Bulunamadı';
+      // Vergi numarasını bul (VKN pattern)
+      let taxId = 'Vergi No Bulunamadı';
+      if (customerIdTable) {
+        const vknCell = Array.from(customerIdTable.querySelectorAll('td'))
+          .find(td => td.textContent.includes('VKN:'));
+        if (vknCell) {
+          const vknMatch = vknCell.textContent.match(/VKN:?\s*(\d{10,11})/);
+          if (vknMatch) {
+            taxId = vknMatch[1];
+          }
+        }
+      }
+      
+      // Alternatif VKN arama
+      if (taxId === 'Vergi No Bulunamadı') {
+        const taxIdMatch = textContent.match(/VKN[:\s]*(\d{10,11})/i);
+        if (taxIdMatch) {
+          taxId = taxIdMatch[1];
+        }
+      }
       
       // Tarih bul (çeşitli formatları dene)
       let invoiceDate = 'Tarih Bulunamadı';
