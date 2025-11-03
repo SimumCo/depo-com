@@ -45,10 +45,10 @@ def parse_invoice_html(html_content: str) -> Dict[str, Any]:
     # 2. MÜŞTERİ ADI - customerIDTable'dan
     customer_id_table = soup.find('table', {'id': 'customerIDTable'})
     if customer_id_table:
-        # İlk bold span genelde müşteri adıdır
-        customer_name_span = customer_id_table.find('span', {'style': lambda x: x and 'font-weight:bold' in x})
-        if customer_name_span:
-            invoice_data["customer_name"] = customer_name_span.get_text(strip=True)
+        # Tüm bold span'leri al, ikincisi müşteri adıdır (birincisi "SAYIN")
+        bold_spans = customer_id_table.find_all('span', {'style': lambda x: x and 'font-weight:bold' in x})
+        if len(bold_spans) >= 2:
+            invoice_data["customer_name"] = bold_spans[1].get_text(strip=True)
     
     # Alternatif: Text içinde "ALICI" veya "MÜŞTERİ" anahtar kelimelerinden sonra gelen firma adı
     if not invoice_data["customer_name"]:
