@@ -61,9 +61,26 @@ const InvoiceUpload = ({ onSuccess }) => {
       const doc = parser.parseFromString(htmlContent, 'text/html');
       const textContent = doc.body.textContent || '';
       
-      // Fatura numarasını bul (EE ile başlayan veya diğer formatlar)
-      const invoiceNumMatch = textContent.match(/(?:Fatura\s*No\s*[:\-]?\s*)?([A-Z]{2,3}\d{10,})/i) || 
-                              textContent.match(/(?:ETTN\s*[:\-]?\s*)?([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+      // Müşteri adını bul
+      let customerName = 'Müşteri Adı Bulunamadı';
+      const customerIdTable = doc.querySelector('#customerIDTable');
+      if (customerIdTable) {
+        const boldSpan = customerIdTable.querySelector('span[style*="font-weight:bold"]');
+        if (boldSpan) {
+          customerName = boldSpan.textContent.trim();
+        }
+      }
+      
+      // Alternatif: ALICI kelimesinden sonra gelen firma adı
+      if (customerName === 'Müşteri Adı Bulunamadı') {
+        const customerMatch = textContent.match(/ALICI[:\s]*([A-ZÇĞİÖŞÜ\s]+(?:ANONİM ŞİRKETİ|LİMİTED ŞİRKETİ|TİCARET|SANAYİ))/i);
+        if (customerMatch) {
+          customerName = customerMatch[1].trim();
+        }
+      }
+      
+      // Fatura numarasını bul (SED veya EE formatı)
+      const invoiceNumMatch = textContent.match(/(?:Fatura\s*No\s*[:\-]?\s*)?([A-Z]{2,3}\d{10,})/i);
       const invoiceNumber = invoiceNumMatch ? invoiceNumMatch[1] : 'Fatura No Bulunamadı';
       
       // Vergi numarasını bul (10-11 haneli sayı, VKN ile başlayabilir)
