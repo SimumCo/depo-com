@@ -184,6 +184,7 @@ const InvoiceUpload = ({ onSuccess }) => {
         invoice_id: invoiceData.invoice_id || 'N/A',
         invoice_number: invoiceNumber,
         invoice_date: invoiceDate,
+        customer_name: customerName,
         customer_tax_id: taxId,
         products: products,
         grand_total: grandTotal
