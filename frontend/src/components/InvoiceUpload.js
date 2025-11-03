@@ -65,9 +65,10 @@ const InvoiceUpload = ({ onSuccess }) => {
       let customerName = 'Müşteri Adı Bulunamadı';
       const customerIdTable = doc.querySelector('#customerIDTable');
       if (customerIdTable) {
-        const boldSpan = customerIdTable.querySelector('span[style*="font-weight:bold"]');
-        if (boldSpan) {
-          customerName = boldSpan.textContent.trim();
+        const boldSpans = customerIdTable.querySelectorAll('span[style*="font-weight:bold"]');
+        if (boldSpans.length >= 2) {
+          // İkinci bold span müşteri adıdır (birincisi "SAYIN")
+          customerName = boldSpans[1].textContent.trim();
         }
       }
       
