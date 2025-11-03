@@ -243,6 +243,7 @@ async def get_my_invoices(
             id=inv["id"],
             invoice_number=inv["invoice_number"],
             invoice_date=inv["invoice_date"],
+            customer_name=inv.get("customer_name"),
             grand_total=inv["grand_total"],
             product_count=len(inv.get("products", [])),
             uploaded_at=inv["uploaded_at"]
@@ -298,6 +299,7 @@ async def get_all_invoices(
             id=inv["id"],
             invoice_number=inv["invoice_number"],
             invoice_date=inv["invoice_date"],
+            customer_name=inv.get("customer_name"),
             grand_total=inv["grand_total"],
             product_count=len(inv.get("products", [])),
             uploaded_at=inv["uploaded_at"]
