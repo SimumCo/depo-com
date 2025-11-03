@@ -17,13 +17,14 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 def parse_invoice_html(html_content: str) -> Dict[str, Any]:
-    """HTML faturadan verileri çıkarır"""
+    """HTML faturadan verileri çıkarır - SED ve EE formatlarını destekler"""
     soup = BeautifulSoup(html_content, 'html.parser')
     
-    # Extract invoice data (bu basit bir örnek, gerçek HTML yapısına göre ayarlanmalı)
+    # Extract invoice data
     invoice_data = {
         "invoice_number": "",
         "invoice_date": "",
+        "customer_name": "",
         "customer_tax_id": "",
         "products": [],
         "subtotal": "0",
@@ -35,28 +36,138 @@ def parse_invoice_html(html_content: str) -> Dict[str, Any]:
     # Parse HTML content
     text_content = soup.get_text()
     
-    # Fatura numarası pattern: EE12025000004134
-    invoice_num_match = re.search(r'EE\d+', text_content)
+    # 1. FATURA NUMARASI - SED veya EE formatı
+    # SED formatı: SED2025000000078
+    invoice_num_match = re.search(r'(?:Fatura\s*No[:\s]*)?([A-Z]{2,3}\d{10,})', text_content, re.IGNORECASE)
     if invoice_num_match:
-        invoice_data["invoice_number"] = invoice_num_match.group()
+        invoice_data["invoice_number"] = invoice_num_match.group(1)
     
-    # Vergi numarası pattern: 10-11 digit number
-    tax_id_match = re.search(r'\b\d{10,11}\b', text_content)
-    if tax_id_match:
-        invoice_data["customer_tax_id"] = tax_id_match.group()
+    # 2. MÜŞTERİ ADI - customerIDTable'dan
+    customer_id_table = soup.find('table', {'id': 'customerIDTable'})
+    if customer_id_table:
+        # İlk bold span genelde müşteri adıdır
+        customer_name_span = customer_id_table.find('span', {'style': lambda x: x and 'font-weight:bold' in x})
+        if customer_name_span:
+            invoice_data["customer_name"] = customer_name_span.get_text(strip=True)
     
-    # Tarih pattern: DD MM YYYY
-    date_match = re.search(r'\b(\d{1,2})\s+(\d{1,2})\s+(\d{4})\b', text_content)
-    if date_match:
-        invoice_data["invoice_date"] = f"{date_match.group(1)} {date_match.group(2)} {date_match.group(3)}"
+    # Alternatif: Text içinde "ALICI" veya "MÜŞTERİ" anahtar kelimelerinden sonra gelen firma adı
+    if not invoice_data["customer_name"]:
+        # Büyük harflerle yazılmış uzun firma adı (genellikle ANONİM ŞİRKETİ ile biter)
+        customer_match = re.search(r'ALICI[:\s]*([A-ZÇĞİÖŞÜ\s]+(?:ANONİM ŞİRKETİ|LİMİTED ŞİRKETİ|TİCARET|SANAYİ))', text_content, re.IGNORECASE)
+        if customer_match:
+            invoice_data["customer_name"] = customer_match.group(1).strip()
     
-    # Ürünler için tablo parse et (basitleştirilmiş)
-    # Gerçek implementasyonda HTML yapısına göre detaylı parse yapılmalı
+    # 3. VERGİ NUMARASI - customerIDTable'dan veya VKN: pattern
+    if customer_id_table:
+        vkn_cell = customer_id_table.find('td', string=re.compile(r'VKN:?\s*\d{10}'))
+        if vkn_cell:
+            vkn_match = re.search(r'VKN:?\s*(\d{10,11})', vkn_cell.get_text())
+            if vkn_match:
+                invoice_data["customer_tax_id"] = vkn_match.group(1)
     
-    # Toplam tutarlar
-    amounts = re.findall(r'([\d\.]+,\d{2})\s*TL', text_content)
-    if amounts:
-        invoice_data["grand_total"] = amounts[-1] if amounts else "0"
+    # Alternatif: Text'ten VKN pattern
+    if not invoice_data["customer_tax_id"]:
+        tax_id_match = re.search(r'VKN[:\s]*(\d{10,11})', text_content)
+        if tax_id_match:
+            invoice_data["customer_tax_id"] = tax_id_match.group(1)
+        else:
+            # Son çare: 10-11 haneli sayı bul (ama dikkatli ol, fiyatlarla karışabilir)
+            tax_matches = re.findall(r'\b(\d{10,11})\b', text_content)
+            if tax_matches:
+                invoice_data["customer_tax_id"] = tax_matches[0]
+    
+    # 4. FATURA TARİHİ - despatchTable'dan
+    despatch_table = soup.find('table', {'id': 'despatchTable'})
+    if despatch_table:
+        date_cells = despatch_table.find_all('td')
+        for i, cell in enumerate(date_cells):
+            if 'Fatura Tarihi' in cell.get_text():
+                if i + 1 < len(date_cells):
+                    date_text = date_cells[i + 1].get_text(strip=True)
+                    # Format: 27-10-2025 -> 27 10 2025
+                    date_match = re.search(r'(\d{1,2})[-/\.](\d{1,2})[-/\.](\d{4})', date_text)
+                    if date_match:
+                        invoice_data["invoice_date"] = f"{date_match.group(1)} {date_match.group(2)} {date_match.group(3)}"
+                    break
+    
+    # Alternatif tarih pattern
+    if not invoice_data["invoice_date"]:
+        date_match = re.search(r'(?:Fatura\s*Tarihi[:\s]*)?(\d{1,2})[-/\.\s](\d{1,2})[-/\.\s](\d{4})', text_content)
+        if date_match:
+            invoice_data["invoice_date"] = f"{date_match.group(1)} {date_match.group(2)} {date_match.group(3)}"
+    
+    # 5. ÜRÜN BİLGİLERİ - lineTable'dan
+    line_table = soup.find('table', {'id': 'lineTable'})
+    if line_table:
+        rows = line_table.find_all('tr')
+        
+        for row in rows:
+            cells = row.find_all('td')
+            
+            # Header satırı veya az hücreli satırları atla
+            if len(cells) < 6:
+                continue
+            
+            # Header kontrolü
+            row_text = row.get_text().lower()
+            if 'ürün' in row_text and 'hizmet' in row_text and 'kod' in row_text:
+                continue
+            
+            # Ürün bilgilerini çıkar
+            # Tipik yapı: Sıra No | Ürün Kodu | Ürün Adı | Miktar | Birim | Birim Fiyat | ... | Tutar | KDV | ...
+            try:
+                product_code = cells[1].get_text(strip=True) if len(cells) > 1 else ""
+                product_name = cells[2].get_text(strip=True) if len(cells) > 2 else ""
+                quantity_text = cells[3].get_text(strip=True) if len(cells) > 3 else "0"
+                unit_price_text = cells[5].get_text(strip=True) if len(cells) > 5 else "0"
+                total_text = cells[8].get_text(strip=True) if len(cells) > 8 else "0"
+                
+                # Temizle
+                quantity = quantity_text.replace(',', '.')
+                
+                # Ürün adı ve kodu boş değilse ekle
+                if product_name and len(product_name) > 2:
+                    invoice_data["products"].append({
+                        "product_code": product_code,
+                        "product_name": product_name,
+                        "quantity": float(quantity) if quantity.replace('.', '').isdigit() else 0,
+                        "unit_price": unit_price_text,
+                        "total": total_text
+                    })
+            except (IndexError, ValueError) as e:
+                # Bu satırı atla
+                continue
+    
+    # 6. TOPLAM TUTARLAR - budgetContainerTable'dan
+    budget_table = soup.find('table', {'id': 'budgetContainerTable'})
+    if budget_table:
+        budget_text = budget_table.get_text()
+        
+        # Mal Hizmet Toplam Tutarı (Subtotal)
+        subtotal_match = re.search(r'Mal\s+Hizmet\s+Toplam\s+Tutarı[:\s]*([\d\.,]+)\s*TL', budget_text, re.IGNORECASE)
+        if subtotal_match:
+            invoice_data["subtotal"] = subtotal_match.group(1)
+        
+        # Toplam İskonto
+        discount_match = re.search(r'Toplam\s+İskonto[:\s]*([\d\.,]+)\s*TL', budget_text, re.IGNORECASE)
+        if discount_match:
+            invoice_data["total_discount"] = discount_match.group(1)
+        
+        # KDV Tutarı
+        tax_match = re.search(r'(?:KDV|Vergi)[:\s]*([\d\.,]+)\s*TL', budget_text, re.IGNORECASE)
+        if tax_match:
+            invoice_data["total_tax"] = tax_match.group(1)
+        
+        # Ödenecek Tutar (Grand Total)
+        grand_match = re.search(r'Ödenecek\s+Tutar[:\s]*([\d\.,]+)\s*TL', budget_text, re.IGNORECASE)
+        if grand_match:
+            invoice_data["grand_total"] = grand_match.group(1)
+    
+    # Alternatif: Text'ten son TL değeri
+    if invoice_data["grand_total"] == "0":
+        amounts = re.findall(r'([\d\.]+,\d{2})\s*TL', text_content)
+        if amounts:
+            invoice_data["grand_total"] = amounts[-1]
     
     return invoice_data
 
