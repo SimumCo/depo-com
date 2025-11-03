@@ -754,7 +754,7 @@ class APITester:
             self.login_user(user_type)
         
         print("\n📄 Invoice Management API Tests:")
-        self.test_invoice_upload()
+        self.test_sed_invoice_upload()  # Test SED invoice first
         self.test_get_all_invoices()
         self.test_get_my_invoices()
         self.test_get_invoice_detail()
