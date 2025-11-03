@@ -356,6 +356,136 @@ class APITester:
     
     # ========== NEW INVOICE API TESTS ==========
     
+    def test_sed_invoice_upload(self):
+        """Test SED HTML Invoice Upload and Parsing"""
+        headers = self.get_headers("accounting")
+        if not headers:
+            self.log_test("SED Invoice Upload", False, "No accounting token")
+            return
+        
+        # Fetch SED HTML content from URL
+        try:
+            import requests as req_lib
+            html_response = req_lib.get("https://customer-assets.emergentagent.com/job_c21b56fa-eb45-48e4-8eca-74c5ff09f9b2/artifacts/nf1rxoc2_SED2025000000078.html", timeout=30)
+            if html_response.status_code != 200:
+                self.log_test("SED Invoice Upload", False, f"Failed to fetch HTML: {html_response.status_code}")
+                return
+            
+            sed_html_content = html_response.text
+            
+            invoice_data = {
+                "html_content": sed_html_content
+            }
+            
+            response = requests.post(
+                f"{BASE_URL}/invoices/upload",
+                json=invoice_data,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                invoice_id = result.get("invoice_id")
+                if invoice_id:
+                    self.log_test("SED Invoice Upload", True, f"SED Invoice uploaded: {invoice_id}")
+                    # Store invoice ID for detailed validation
+                    self.uploaded_invoice_id = invoice_id
+                    
+                    # Now validate the parsed data
+                    self.validate_sed_invoice_parsing(invoice_id, headers)
+                else:
+                    self.log_test("SED Invoice Upload", False, "No invoice_id in response")
+            else:
+                self.log_test("SED Invoice Upload", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("SED Invoice Upload", False, f"Exception: {str(e)}")
+    
+    def validate_sed_invoice_parsing(self, invoice_id, headers):
+        """Validate SED invoice parsing results"""
+        try:
+            # Get invoice details
+            response = requests.get(
+                f"{BASE_URL}/invoices/{invoice_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code != 200:
+                self.log_test("SED Invoice Parsing Validation", False, f"Failed to get invoice details: {response.status_code}")
+                return
+            
+            invoice = response.json()
+            
+            # Expected values for SED2025000000078
+            expected_customer_name = "YÖRÜKOĞLU SÜT VE ÜRÜNLERİ SANAYİ TİCARET ANONİM ŞİRKETİ"
+            expected_tax_id = "9830366087"
+            expected_invoice_number = "SED2025000000078"
+            expected_invoice_date = "27 10 2025"
+            expected_product_count = 9
+            expected_grand_total = "47.395,61"
+            
+            # Validate customer name
+            if invoice.get("customer_name") == expected_customer_name:
+                self.log_test("SED Customer Name Parsing", True, f"Correct: {invoice.get('customer_name')}")
+            else:
+                self.log_test("SED Customer Name Parsing", False, f"Expected: {expected_customer_name}, Got: {invoice.get('customer_name')}")
+            
+            # Validate tax ID
+            if invoice.get("customer_tax_id") == expected_tax_id:
+                self.log_test("SED Tax ID Parsing", True, f"Correct: {invoice.get('customer_tax_id')}")
+            else:
+                self.log_test("SED Tax ID Parsing", False, f"Expected: {expected_tax_id}, Got: {invoice.get('customer_tax_id')}")
+            
+            # Validate invoice number
+            if invoice.get("invoice_number") == expected_invoice_number:
+                self.log_test("SED Invoice Number Parsing", True, f"Correct: {invoice.get('invoice_number')}")
+            else:
+                self.log_test("SED Invoice Number Parsing", False, f"Expected: {expected_invoice_number}, Got: {invoice.get('invoice_number')}")
+            
+            # Validate invoice date
+            if invoice.get("invoice_date") == expected_invoice_date:
+                self.log_test("SED Invoice Date Parsing", True, f"Correct: {invoice.get('invoice_date')}")
+            else:
+                self.log_test("SED Invoice Date Parsing", False, f"Expected: {expected_invoice_date}, Got: {invoice.get('invoice_date')}")
+            
+            # Validate product count
+            products = invoice.get("products", [])
+            if len(products) == expected_product_count:
+                self.log_test("SED Product Count Parsing", True, f"Correct: {len(products)} products")
+            else:
+                self.log_test("SED Product Count Parsing", False, f"Expected: {expected_product_count}, Got: {len(products)}")
+            
+            # Validate specific products
+            expected_products = [
+                {"name": "SÜZME YOĞURT 10 KG.", "quantity": 9},
+                {"name": "YARIM YAĞLI YOĞURT 10 KG.", "quantity": 5},
+                {"name": "KÖY PEYNİRİ 4 KG.", "quantity": 3}
+            ]
+            
+            for expected_product in expected_products:
+                found = False
+                for product in products:
+                    if (expected_product["name"] in product.get("product_name", "") and 
+                        product.get("quantity") == expected_product["quantity"]):
+                        found = True
+                        break
+                
+                if found:
+                    self.log_test(f"SED Product '{expected_product['name']}' Parsing", True, f"Found with quantity {expected_product['quantity']}")
+                else:
+                    self.log_test(f"SED Product '{expected_product['name']}' Parsing", False, f"Not found or incorrect quantity")
+            
+            # Validate grand total
+            if invoice.get("grand_total") == expected_grand_total:
+                self.log_test("SED Grand Total Parsing", True, f"Correct: {invoice.get('grand_total')}")
+            else:
+                self.log_test("SED Grand Total Parsing", False, f"Expected: {expected_grand_total}, Got: {invoice.get('grand_total')}")
+                
+        except Exception as e:
+            self.log_test("SED Invoice Parsing Validation", False, f"Exception: {str(e)}")
+
     def test_invoice_upload(self):
         """Test POST /api/invoices/upload"""
         headers = self.get_headers("accounting")
