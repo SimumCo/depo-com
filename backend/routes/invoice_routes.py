@@ -122,15 +122,17 @@ def parse_invoice_html(html_content: str) -> Dict[str, Any]:
                 unit_price_text = cells[5].get_text(strip=True) if len(cells) > 5 else "0"
                 total_text = cells[8].get_text(strip=True) if len(cells) > 8 else "0"
                 
-                # Temizle
-                quantity = quantity_text.replace(',', '.')
+                # Miktar değerini temizle - sadece rakamları al
+                import re as regex
+                quantity_match = regex.search(r'(\d+)', quantity_text)
+                quantity = float(quantity_match.group(1)) if quantity_match else 0.0
                 
                 # Ürün adı ve kodu boş değilse ekle
                 if product_name and len(product_name) > 2:
                     invoice_data["products"].append({
                         "product_code": product_code,
                         "product_name": product_name,
-                        "quantity": float(quantity) if quantity.replace('.', '').isdigit() else 0,
+                        "quantity": quantity,
                         "unit_price": unit_price_text,
                         "total": total_text
                     })
