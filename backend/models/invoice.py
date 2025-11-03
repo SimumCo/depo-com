@@ -17,6 +17,7 @@ class Invoice(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     invoice_number: str
     invoice_date: str  # Format: "DD MM YYYY"
+    customer_name: Optional[str] = None  # Müşteri adı
     customer_tax_id: str
     customer_id: Optional[str] = None  # Link to user
     html_content: str  # Full HTML content
