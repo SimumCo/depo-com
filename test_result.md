@@ -310,8 +310,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Invoice Management APIs"
-    - "Invoice HTML Parsing - SED Format"
+    - "Sales Agent API'leri"
   stuck_tasks:
     - "Sales Agent API'leri"
   test_all: false
