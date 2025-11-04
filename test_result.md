@@ -359,6 +359,44 @@ test_plan:
 agent_communication:
   - agent: "testing"
     message: |
+      🎯 MANUEL FATURA GİRİŞ SİSTEMİ TEST TAMAMLANDI - %100 BAŞARILI!
+      
+      **Review Request Kriterleri Karşılandı:**
+      ✅ **1. Muhasebe Girişi:** POST /api/auth/login (muhasebe/muhasebe123) başarılı
+      ✅ **2. Manuel Fatura Oluşturma:** POST /api/invoices/manual-entry başarılı
+      ✅ **3. Response Doğrulama:** Tüm beklenen alanlar mevcut
+         - message: "Manuel fatura başarıyla oluşturuldu" ✓
+         - invoice_id: var ✓
+         - customer_created: true ✓
+         - customer_username: "test_gida_sanayi_ve_ticaret_ltd_sti_104" ✓
+         - customer_password: "musteri104" ✓
+         - products_created: ["TEST SÜZME YOĞURT 5 KG", "TEST BEYAZ PEYNİR 1 KG"] ✓
+      ✅ **4. Müşteri Kontrolü:** Yeni müşteri MongoDB'de oluşturuldu ve giriş yapabildi
+      ✅ **5. Ürün Kontrolü:** 2 yeni ürün (TEST001, TEST002) kategorileri ile oluşturuldu
+      ✅ **6. Fatura Kontrolü:** GET /api/invoices/{invoice_id} doğru veri döndürüyor
+      ✅ **7. İkinci Fatura Testi:** Aynı vergi no ile customer_created: false döndü
+      
+      **Başarı Kriterleri:**
+      ✅ API 200 döndü
+      ✅ Yeni müşteri otomatik oluşturuldu (username + password)
+      ✅ 2 yeni ürün otomatik oluşturuldu
+      ✅ Fatura başarıyla kaydedildi
+      ✅ İkinci faturada mevcut müşteri kullanıldı
+      
+      **Düzeltilen Kritik Bug:**
+      🔧 Password hashing sorunu çözüldü: Manuel oluşturulan müşteriler artık password_hash field'ı ile kaydediliyor ve giriş yapabiliyor
+      
+      **Test Kapsamı:** 30/30 test başarılı (%100 başarı oranı)
+      - Manuel fatura giriş API'leri
+      - Müşteri otomatik oluşturma ve giriş
+      - Ürün otomatik oluşturma
+      - Database verification
+      - Legacy invoice ve consumption API'leri
+      - Sales agent API'leri
+      
+      Manuel Fatura Giriş Sistemi tamamen çalışır durumda!
+  - agent: "testing"
+    message: |
       🎯 KAPSAMLI BACKEND TEST TAMAMLANDI - %100 BAŞARILI!
       
       **Test Kapsamı (Review Request'e Göre):**
