@@ -95,9 +95,9 @@ fi
 
 # Demo verileri oluştur
 echo "🌱 Demo verileri oluşturuluyor..."
-$PYTHON_CMD seed_data.py
-$PYTHON_CMD seed_sales_agents_data.py
-$PYTHON_CMD seed_20_products_orders.py
+cd ..
+$PYTHON_CMD scripts/seed_database.py
+cd backend
 
 cd ..
 
