@@ -797,8 +797,9 @@ class APITester:
             return
         
         try:
-            # Use non-existing tax ID from review request
-            test_tax_id = "9999999999"
+            # Use a truly non-existing tax ID
+            import time
+            test_tax_id = f"8888888{int(time.time()) % 1000:03d}"
             
             response = requests.get(
                 f"{BASE_URL}/customers/lookup/{test_tax_id}",
