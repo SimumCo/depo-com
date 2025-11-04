@@ -266,6 +266,7 @@ const ManualInvoiceEntry = ({ onSuccess }) => {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Vergi Numarası *
+                {lookupLoading && <span className="ml-2 text-blue-500 text-xs">Müşteri aranıyor...</span>}
               </label>
               <input
                 type="text"
@@ -276,6 +277,7 @@ const ManualInvoiceEntry = ({ onSuccess }) => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="9830366087"
               />
+              <p className="text-xs text-gray-500 mt-1">Vergi numarası girildiğinde müşteri bilgileri otomatik getirilir</p>
             </div>
             
             <div>
