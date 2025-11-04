@@ -136,7 +136,8 @@ echo "REACT_APP_BACKEND_URL=http://localhost:8001" > .env
 ### Backend (Terminal 1):
 ```bash
 cd backend
-source venv/bin/activate
+source venv/bin/activate  # macOS/Linux
+# venv\Scripts\activate   # Windows
 uvicorn server:app --host 0.0.0.0 --port 8001 --reload
 ```
 - 🌐 Backend: http://localhost:8001
@@ -147,6 +148,71 @@ uvicorn server:app --host 0.0.0.0 --port 8001 --reload
 cd frontend
 yarn start
 ```
+- 🌐 Frontend: http://localhost:3000
+
+---
+
+## ❗ Yaygın Sorunlar ve Çözümler
+
+### 🔴 "ModuleNotFoundError: No module named 'motor'"
+
+**Çözüm:**
+```bash
+cd backend
+pip install -r requirements.txt
+```
+
+### 🔴 "Could not open requirements file"
+
+**Çözüm:** Backend klasöründe olduğunuzdan emin olun:
+```bash
+cd backend
+pip install -r requirements.txt
+```
+
+### 🔴 MongoDB bağlantı hatası
+
+**Çözüm:**
+1. MongoDB Compass'i açın ve "Connect" butonuna tıklayın
+2. Bağlantı URL'si: `mongodb://localhost:27017`
+3. Backend'i yeniden başlatın
+
+### 🔴 "Faturalar yüklenemedi" (Frontend 404 hatası)
+
+**Çözüm:** Frontend `.env` dosyasını kontrol edin:
+```bash
+cd frontend
+# Dosya içeriği:
+REACT_APP_BACKEND_URL=http://localhost:8001
+```
+
+**Frontend'i yeniden başlatın:**
+```bash
+# Ctrl+C ile durdurup
+yarn start
+```
+
+### 🔴 Port 8001 zaten kullanımda
+
+**Windows:**
+```cmd
+netstat -ano | findstr :8001
+taskkill /PID <PID_NUMARASI> /F
+```
+
+**Linux/macOS:**
+```bash
+lsof -ti:8001 | xargs kill -9
+```
+
+### 🔴 "yarn: command not found"
+
+**Çözüm:**
+```bash
+npm install -g yarn
+```
+
+---
 - 🌐 Frontend: http://localhost:3000
 
 ---
