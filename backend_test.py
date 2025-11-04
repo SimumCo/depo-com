@@ -851,11 +851,16 @@ class APITester:
             return
         
         try:
+            # Use same customer tax ID from the first test
+            if not hasattr(self, 'test_tax_id'):
+                self.log_test("Manual Invoice Entry - Existing Customer", False, "No test tax ID from first test")
+                return
+                
             # Use same customer tax ID but different products
             invoice_data = {
                 "customer": {
                     "customer_name": "TEST GIDA SANAYİ VE TİCARET LTD ŞTİ",
-                    "customer_tax_id": "1234567890",  # Same tax ID
+                    "customer_tax_id": self.test_tax_id,  # Same tax ID from first test
                     "address": "Test Mahallesi, Test Sokak No:1, Ankara",
                     "email": "info@testgida.com",
                     "phone": "0312 555 12 34"
