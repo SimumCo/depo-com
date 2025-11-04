@@ -743,8 +743,214 @@ class APITester:
         except Exception as e:
             self.log_test("Get Customer Consumption", False, f"Exception: {str(e)}")
     
+    def test_customer_lookup_existing(self):
+        """Test GET /api/customers/lookup/{tax_id} - Existing Customer"""
+        headers = self.get_headers("accounting")
+        if not headers:
+            self.log_test("Customer Lookup - Existing", False, "No accounting token")
+            return
+        
+        try:
+            # Use the tax ID from previous test (1234567890 from review request)
+            test_tax_id = "1234567890"
+            
+            response = requests.get(
+                f"{BASE_URL}/customers/lookup/{test_tax_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                
+                # Validate response structure
+                expected_fields = ["found", "customer_name", "customer_tax_id", "email", "phone", "address"]
+                missing_fields = [field for field in expected_fields if field not in result]
+                
+                if missing_fields:
+                    self.log_test("Customer Lookup - Existing", False, f"Missing response fields: {missing_fields}")
+                    return
+                
+                # Validate expected values from review request
+                if result.get("found") != True:
+                    self.log_test("Customer Lookup - Existing", False, f"found should be true, got: {result.get('found')}")
+                    return
+                
+                if result.get("customer_tax_id") != test_tax_id:
+                    self.log_test("Customer Lookup - Existing", False, f"Wrong tax ID: expected {test_tax_id}, got {result.get('customer_tax_id')}")
+                    return
+                
+                self.log_test("Customer Lookup - Existing", True, 
+                    f"Found customer: {result.get('customer_name')} (Tax ID: {result.get('customer_tax_id')})")
+                
+            else:
+                self.log_test("Customer Lookup - Existing", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Customer Lookup - Existing", False, f"Exception: {str(e)}")
+    
+    def test_customer_lookup_not_found(self):
+        """Test GET /api/customers/lookup/{tax_id} - Non-existing Customer"""
+        headers = self.get_headers("accounting")
+        if not headers:
+            self.log_test("Customer Lookup - Not Found", False, "No accounting token")
+            return
+        
+        try:
+            # Use non-existing tax ID from review request
+            test_tax_id = "9999999999"
+            
+            response = requests.get(
+                f"{BASE_URL}/customers/lookup/{test_tax_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 404:
+                result = response.json()
+                expected_detail = "Bu vergi numarası ile kayıtlı müşteri bulunamadı"
+                
+                if result.get("detail") == expected_detail:
+                    self.log_test("Customer Lookup - Not Found", True, f"Correct 404 response: {result.get('detail')}")
+                else:
+                    self.log_test("Customer Lookup - Not Found", False, f"Wrong error message: {result.get('detail')}")
+                
+            else:
+                self.log_test("Customer Lookup - Not Found", False, f"Expected 404, got: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Customer Lookup - Not Found", False, f"Exception: {str(e)}")
+
+    def test_manual_invoice_new_categories(self):
+        """Test Manuel Fatura Giriş - Yeni Kategoriler ile Ürünler"""
+        headers = self.get_headers("accounting")
+        if not headers:
+            self.log_test("Manual Invoice - New Categories", False, "No accounting token")
+            return
+        
+        try:
+            # Generate unique tax ID and product codes for this test run
+            import time
+            timestamp = int(time.time()) % 10000
+            unique_tax_id = f"555555{timestamp:04d}"
+            
+            # Test data from review request with new categories
+            invoice_data = {
+                "customer": {
+                    "customer_name": "YENİ TEST MÜŞTERİ LTD",
+                    "customer_tax_id": unique_tax_id,
+                    "address": "Yeni Adres",
+                    "email": "yeni@test.com",
+                    "phone": "0312 999 88 77"
+                },
+                "invoice_number": "TEST2025000002",
+                "invoice_date": "2025-01-16",
+                "products": [
+                    {
+                        "product_code": f"YOG{timestamp:03d}",
+                        "product_name": "KREMALI YOĞURT 1 KG",
+                        "category": "Yoğurt",
+                        "quantity": 50,
+                        "unit": "ADET",
+                        "unit_price": "25.00",
+                        "total": "1250.00"
+                    },
+                    {
+                        "product_code": f"AYR{timestamp:03d}",
+                        "product_name": "AYRAN 200 ML",
+                        "category": "Ayran",
+                        "quantity": 100,
+                        "unit": "ADET",
+                        "unit_price": "5.00",
+                        "total": "500.00"
+                    },
+                    {
+                        "product_code": f"KAS{timestamp:03d}",
+                        "product_name": "TAZE KAŞAR 500 GR",
+                        "category": "Kaşar",
+                        "quantity": 20,
+                        "unit": "ADET",
+                        "unit_price": "150.00",
+                        "total": "3000.00"
+                    },
+                    {
+                        "product_code": f"TER{timestamp:03d}",
+                        "product_name": "TEREYAĞ 250 GR",
+                        "category": "Tereyağı",
+                        "quantity": 30,
+                        "unit": "ADET",
+                        "unit_price": "80.00",
+                        "total": "2400.00"
+                    },
+                    {
+                        "product_code": f"KRE{timestamp:03d}",
+                        "product_name": "ŞEFİN KREMASI 200 ML",
+                        "category": "Krema",
+                        "quantity": 25,
+                        "unit": "ADET",
+                        "unit_price": "35.00",
+                        "total": "875.00"
+                    }
+                ],
+                "subtotal": "8025.00",
+                "total_discount": "0",
+                "total_tax": "80.25",
+                "grand_total": "8105.25"
+            }
+            
+            response = requests.post(
+                f"{BASE_URL}/invoices/manual-entry",
+                json=invoice_data,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                
+                # Validate response structure
+                expected_fields = ["message", "invoice_id", "customer_created", "customer_username", "customer_password", "products_created"]
+                missing_fields = [field for field in expected_fields if field not in result]
+                
+                if missing_fields:
+                    self.log_test("Manual Invoice - New Categories", False, f"Missing response fields: {missing_fields}")
+                    return
+                
+                # Validate response values
+                if result.get("message") != "Manuel fatura başarıyla oluşturuldu":
+                    self.log_test("Manual Invoice - New Categories", False, f"Wrong message: {result.get('message')}")
+                    return
+                
+                if result.get("customer_created") != True:
+                    self.log_test("Manual Invoice - New Categories", False, f"customer_created should be true for new customer, got: {result.get('customer_created')}")
+                    return
+                
+                if not result.get("customer_username") or not result.get("customer_password"):
+                    self.log_test("Manual Invoice - New Categories", False, "Missing customer credentials")
+                    return
+                
+                expected_products = ["KREMALI YOĞURT 1 KG", "AYRAN 200 ML", "TAZE KAŞAR 500 GR", "TEREYAĞ 250 GR", "ŞEFİN KREMASI 200 ML"]
+                if result.get("products_created") != expected_products:
+                    self.log_test("Manual Invoice - New Categories", False, f"Wrong products created: {result.get('products_created')}")
+                    return
+                
+                # Store for later tests
+                self.new_customer_username = result.get("customer_username")
+                self.new_customer_password = result.get("customer_password")
+                self.new_invoice_id = result.get("invoice_id")
+                self.test_tax_id = unique_tax_id  # Store for existing customer test
+                
+                self.log_test("Manual Invoice - New Categories", True, 
+                    f"Invoice: {result.get('invoice_id')}, Customer: {result.get('customer_username')}/{result.get('customer_password')}, Products: {len(result.get('products_created', []))}")
+                
+            else:
+                self.log_test("Manual Invoice - New Categories", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Manual Invoice - New Categories", False, f"Exception: {str(e)}")
+
     def test_manual_invoice_entry_new_customer(self):
-        """Test Manuel Fatura Giriş - Yeni Müşteri + Yeni Ürünler"""
+        """Test Manuel Fatura Giriş - Yeni Müşteri + Yeni Ürünler (Legacy Test)"""
         headers = self.get_headers("accounting")
         if not headers:
             self.log_test("Manual Invoice Entry - New Customer", False, "No accounting token")
@@ -832,10 +1038,10 @@ class APITester:
                     return
                 
                 # Store for later tests
-                self.new_customer_username = result.get("customer_username")
-                self.new_customer_password = result.get("customer_password")
-                self.new_invoice_id = result.get("invoice_id")
-                self.test_tax_id = unique_tax_id  # Store for existing customer test
+                self.legacy_customer_username = result.get("customer_username")
+                self.legacy_customer_password = result.get("customer_password")
+                self.legacy_invoice_id = result.get("invoice_id")
+                self.legacy_tax_id = unique_tax_id  # Store for existing customer test
                 self.test_product_code_1 = product_code_1  # Store for database verification test
                 
                 self.log_test("Manual Invoice Entry - New Customer", True, 
