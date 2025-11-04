@@ -59,6 +59,10 @@ const AccountingDashboard = () => {
             <FileCode className="mr-2 h-4 w-4" />
             Fatura Yükleme (HTML)
           </TabsTrigger>
+          <TabsTrigger value="manual-entry">
+            <Edit className="mr-2 h-4 w-4" />
+            Manuel Fatura Gir
+          </TabsTrigger>
           <TabsTrigger value="my-invoices">
             <FileText className="mr-2 h-4 w-4" />
             Yüklediğim Faturalar
@@ -71,6 +75,10 @@ const AccountingDashboard = () => {
 
         <TabsContent value="invoice-upload">
           <InvoiceUpload onSuccess={loadMyInvoices} />
+        </TabsContent>
+        
+        <TabsContent value="manual-entry">
+          <ManualInvoiceEntry onSuccess={loadMyInvoices} />
         </TabsContent>
 
         <TabsContent value="my-invoices">
