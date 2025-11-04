@@ -466,10 +466,23 @@ lsof -ti:8001 | xargs kill -9
 ### Module not found?
 ```bash
 # Backend
+cd backend
 pip install -r requirements.txt
 
 # Frontend
+cd frontend
 rm -rf node_modules && yarn install
+```
+
+### Frontend "undefined/api" hatası?
+```bash
+# frontend/.env dosyasını kontrol edin
+cd frontend
+cat .env
+# REACT_APP_BACKEND_URL=http://localhost:8001 olmalı
+
+# Frontend'i yeniden başlatın
+yarn start
 ```
 
 ---
