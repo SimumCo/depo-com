@@ -1032,7 +1032,7 @@ class APITester:
                 "invoice_date": "2025-01-17",
                 "products": [
                     {
-                        "product_code": "TEST001",  # Existing product
+                        "product_code": f"TEST{int(time.time()) % 1000:03d}99",  # New unique product
                         "product_name": "TEST SÜZME YOĞURT 5 KG",
                         "category": "Süt Ürünleri",
                         "quantity": 5,
