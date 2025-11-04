@@ -259,9 +259,11 @@ npm install -g yarn
 - ✅ Büyüme oranı ve tahminler
 
 ### 💰 Muhasebe
-- ✅ **HTML E-Fatura Yükleme** - Otomatik parse
-- ✅ Fatura listeleme
-- ✅ Müşteri bazlı raporlar
+- ✅ **HTML E-Fatura Yükleme** - SED/EE formatı otomatik parse
+- ✅ **Manuel Fatura Girişi** - Vergi no ile müşteri otomatik bulma
+- ✅ **Otomatik Müşteri/Ürün Oluşturma** - Yeni kayıtlar otomatik
+- ✅ **Genişletilmiş Ürün Kategorileri** - 12 kategori (Yoğurt, Ayran, Peynir, vb.)
+- ✅ Fatura listeleme ve raporlar
 
 ---
 
