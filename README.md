@@ -12,10 +12,11 @@ Modern B2B dağıtım ve satış yönetim platformu - FastAPI + React + MongoDB
 - ✅ **Excel Toplu Veri Girişi** - Hızlı sipariş oluşturma
 
 ### 🆕 Yeni Özellikler (v2.0)
-- ✅ **Fatura Yönetimi** - HTML e-fatura yükleme ve görüntüleme
+- ✅ **Fatura Yönetimi** - HTML e-fatura yükleme (SED/EE formatı) ve manuel fatura girişi
+- ✅ **Otomatik Müşteri/Ürün Kaydı** - Vergi no ile müşteri bulma, otomatik kayıt
+- ✅ **Genişletilmiş Ürün Kategorileri** - 12 kategori (Yoğurt, Ayran, Peynir, Kaşar, Tereyağı, Krema, vb.)
 - ✅ **Tüketim Analizi** - Otomatik sarfiyat hesaplama ve tahmin
-- ✅ **Kullanıcı Yönetimi** - Satış temsilcisi müşteri/kullanıcı kaydı
-- ✅ **Modüler Backend** - Organize edilmiş API yapısı
+- ✅ **Modüler Backend** - OOP prensipleri (Repository/Service pattern)
 - ✅ **Dropdown Formlar** - Veritabanından dinamik seçim
 
 ---
