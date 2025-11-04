@@ -495,10 +495,14 @@ yarn start
 - `GET /api/auth/me` - Kullanıcı bilgileri
 
 ### Invoices (Faturalar)
-- `POST /api/invoices/upload` - HTML fatura yükle
+- `POST /api/invoices/upload` - HTML fatura yükle (SED/EE format)
+- `POST /api/invoices/manual-entry` - Manuel fatura gir
 - `GET /api/invoices/my-invoices` - Faturalarım
 - `GET /api/invoices/{id}` - Fatura detayı
 - `GET /api/invoices/all/list` - Tüm faturalar (muhasebe)
+
+### Customers (Müşteriler)
+- `GET /api/customers/lookup/{tax_id}` - Vergi no ile müşteri ara
 
 ### Consumption (Tüketim)
 - `POST /api/consumption/calculate` - Tüketim hesapla
