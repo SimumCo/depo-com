@@ -6,8 +6,16 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001'
 
 const PRODUCT_CATEGORIES = [
   'Süt Ürünleri',
+  'Yoğurt',
+  'Ayran',
   'Peynir',
-  'Tereyağı/Krema',
+  'Kaşar',
+  'Tereyağı',
+  'Krema',
+  'Süt',
+  'Kefir',
+  'Labne',
+  'Lor',
   'Diğer'
 ];
 
