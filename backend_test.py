@@ -743,9 +743,316 @@ class APITester:
         except Exception as e:
             self.log_test("Get Customer Consumption", False, f"Exception: {str(e)}")
     
+    def test_manual_invoice_entry_new_customer(self):
+        """Test Manuel Fatura Giriş - Yeni Müşteri + Yeni Ürünler"""
+        headers = self.get_headers("accounting")
+        if not headers:
+            self.log_test("Manual Invoice Entry - New Customer", False, "No accounting token")
+            return
+        
+        try:
+            # Test data from review request
+            invoice_data = {
+                "customer": {
+                    "customer_name": "TEST GIDA SANAYİ VE TİCARET LTD ŞTİ",
+                    "customer_tax_id": "1234567890",
+                    "address": "Test Mahallesi, Test Sokak No:1, Ankara",
+                    "email": "info@testgida.com",
+                    "phone": "0312 555 12 34"
+                },
+                "invoice_number": "TEST2025000001",
+                "invoice_date": "2025-01-15",
+                "products": [
+                    {
+                        "product_code": "TEST001",
+                        "product_name": "TEST SÜZME YOĞURT 5 KG",
+                        "category": "Süt Ürünleri",
+                        "quantity": 10,
+                        "unit": "ADET",
+                        "unit_price": "500.00",
+                        "total": "5000.00"
+                    },
+                    {
+                        "product_code": "TEST002",
+                        "product_name": "TEST BEYAZ PEYNİR 1 KG",
+                        "category": "Peynir",
+                        "quantity": 20,
+                        "unit": "ADET",
+                        "unit_price": "300.00",
+                        "total": "6000.00"
+                    }
+                ],
+                "subtotal": "11000.00",
+                "total_discount": "0",
+                "total_tax": "110.00",
+                "grand_total": "11110.00"
+            }
+            
+            response = requests.post(
+                f"{BASE_URL}/invoices/manual-entry",
+                json=invoice_data,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                
+                # Validate response structure
+                expected_fields = ["message", "invoice_id", "customer_created", "customer_username", "customer_password", "products_created"]
+                missing_fields = [field for field in expected_fields if field not in result]
+                
+                if missing_fields:
+                    self.log_test("Manual Invoice Entry - New Customer", False, f"Missing response fields: {missing_fields}")
+                    return
+                
+                # Validate response values
+                if result.get("message") != "Manuel fatura başarıyla oluşturuldu":
+                    self.log_test("Manual Invoice Entry - New Customer", False, f"Wrong message: {result.get('message')}")
+                    return
+                
+                if not result.get("customer_created"):
+                    self.log_test("Manual Invoice Entry - New Customer", False, "customer_created should be true for new customer")
+                    return
+                
+                if not result.get("customer_username") or not result.get("customer_password"):
+                    self.log_test("Manual Invoice Entry - New Customer", False, "Missing customer credentials")
+                    return
+                
+                expected_products = ["TEST SÜZME YOĞURT 5 KG", "TEST BEYAZ PEYNİR 1 KG"]
+                if result.get("products_created") != expected_products:
+                    self.log_test("Manual Invoice Entry - New Customer", False, f"Wrong products created: {result.get('products_created')}")
+                    return
+                
+                # Store for later tests
+                self.new_customer_username = result.get("customer_username")
+                self.new_customer_password = result.get("customer_password")
+                self.new_invoice_id = result.get("invoice_id")
+                
+                self.log_test("Manual Invoice Entry - New Customer", True, 
+                    f"Invoice: {result.get('invoice_id')}, Customer: {result.get('customer_username')}/{result.get('customer_password')}, Products: {len(result.get('products_created', []))}")
+                
+            else:
+                self.log_test("Manual Invoice Entry - New Customer", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Manual Invoice Entry - New Customer", False, f"Exception: {str(e)}")
+    
+    def test_manual_invoice_entry_existing_customer(self):
+        """Test Manuel Fatura Giriş - Mevcut Müşteri + Yeni Ürün"""
+        headers = self.get_headers("accounting")
+        if not headers:
+            self.log_test("Manual Invoice Entry - Existing Customer", False, "No accounting token")
+            return
+        
+        try:
+            # Use same customer tax ID but different products
+            invoice_data = {
+                "customer": {
+                    "customer_name": "TEST GIDA SANAYİ VE TİCARET LTD ŞTİ",
+                    "customer_tax_id": "1234567890",  # Same tax ID
+                    "address": "Test Mahallesi, Test Sokak No:1, Ankara",
+                    "email": "info@testgida.com",
+                    "phone": "0312 555 12 34"
+                },
+                "invoice_number": "TEST2025000002",
+                "invoice_date": "2025-01-16",
+                "products": [
+                    {
+                        "product_code": "TEST003",
+                        "product_name": "TEST KAŞAR PEYNİRİ 2 KG",
+                        "category": "Peynir",
+                        "quantity": 15,
+                        "unit": "ADET",
+                        "unit_price": "400.00",
+                        "total": "6000.00"
+                    }
+                ],
+                "subtotal": "6000.00",
+                "total_discount": "0",
+                "total_tax": "60.00",
+                "grand_total": "6060.00"
+            }
+            
+            response = requests.post(
+                f"{BASE_URL}/invoices/manual-entry",
+                json=invoice_data,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                
+                # Validate that existing customer is used
+                if result.get("customer_created") != False:
+                    self.log_test("Manual Invoice Entry - Existing Customer", False, "customer_created should be false for existing customer")
+                    return
+                
+                if result.get("customer_username") is not None or result.get("customer_password") is not None:
+                    self.log_test("Manual Invoice Entry - Existing Customer", False, "Should not return credentials for existing customer")
+                    return
+                
+                expected_products = ["TEST KAŞAR PEYNİRİ 2 KG"]
+                if result.get("products_created") != expected_products:
+                    self.log_test("Manual Invoice Entry - Existing Customer", False, f"Wrong products created: {result.get('products_created')}")
+                    return
+                
+                self.log_test("Manual Invoice Entry - Existing Customer", True, 
+                    f"Invoice: {result.get('invoice_id')}, Existing customer used, New products: {len(result.get('products_created', []))}")
+                
+            else:
+                self.log_test("Manual Invoice Entry - Existing Customer", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Manual Invoice Entry - Existing Customer", False, f"Exception: {str(e)}")
+    
+    def test_new_customer_login(self):
+        """Test that newly created customer can login"""
+        if not hasattr(self, 'new_customer_username') or not hasattr(self, 'new_customer_password'):
+            self.log_test("New Customer Login", False, "No new customer credentials available")
+            return
+        
+        try:
+            login_data = {
+                "username": self.new_customer_username,
+                "password": self.new_customer_password
+            }
+            
+            response = requests.post(
+                f"{BASE_URL}/auth/login",
+                json=login_data,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                token = data.get("access_token")
+                if token:
+                    self.log_test("New Customer Login", True, f"Customer {self.new_customer_username} can login successfully")
+                else:
+                    self.log_test("New Customer Login", False, "No token in response")
+            else:
+                self.log_test("New Customer Login", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("New Customer Login", False, f"Exception: {str(e)}")
+    
+    def test_invoice_retrieval(self):
+        """Test retrieving the created invoice"""
+        if not hasattr(self, 'new_invoice_id'):
+            self.log_test("Invoice Retrieval", False, "No invoice ID available")
+            return
+        
+        headers = self.get_headers("accounting")
+        if not headers:
+            self.log_test("Invoice Retrieval", False, "No accounting token")
+            return
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/invoices/{self.new_invoice_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                invoice = response.json()
+                
+                # Validate invoice data
+                if invoice.get("customer_name") != "TEST GIDA SANAYİ VE TİCARET LTD ŞTİ":
+                    self.log_test("Invoice Retrieval", False, f"Wrong customer name: {invoice.get('customer_name')}")
+                    return
+                
+                if invoice.get("customer_tax_id") != "1234567890":
+                    self.log_test("Invoice Retrieval", False, f"Wrong tax ID: {invoice.get('customer_tax_id')}")
+                    return
+                
+                products = invoice.get("products", [])
+                if len(products) != 2:
+                    self.log_test("Invoice Retrieval", False, f"Wrong product count: {len(products)}")
+                    return
+                
+                # Check specific products
+                product_names = [p.get("product_name") for p in products]
+                expected_names = ["TEST SÜZME YOĞURT 5 KG", "TEST BEYAZ PEYNİR 1 KG"]
+                
+                for expected_name in expected_names:
+                    if expected_name not in product_names:
+                        self.log_test("Invoice Retrieval", False, f"Missing product: {expected_name}")
+                        return
+                
+                self.log_test("Invoice Retrieval", True, f"Invoice data correct: {len(products)} products, customer: {invoice.get('customer_name')}")
+                
+            else:
+                self.log_test("Invoice Retrieval", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Invoice Retrieval", False, f"Exception: {str(e)}")
+    
+    def test_database_verification(self):
+        """Test database verification for created customer and products"""
+        # This would require direct MongoDB access, which we'll simulate through API calls
+        
+        # Test 1: Check if customer exists by trying to create another invoice with same tax ID
+        headers = self.get_headers("accounting")
+        if not headers:
+            self.log_test("Database Verification", False, "No accounting token")
+            return
+        
+        try:
+            # Try to create another invoice with same customer - should use existing customer
+            test_invoice = {
+                "customer": {
+                    "customer_name": "TEST GIDA SANAYİ VE TİCARET LTD ŞTİ",
+                    "customer_tax_id": "1234567890",  # Same tax ID
+                    "address": "Test Mahallesi, Test Sokak No:1, Ankara",
+                    "email": "info@testgida.com",
+                    "phone": "0312 555 12 34"
+                },
+                "invoice_number": "TEST2025000003",
+                "invoice_date": "2025-01-17",
+                "products": [
+                    {
+                        "product_code": "TEST001",  # Existing product
+                        "product_name": "TEST SÜZME YOĞURT 5 KG",
+                        "category": "Süt Ürünleri",
+                        "quantity": 5,
+                        "unit": "ADET",
+                        "unit_price": "500.00",
+                        "total": "2500.00"
+                    }
+                ],
+                "subtotal": "2500.00",
+                "total_discount": "0",
+                "total_tax": "25.00",
+                "grand_total": "2525.00"
+            }
+            
+            response = requests.post(
+                f"{BASE_URL}/invoices/manual-entry",
+                json=test_invoice,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                
+                # Should use existing customer and existing product
+                if result.get("customer_created") == False and len(result.get("products_created", [])) == 0:
+                    self.log_test("Database Verification", True, "Customer and products exist in database - reused correctly")
+                else:
+                    self.log_test("Database Verification", False, f"Unexpected creation: customer_created={result.get('customer_created')}, products_created={result.get('products_created')}")
+            else:
+                self.log_test("Database Verification", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Database Verification", False, f"Exception: {str(e)}")
+
     def run_all_tests(self):
         """Run all API tests"""
-        print("🧪 Starting Backend API Tests - Invoice & Consumption Features")
+        print("🧪 Starting Backend API Tests - Manuel Fatura Giriş Sistemi")
         print("=" * 70)
         
         # Login all users first
@@ -753,8 +1060,15 @@ class APITester:
         for user_type in TEST_USERS.keys():
             self.login_user(user_type)
         
-        print("\n📄 Invoice Management API Tests:")
-        self.test_sed_invoice_upload()  # Test SED invoice first
+        print("\n📝 Manuel Fatura Giriş API Tests:")
+        self.test_manual_invoice_entry_new_customer()
+        self.test_manual_invoice_entry_existing_customer()
+        self.test_new_customer_login()
+        self.test_invoice_retrieval()
+        self.test_database_verification()
+        
+        print("\n📄 Legacy Invoice Management API Tests:")
+        self.test_sed_invoice_upload()  # Test SED invoice
         self.test_get_all_invoices()
         self.test_get_my_invoices()
         self.test_get_invoice_detail()
