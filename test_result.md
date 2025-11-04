@@ -408,33 +408,32 @@ agent_communication:
       SED Fatura yükleme ve görüntüleme sistemi %100 çalışır durumda!
   - agent: "main"
     message: |
-      🔄 SED Fatura Formatı Desteği Eklendi (Aşama 1)
+      🔄 Manuel Fatura Giriş Sistemi Eklendi
       
-      **Backend Güncellemeleri:**
-      1. ✅ Invoice model'e customer_name field eklendi
-      2. ✅ parse_invoice_html() fonksiyonu SED formatı için güçlendirildi:
-         - customerIDTable'dan müşteri adı çıkarma
-         - despatchTable'dan fatura no ve tarih
-         - lineTable'dan ürün bilgileri (kod, ad, miktar, fiyat, toplam)
-         - budgetContainerTable'dan toplam tutarlar
-      3. ✅ InvoiceResponse'a customer_name field eklendi
+      **Backend:**
+      1. ✅ Manuel fatura API'si (/api/invoices/manual-entry)
+      2. ✅ Otomatik müşteri oluşturma:
+         - Kullanıcı adı: isim + 3 haneli sayı (ör: yorukoglu_sut_ve_urunleri_100)
+         - Şifre: musteri + aynı sayı (ör: musteri100)
+         - Vergi no ile kontrol
+      3. ✅ Otomatik ürün oluşturma (kategori ile)
+      4. ✅ Product model'de zaten category var
       
-      **Frontend Güncellemeleri:**
-      1. ✅ InvoiceUpload.js - SED formatı için parsing optimize edildi
-      2. ✅ Müşteri adı gösterimi eklendi
-      3. ✅ lineTable id'sine özel ürün parsing
+      **Frontend:**
+      1. ✅ ManualInvoiceEntry component oluşturuldu
+      2. ✅ Müşteri bilgileri formu (ad, vergi no, adres, email, telefon)
+      3. ✅ Fatura bilgileri (fatura no, tarih, iskonto)
+      4. ✅ Dinamik ürün listesi (+ Yeni Ürün Ekle butonu)
+      5. ✅ Kategori dropdown (Süt Ürünleri, Peynir, Tereyağı/Krema, Diğer)
+      6. ✅ Otomatik toplam hesaplama
+      7. ✅ Accounting Dashboard'a "Manuel Fatura Gir" tab eklendi
+      8. ✅ Admin UserManagement'a tüm roller eklendi (Admin, Muhasebe, Depo Müdürü, Depo Personeli, Plasiyer, Müşteri)
       
       **Test Talebi:**
-      Lütfen SED2025000000078.html faturasını test edin:
-      - Muhasebe hesabı (muhasebe/muhasebe123) ile giriş
-      - HTML fatura yükleme
-      - Beklenen sonuçlar:
-        * Müşteri Adı: YÖRÜKOĞLU SÜT VE ÜRÜNLERİ SANAYİ TİCARET ANONİM ŞİRKETİ
-        * Vergi No: 9830366087
-        * Fatura No: SED2025000000078
-        * Fatura Tarihi: 27-10-2025
-        * 9 ürün parse edilmeli (SÜZME YOĞURT, YARIM YAĞLI YOĞURT, vb.)
-        * Toplam Tutar: 47.395,61 TL
+      Manuel fatura giriş API'sini test et:
+      - Muhasebe hesabı ile giriş
+      - Yeni müşteri + ürünlerle fatura oluştur
+      - Müşteri ve ürün otomatik oluşturulmalı
   - agent: "testing"
     message: |
       ✅ SED Fatura HTML Parsing Bug Fix - BAŞARILI!
