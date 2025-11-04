@@ -353,13 +353,18 @@ npm install -g yarn
 Tek komutla tüm test verilerini yükleyin:
 
 ```bash
-cd /app
+# Root klasöründen
 python scripts/seed_database.py
+
+# Backend klasöründen
+cd ..
+python scripts/seed_database.py
+cd backend
 ```
 
 **Ne yüklenir?**
-- ✅ **Kullanıcılar** - Admin, Muhasebe, Plasiyer, Müşteriler
-- ✅ **Ürünler** - 8 ürün (Yoğurt, Peynir, Ayran, Süt, Tereyağı, Krema)
+- ✅ **6 Kullanıcı** - Admin, Muhasebe, 2 Plasiyer, 2 Müşteri
+- ✅ **8 Ürün** - Yoğurt, Peynir, Ayran, Süt, Tereyağı, Krema
 - ✅ **Test Hesapları** - Hazır kullanıcı adı/şifre
 
 ### 🗑️ Sıfırlama ve Yeniden Yükleme
