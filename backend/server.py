@@ -39,6 +39,7 @@ api_router = APIRouter(prefix="/api")
 # Include new modular routes
 api_router.include_router(auth_router)
 api_router.include_router(invoice_router)
+api_router.include_router(manual_invoice_router)
 api_router.include_router(consumption_router)
 
 # Include old routes temporarily
