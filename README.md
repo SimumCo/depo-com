@@ -271,9 +271,19 @@ npm install -g yarn
 ## 📊 Sistem Özellikleri
 
 ### 🆕 Fatura Yönetimi (v2.0)
-- HTML e-fatura yükleme ve otomatik parsing
+**HTML E-Fatura:**
+- SED/EE formatı otomatik parsing
 - Fatura numarası, vergi no, ürün bilgileri otomatik çıkarma
 - Vergi numarasına göre müşteri eşleştirme
+- Türkçe karakter desteği
+
+**Manuel Fatura Girişi:**
+- Vergi numarası ile otomatik müşteri arama
+- Mevcut müşteri bilgileri otomatik doldurulur
+- Yeni müşteri otomatik oluşturulur (kullanıcı adı + şifre)
+- Yeni ürün otomatik kaydedilir
+- 12 ürün kategorisi (Yoğurt, Ayran, Peynir, Kaşar, Tereyağı, Krema, Süt, Kefir, Labne, Lor, Diğer)
+- Otomatik toplam hesaplama
 - Müşteri fatura görüntüleme arayüzü
 
 ### 📈 Tüketim Analizi (v2.0)
