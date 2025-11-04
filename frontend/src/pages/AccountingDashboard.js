@@ -3,8 +3,9 @@ import Layout from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { toast } from 'sonner';
-import { Upload, FileText, CheckCircle, FileCode, Eye } from 'lucide-react';
+import { Upload, FileText, CheckCircle, FileCode, Eye, Edit } from 'lucide-react';
 import InvoiceUpload from '../components/InvoiceUpload';
+import ManualInvoiceEntry from '../components/ManualInvoiceEntry';
 import axios from 'axios';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
