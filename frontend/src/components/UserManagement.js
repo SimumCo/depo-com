@@ -104,10 +104,12 @@ const UserManagement = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="admin">Yönetici</SelectItem>
+                    <SelectItem value="admin">Yönetici (Admin)</SelectItem>
+                    <SelectItem value="accounting">Muhasebe</SelectItem>
                     <SelectItem value="warehouse_manager">Depo Müdürü</SelectItem>
                     <SelectItem value="warehouse_staff">Depo Personeli</SelectItem>
-                    <SelectItem value="sales_rep">Satış Temsilcisi</SelectItem>
+                    <SelectItem value="sales_rep">Satış Temsilcisi (Plasiyer)</SelectItem>
+                    <SelectItem value="customer">Müşteri</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
