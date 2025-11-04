@@ -1013,10 +1013,14 @@ class APITester:
         
         try:
             # Try to create another invoice with same customer - should use existing customer
+            if not hasattr(self, 'test_tax_id'):
+                self.log_test("Database Verification", False, "No test tax ID available")
+                return
+                
             test_invoice = {
                 "customer": {
                     "customer_name": "TEST GIDA SANAYİ VE TİCARET LTD ŞTİ",
-                    "customer_tax_id": "1234567890",  # Same tax ID
+                    "customer_tax_id": self.test_tax_id,  # Same tax ID from first test
                     "address": "Test Mahallesi, Test Sokak No:1, Ankara",
                     "email": "info@testgida.com",
                     "phone": "0312 555 12 34"
