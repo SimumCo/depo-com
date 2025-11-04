@@ -797,6 +797,7 @@ class APITester:
             
             if response.status_code == 200:
                 result = response.json()
+                print(f"DEBUG: Manual invoice response: {result}")
                 
                 # Validate response structure
                 expected_fields = ["message", "invoice_id", "customer_created", "customer_username", "customer_password", "products_created"]
@@ -811,8 +812,8 @@ class APITester:
                     self.log_test("Manual Invoice Entry - New Customer", False, f"Wrong message: {result.get('message')}")
                     return
                 
-                if not result.get("customer_created"):
-                    self.log_test("Manual Invoice Entry - New Customer", False, "customer_created should be true for new customer")
+                if result.get("customer_created") != True:
+                    self.log_test("Manual Invoice Entry - New Customer", False, f"customer_created should be true for new customer, got: {result.get('customer_created')}")
                     return
                 
                 if not result.get("customer_username") or not result.get("customer_password"):
