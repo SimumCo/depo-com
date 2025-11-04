@@ -1283,7 +1283,7 @@ class APITester:
 
     def run_all_tests(self):
         """Run all API tests"""
-        print("🧪 Starting Backend API Tests - Manuel Fatura Giriş Sistemi")
+        print("🧪 Starting Backend API Tests - Güncellenmiş Manuel Fatura Sistemi")
         print("=" * 70)
         
         # Login all users first
@@ -1291,7 +1291,14 @@ class APITester:
         for user_type in TEST_USERS.keys():
             self.login_user(user_type)
         
-        print("\n📝 Manuel Fatura Giriş API Tests:")
+        print("\n🔍 Customer Lookup API Tests:")
+        self.test_customer_lookup_existing()
+        self.test_customer_lookup_not_found()
+        
+        print("\n📝 Manuel Fatura Giriş API Tests (New Categories):")
+        self.test_manual_invoice_new_categories()
+        
+        print("\n📝 Manuel Fatura Giriş API Tests (Legacy):")
         self.test_manual_invoice_entry_new_customer()
         self.test_manual_invoice_entry_existing_customer()
         self.test_new_customer_login()
