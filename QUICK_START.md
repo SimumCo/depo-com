@@ -1,6 +1,8 @@
 # 🚀 HIZLI BAŞLANGIÇ REHBERİ
 
-Windows'ta projeyi çalıştırmak için adım adım rehber.
+Windows/Linux/macOS'ta projeyi çalıştırmak için adım adım rehber.
+
+> **Not:** Detaylı bilgi için [README.md](README.md) dosyasına bakın.
 
 ---
 
