@@ -44,19 +44,47 @@ npm install -g yarn
 
 ## 🚀 Hızlı Kurulum
 
-### 1️⃣ Backend
+### ⚡ Otomatik Kurulum (Önerilen)
+
+**Windows:**
+```cmd
+setup.bat
+```
+
+**Linux / macOS:**
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+✅ Otomatik kurulum şunları yapar:
+- Python ve Node.js bağımlılıklarını yükler
+- `.env` dosyalarını oluşturur
+- Veritabanını test verileriyle doldurur
+
+---
+
+### 🔧 Manuel Kurulum
+
+<details>
+<summary>Manuel kurulum adımlarını görmek için tıklayın</summary>
+
+### 1️⃣ Backend Kurulumu
+
 ```bash
 cd backend
 
-# Virtual environment
+# Virtual environment oluştur
 python -m venv venv
-source venv/bin/activate  # macOS/Linux
-# venv\Scripts\activate   # Windows
 
-# Bağımlılıklar
+# Virtual environment'ı aktive et
+source venv/bin/activate  # macOS/Linux
+venv\Scripts\activate     # Windows
+
+# Bağımlılıkları yükle
 pip install -r requirements.txt
 
-# Konfigürasyon
+# .env dosyası oluştur
 cat > .env << EOF
 MONGO_URL=mongodb://localhost:27017
 DB_NAME=distribution_db
@@ -64,21 +92,42 @@ SECRET_KEY=your-secret-key-change-in-production
 HOST=0.0.0.0
 PORT=8001
 EOF
+```
 
-# Demo Verileri (Tek Komut)
+**Windows için .env oluşturma:**
+```cmd
+echo MONGO_URL=mongodb://localhost:27017 > .env
+echo DB_NAME=distribution_db >> .env
+echo SECRET_KEY=your-secret-key-change-in-production >> .env
+echo HOST=0.0.0.0 >> .env
+echo PORT=8001 >> .env
+```
+
+### 2️⃣ Veritabanını Hazırlayın
+
+**Root klasöründen:**
+```bash
 python scripts/seed_database.py
 ```
 
-### 2️⃣ Frontend
+**Veritabanını sıfırlayıp baştan başlamak için:**
+```bash
+python scripts/seed_database.py --reset
+```
+
+### 3️⃣ Frontend Kurulumu
+
 ```bash
 cd frontend
 
-# Bağımlılıklar
+# Bağımlılıkları yükle
 yarn install
 
-# Konfigürasyon
+# .env dosyası oluştur
 echo "REACT_APP_BACKEND_URL=http://localhost:8001" > .env
 ```
+
+</details>
 
 ---
 
