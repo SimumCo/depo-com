@@ -65,10 +65,8 @@ HOST=0.0.0.0
 PORT=8001
 EOF
 
-# Demo Verileri
-python seed_data.py
-python seed_sales_agents_data.py
-python seed_20_products_orders.py
+# Demo Verileri (Tek Komut)
+python scripts/seed_database.py
 ```
 
 ### 2️⃣ Frontend
