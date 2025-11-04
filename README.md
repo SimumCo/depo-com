@@ -305,45 +305,63 @@ npm install -g yarn
 
 ---
 
-## 📁 Proje Yapısı (v2.0)
+## 📁 Proje Yapısı (v2.0 - OOP Refactored)
 
 ```
 ├── backend/
-│   ├── routes/                   # API Endpoints (Modüler)
-│   │   ├── auth_routes.py       # Kimlik doğrulama
-│   │   ├── invoice_routes.py    # Fatura yönetimi
-│   │   └── consumption_routes.py # Tüketim takibi
-│   ├── models/                   # Data Models
+│   ├── repositories/            # Data Access Layer (NEW)
+│   │   ├── base_repository.py       # Generic CRUD operations
+│   │   ├── customer_repository.py   # Customer DB operations
+│   │   ├── invoice_repository.py    # Invoice DB operations
+│   │   └── product_repository.py    # Product DB operations
+│   ├── services/                # Business Logic Layer (NEW)
+│   │   ├── customer_service.py      # Customer business logic
+│   │   └── invoice_service.py       # Invoice business logic
+│   ├── routes/                  # API Endpoints (Refactored)
+│   │   ├── auth_routes.py           # Authentication
+│   │   ├── invoice_routes.py        # Invoice management
+│   │   ├── manual_invoice_routes.py # Manual invoice entry
+│   │   ├── customer_lookup_routes.py # Customer lookup
+│   │   └── consumption_routes.py    # Consumption tracking
+│   ├── models/                  # Data Models
 │   │   ├── user.py
 │   │   ├── invoice.py
+│   │   ├── product.py
 │   │   └── consumption.py
-│   ├── utils/                    # Helper Functions
+│   ├── utils/                   # Helper Functions
 │   │   ├── auth.py              # JWT, password hashing
 │   │   └── helpers.py
-│   ├── server.py                # Ana application
-│   ├── server_old.py            # Legacy routes
-│   ├── seed_*.py                # Demo data generators
+│   ├── server.py                # Main application
 │   └── requirements.txt
 │
 ├── frontend/
 │   ├── src/
 │   │   ├── components/          # React Components
-│   │   │   ├── CustomerForm.js         # Müşteri kayıt
-│   │   │   ├── ProductForm.js          # Ürün kayıt
-│   │   │   ├── InvoiceFormWithDropdown.js # Fatura oluşturma
-│   │   │   ├── CustomerInvoices.js     # Fatura görüntüleme
-│   │   │   ├── CustomerConsumptionStats.js # Tüketim analizi
+│   │   │   ├── ManualInvoiceEntry.js    # Manual invoice form
+│   │   │   ├── InvoiceUpload.js         # HTML invoice upload
+│   │   │   ├── CustomerInvoices.js      # Invoice viewer
 │   │   │   └── ...
 │   │   ├── pages/               # Dashboard Pages
-│   │   │   ├── CustomerDashboard.js
-│   │   │   ├── SalesRepDashboard.js
 │   │   │   ├── AccountingDashboard.js
+│   │   │   ├── CustomerDashboard.js
 │   │   │   └── ...
-│   │   └── services/api.js     # API calls
+│   │   └── services/api.js      # API calls
 │   └── package.json
 │
-└── README.md
+├── scripts/
+│   └── seed_database.py         # Database seed script (NEW)
+│
+├── README.md
+├── QUICK_START.md               # Quick start guide
+├── setup.bat                    # Windows auto setup
+└── setup.sh                     # Linux/macOS auto setup
 ```
+
+**OOP Prensipleri:**
+- ✅ **Repository Pattern** - Database operations ayrıştırıldı
+- ✅ **Service Layer** - Business logic merkezi yönetiliyor
+- ✅ **Single Responsibility** - Her class tek görev
+- ✅ **Separation of Concerns** - Route/Service/Repository katmanları
 
 ---
 
