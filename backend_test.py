@@ -1181,12 +1181,13 @@ class APITester:
             if response.status_code == 200:
                 invoice = response.json()
                 
-                # Validate invoice data
-                if invoice.get("customer_name") != "TEST GIDA SANAYİ VE TİCARET LTD ŞTİ":
-                    self.log_test("Invoice Retrieval", False, f"Wrong customer name: {invoice.get('customer_name')}")
+                # Validate invoice data - use the correct customer name from new categories test
+                expected_customer_name = "YENİ TEST MÜŞTERİ LTD"
+                if invoice.get("customer_name") != expected_customer_name:
+                    self.log_test("Invoice Retrieval", False, f"Wrong customer name: expected '{expected_customer_name}', got '{invoice.get('customer_name')}'")
                     return
                 
-                # Use the test tax ID from the first test
+                # Use the test tax ID from the new categories test
                 if not hasattr(self, 'test_tax_id'):
                     self.log_test("Invoice Retrieval", False, "No test tax ID available for validation")
                     return
@@ -1196,13 +1197,14 @@ class APITester:
                     return
                 
                 products = invoice.get("products", [])
-                if len(products) != 2:
-                    self.log_test("Invoice Retrieval", False, f"Wrong product count: {len(products)}")
+                expected_product_count = 5  # From new categories test
+                if len(products) != expected_product_count:
+                    self.log_test("Invoice Retrieval", False, f"Wrong product count: expected {expected_product_count}, got {len(products)}")
                     return
                 
-                # Check specific products
+                # Check specific products from new categories test
                 product_names = [p.get("product_name") for p in products]
-                expected_names = ["TEST SÜZME YOĞURT 5 KG", "TEST BEYAZ PEYNİR 1 KG"]
+                expected_names = ["KREMALI YOĞURT 1 KG", "AYRAN 200 ML", "TAZE KAŞAR 500 GR", "TEREYAĞ 250 GR", "ŞEFİN KREMASI 200 ML"]
                 
                 for expected_name in expected_names:
                     if expected_name not in product_names:
