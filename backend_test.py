@@ -833,6 +833,7 @@ class APITester:
                 self.new_customer_username = result.get("customer_username")
                 self.new_customer_password = result.get("customer_password")
                 self.new_invoice_id = result.get("invoice_id")
+                self.test_tax_id = unique_tax_id  # Store for existing customer test
                 
                 self.log_test("Manual Invoice Entry - New Customer", True, 
                     f"Invoice: {result.get('invoice_id')}, Customer: {result.get('customer_username')}/{result.get('customer_password')}, Products: {len(result.get('products_created', []))}")
