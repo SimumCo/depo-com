@@ -111,7 +111,7 @@ const ManualInvoiceEntry = ({ onSuccess }) => {
     setProducts([...products, {
       product_code: '',
       product_name: '',
-      category: 'Süt Ürünleri',
+      category: 'Yoğurt',
       quantity: '',
       unit: 'ADET',
       unit_price: '',
