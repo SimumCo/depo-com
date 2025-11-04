@@ -804,7 +804,6 @@ class APITester:
             
             if response.status_code == 200:
                 result = response.json()
-                print(f"DEBUG: Manual invoice response: {result}")
                 
                 # Validate response structure
                 expected_fields = ["message", "invoice_id", "customer_created", "customer_username", "customer_password", "products_created"]
