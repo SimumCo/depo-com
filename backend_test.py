@@ -751,9 +751,12 @@ class APITester:
             return
         
         try:
-            # Generate unique tax ID for this test run
+            # Generate unique tax ID and product codes for this test run
             import time
-            unique_tax_id = f"123456{int(time.time()) % 10000:04d}"
+            timestamp = int(time.time()) % 10000
+            unique_tax_id = f"123456{timestamp:04d}"
+            product_code_1 = f"TEST{timestamp:03d}01"
+            product_code_2 = f"TEST{timestamp:03d}02"
             
             # Test data from review request
             invoice_data = {
