@@ -219,14 +219,14 @@ npm install -g yarn
 
 ## 🔐 Demo Hesaplar
 
-| Rol | Kullanıcı Adı | Şifre | Yetkiler |
+| Rol | Kullanıcı Adı | Şifre | Açıklama |
 |-----|---------------|-------|----------|
-| 👤 **Admin** | `admin` | `admin123` | Tüm sistem yönetimi |
-| 📦 **Depo Müdürü** | `manager` | `manager123` | Stok, sevkiyat yönetimi |
-| 💼 **Satış Temsilcisi** | `satistemsilcisi` | `satis123` | Müşteri/ürün/fatura kaydı |
-| 🚗 **Plasiyer** | `plasiyer1` | `plasiyer123` | Müşteri rotaları, sipariş |
+| 👤 **Admin** | `admin` | `admin123` | Tüm sistem yönetimi, kullanıcı ekleme |
+| 💰 **Muhasebe** | `muhasebe` | `muhasebe123` | HTML fatura yükleme, manuel fatura gir |
+| 🚗 **Plasiyer** | `plasiyer1` | `plasiyer123` | Müşteri rotaları, sipariş alma |
 | 🛒 **Müşteri** | `musteri1` | `musteri123` | Sipariş verme, fatura görüntüleme |
-| 💰 **Muhasebe** | `muhasebe` | `muhasebe123` | Fatura yükleme |
+
+**Test için:** Herhangi bir hesapla `http://localhost:3000` adresinden giriş yapın.
 
 ---
 
