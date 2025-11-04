@@ -231,7 +231,32 @@ yarn start
 
 ---
 
-## 🔄 Veritabanını Sıfırlama
+## 🔄 Veritabanı Kurulumu
+
+### ⚡ Hızlı Kurulum (Önerilen)
+Tek komutla tüm test verilerini yükleyin:
+
+```bash
+cd /app
+python scripts/seed_database.py
+```
+
+**Ne yüklenir?**
+- ✅ **Kullanıcılar** - Admin, Muhasebe, Plasiyer, Müşteriler
+- ✅ **Ürünler** - 8 ürün (Yoğurt, Peynir, Ayran, Süt, Tereyağı, Krema)
+- ✅ **Test Hesapları** - Hazır kullanıcı adı/şifre
+
+### 🗑️ Sıfırlama ve Yeniden Yükleme
+Tüm verileri silip baştan başlamak için:
+
+```bash
+python scripts/seed_database.py --reset
+```
+
+**Uyarı:** Bu komut tüm mevcut verileri siler!
+
+### 📊 Manuel Kurulum
+Seed script yerine manuel olarak veritabanı oluşturmak isterseniz:
 
 ```bash
 mongosh
@@ -239,7 +264,7 @@ use distribution_db
 db.dropDatabase()
 exit
 
-# Seed scriptlerini tekrar çalıştır
+# Eski seed scriptleri
 cd backend
 python seed_data.py
 python seed_sales_agents_data.py
