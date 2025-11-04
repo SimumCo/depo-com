@@ -94,7 +94,7 @@ async def create_manual_invoice(
         new_customer = {
             "id": customer_id,
             "username": username,
-            "password": password,  # Production'da hash'lenmeli
+            "password_hash": hash_password(password),  # Properly hashed password
             "full_name": invoice_input.customer.customer_name,
             "email": invoice_input.customer.email or f"{username}@example.com",
             "phone": invoice_input.customer.phone or "",
