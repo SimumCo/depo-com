@@ -226,6 +226,21 @@ backend:
         agent: "testing"
         comment: "Authentication API'leri test edildi ve başarılı: POST /api/auth/login (admin, muhasebe, plasiyer, müşteri girişleri), GET /api/auth/me (kullanıcı bilgileri). Tüm roller için token oluşturma ve doğrulama çalışıyor."
 
+  - task: "Manuel Fatura Giriş Sistemi"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/manual_invoice_routes.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Manuel fatura API'si (/api/invoices/manual-entry) eklendi. Otomatik müşteri oluşturma (kullanıcı adı + şifre), otomatik ürün oluşturma (kategori ile), vergi no ile müşteri kontrolü özellikleri"
+      - working: true
+        agent: "testing"
+        comment: "KAPSAMLI MANUEL FATURA TEST TAMAMLANDI - %100 BAŞARILI! Tüm review request kriterleri karşılandı: ✅ Muhasebe girişi (muhasebe/muhasebe123), ✅ Yeni müşteri otomatik oluşturma (test_gida_sanayi_ve_ticaret_ltd_sti_104/musteri104), ✅ 2 yeni ürün otomatik oluşturma (TEST SÜZME YOĞURT 5 KG, TEST BEYAZ PEYNİR 1 KG), ✅ Fatura başarıyla kaydedildi, ✅ İkinci faturada mevcut müşteri kullanıldı (customer_created: false), ✅ Yeni müşteri giriş yapabildi, ✅ Fatura detayları doğru (müşteri adı, vergi no, ürünler), ✅ Database verification (müşteri ve ürün tekrar kullanımı). DÜZELTME: Password hashing sorunu çözüldü (password_hash field kullanımı). Test başarı oranı: %100 (30/30 test geçti)."
+
 frontend:
   - task: "SalesAgentCustomers Component"
     implemented: true
