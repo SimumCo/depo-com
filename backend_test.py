@@ -873,7 +873,7 @@ class APITester:
                 "invoice_date": "2025-01-16",
                 "products": [
                     {
-                        "product_code": "TEST003",
+                        "product_code": f"TEST{int(time.time()) % 1000:03d}03",
                         "product_name": "TEST KAŞAR PEYNİRİ 2 KG",
                         "category": "Peynir",
                         "quantity": 15,
