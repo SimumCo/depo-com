@@ -41,6 +41,7 @@ api_router = APIRouter(prefix="/api")
 api_router.include_router(auth_router)
 api_router.include_router(invoice_router)
 api_router.include_router(manual_invoice_router)
+api_router.include_router(customer_lookup_router)
 api_router.include_router(consumption_router)
 
 # Include old routes temporarily
