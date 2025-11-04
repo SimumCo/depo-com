@@ -771,7 +771,7 @@ class APITester:
                 "invoice_date": "2025-01-15",
                 "products": [
                     {
-                        "product_code": "TEST001",
+                        "product_code": product_code_1,
                         "product_name": "TEST SÜZME YOĞURT 5 KG",
                         "category": "Süt Ürünleri",
                         "quantity": 10,
@@ -780,7 +780,7 @@ class APITester:
                         "total": "5000.00"
                     },
                     {
-                        "product_code": "TEST002",
+                        "product_code": product_code_2,
                         "product_name": "TEST BEYAZ PEYNİR 1 KG",
                         "category": "Peynir",
                         "quantity": 20,
