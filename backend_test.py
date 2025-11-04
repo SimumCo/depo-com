@@ -1023,8 +1023,8 @@ class APITester:
         try:
             import time
             # Try to create another invoice with same customer - should use existing customer
-            if not hasattr(self, 'test_tax_id'):
-                self.log_test("Database Verification", False, "No test tax ID available")
+            if not hasattr(self, 'test_tax_id') or not hasattr(self, 'test_product_code_1'):
+                self.log_test("Database Verification", False, "No test data available from first test")
                 return
                 
             test_invoice = {
