@@ -978,8 +978,13 @@ class APITester:
                     self.log_test("Invoice Retrieval", False, f"Wrong customer name: {invoice.get('customer_name')}")
                     return
                 
-                if invoice.get("customer_tax_id") != "1234567890":
-                    self.log_test("Invoice Retrieval", False, f"Wrong tax ID: {invoice.get('customer_tax_id')}")
+                # Use the test tax ID from the first test
+                if not hasattr(self, 'test_tax_id'):
+                    self.log_test("Invoice Retrieval", False, "No test tax ID available for validation")
+                    return
+                    
+                if invoice.get("customer_tax_id") != self.test_tax_id:
+                    self.log_test("Invoice Retrieval", False, f"Wrong tax ID: expected {self.test_tax_id}, got {invoice.get('customer_tax_id')}")
                     return
                 
                 products = invoice.get("products", [])
