@@ -45,7 +45,7 @@ const ManualInvoiceEntry = ({ onSuccess }) => {
   const [products, setProducts] = useState([{
     product_code: '',
     product_name: '',
-    category: 'Süt Ürünleri',
+    category: 'Yoğurt',
     quantity: '',
     unit: 'ADET',
     unit_price: '',
