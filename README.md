@@ -126,7 +126,9 @@ cd frontend
 # Bağımlılıkları yükle
 yarn install
 
-# .env dosyası oluştur
+# .env dosyası oluştur (.env.example'dan kopyala)
+cp .env.example .env
+# VEYA manuel:
 echo "REACT_APP_BACKEND_URL=http://localhost:8001" > .env
 ```
 
