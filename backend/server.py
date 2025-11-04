@@ -9,6 +9,7 @@ import logging
 from routes.auth_routes import router as auth_router
 from routes.invoice_routes import router as invoice_router
 from routes.manual_invoice_routes import router as manual_invoice_router
+from routes.customer_lookup_routes import router as customer_lookup_router
 from routes.consumption_routes import router as consumption_router
 
 # Import old routes temporarily (will be refactored)
