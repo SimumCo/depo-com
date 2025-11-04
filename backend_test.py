@@ -751,11 +751,15 @@ class APITester:
             return
         
         try:
+            # Generate unique tax ID for this test run
+            import time
+            unique_tax_id = f"123456{int(time.time()) % 10000:04d}"
+            
             # Test data from review request
             invoice_data = {
                 "customer": {
                     "customer_name": "TEST GIDA SANAYİ VE TİCARET LTD ŞTİ",
-                    "customer_tax_id": "1234567890",
+                    "customer_tax_id": unique_tax_id,
                     "address": "Test Mahallesi, Test Sokak No:1, Ankara",
                     "email": "info@testgida.com",
                     "phone": "0312 555 12 34"
