@@ -854,6 +854,7 @@ class APITester:
             return
         
         try:
+            import time
             # Use same customer tax ID from the first test
             if not hasattr(self, 'test_tax_id'):
                 self.log_test("Manual Invoice Entry - Existing Customer", False, "No test tax ID from first test")
