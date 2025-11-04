@@ -53,6 +53,58 @@ const ManualInvoiceEntry = ({ onSuccess }) => {
   }]);
   
   const [createdInfo, setCreatedInfo] = useState(null);
+  const [lookupLoading, setLookupLoading] = useState(false);
+
+  // Vergi numarası ile müşteri bilgisi çekme
+  const lookupCustomerByTaxId = async (taxId) => {
+    if (!taxId || taxId.length < 10) return;
+    
+    try {
+      setLookupLoading(true);
+      const token = localStorage.getItem('token');
+      
+      const response = await axios.get(
+        `${BACKEND_URL}/api/customers/lookup/${taxId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+      
+      if (response.data.found) {
+        // Müşteri bilgilerini form'a doldur
+        setCustomer({
+          customer_name: response.data.customer_name,
+          customer_tax_id: response.data.customer_tax_id,
+          address: response.data.address,
+          email: response.data.email,
+          phone: response.data.phone
+        });
+        
+        toast.success('Müşteri bilgileri bulundu ve dolduruldu');
+      }
+    } catch (err) {
+      if (err.response?.status === 404) {
+        toast.info('Bu vergi numarası ile kayıtlı müşteri bulunamadı. Yeni müşteri oluşturulacak.');
+      } else {
+        console.error('Müşteri arama hatası:', err);
+      }
+    } finally {
+      setLookupLoading(false);
+    }
+  };
+
+  // Vergi numarası değiştiğinde otomatik ara (debounce ile)
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      if (customer.customer_tax_id && customer.customer_tax_id.length >= 10) {
+        lookupCustomerByTaxId(customer.customer_tax_id);
+      }
+    }, 800);
+    
+    return () => clearTimeout(timer);
+  }, [customer.customer_tax_id]);
 
   // Ürün ekleme
   const addProduct = () => {
