@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from models.invoice import Invoice, InvoiceProduct
 from models.user import User, UserRole
 from models.product import Product
-from utils.auth import get_current_user, require_role
+from utils.auth import get_current_user, require_role, hash_password
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import random
