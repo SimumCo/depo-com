@@ -76,9 +76,9 @@ if not exist .env (
 
 REM Demo verileri oluştur
 echo 🌱 Demo verileri oluşturuluyor...
-python seed_data.py
-python seed_sales_agents_data.py
-python seed_20_products_orders.py
+cd ..
+python scripts\seed_database.py
+cd backend
 
 cd ..
 
