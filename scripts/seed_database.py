@@ -4,7 +4,8 @@ Database Seed Script
 Veritabanını test verileri ile doldurur.
 
 Kullanım:
-    python scripts/seed_database.py
+    python scripts/seed_database.py          (root klasöründen)
+    python ../scripts/seed_database.py       (backend klasöründen)
 
 Not: Mevcut verileri silmez, sadece yeni veriler ekler.
      Tüm verileri silip baştan başlamak için --reset flag'i kullanın.
@@ -16,15 +17,25 @@ import os
 from pathlib import Path
 from datetime import datetime, timezone
 
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Add backend directory to path
+ROOT_DIR = Path(__file__).parent.parent
+BACKEND_DIR = ROOT_DIR / 'backend'
+sys.path.insert(0, str(BACKEND_DIR))
 
 from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
-from utils.auth import hash_password
 
-# Load environment variables
-load_dotenv(Path(__file__).parent.parent / '.env')
+# Load environment variables from backend/.env
+load_dotenv(BACKEND_DIR / '.env')
+
+# Import hash_password after adding backend to path
+try:
+    from utils.auth import hash_password
+except ImportError:
+    # Fallback: Simple hash function if utils.auth not available
+    import hashlib
+    def hash_password(password: str) -> str:
+        return hashlib.sha256(password.encode()).hexdigest()
 
 # MongoDB connection
 MONGO_URL = os.environ['MONGO_URL']
