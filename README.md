@@ -85,7 +85,9 @@ venv\Scripts\activate     # Windows
 # Bağımlılıkları yükle
 pip install -r requirements.txt
 
-# .env dosyası oluştur
+# .env dosyası oluştur (.env.example'dan kopyala)
+cp .env.example .env
+# VEYA manuel oluştur:
 cat > .env << EOF
 MONGO_URL=mongodb://localhost:27017
 DB_NAME=distribution_db
