@@ -85,3 +85,15 @@ test_result.md.backup
 # Temporary files
 *.tmp
 ~*
+-e 
+# Environment files
+*.env
+*.env.*
+-e 
+# Environment files
+*.env
+*.env.*
+-e 
+# Environment files
+*.env
+*.env.*
