@@ -120,9 +120,10 @@ async def calculate_consumption(customer_id: str, product_id: str, start_date: d
                 date_diffs.append(diff)
         avg_days_between = sum(date_diffs) / len(date_diffs) if date_diffs else total_days
     else:
-        # Tek fatura varsa, 1 günlük tüketim kabul et
-        total_days = 1
-        avg_days_between = 1
+        # Tek fatura varsa, 30 günlük tüketim kabul et (aylık sipariş varsayımı)
+        # Bu ürün için yetersiz veri olduğundan tahmin yapıyoruz
+        total_days = 30
+        avg_days_between = 30
     
     # Günlük tüketim = Toplam miktar / Toplam süre
     daily_consumption = total_ordered / total_days
