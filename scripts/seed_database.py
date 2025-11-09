@@ -93,4 +93,4 @@ async def setup_users():
     print("   Muhasebe: muhasebe / muhasebe123")
 
 if __name__ == "__main__":
-    asyncio.run(setup_admin())
+    asyncio.run(setup_users())
