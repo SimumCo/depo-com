@@ -44,21 +44,30 @@ async def calculate_consumption(customer_id: str, product_id: str, start_date: d
     if not invoices:
         return None
     
-    # Ürün bilgisini al (product_code ile eşleşecek)
+    # Ürün bilgisini al
     product = await db.products.find_one({"id": product_id}, {"_id": 0, "code": 1, "name": 1})
     if not product:
         return None
     
     product_code = product.get("code", "")
-    product_name = product.get("name", "")
+    product_name = product.get("name", "").strip().lower()
     
     # Ürün bazlı fatura kalemlerini grupla
     product_invoices = []
     for invoice in invoices:
         for item in invoice.get("products", []):
-            # Ürün kodu veya ismi ile eşleştir
-            if (item.get("product_code") == product_code or 
-                item.get("product_name", "").lower() == product_name.lower()):
+            # Ürün adını normalize et
+            item_name = item.get("product_name", "").strip().lower()
+            item_code = item.get("product_code", "").strip()
+            
+            # Ürün kodu veya ismi ile eşleştir (önce kod, sonra isim)
+            matched = False
+            if product_code and item_code and item_code == product_code:
+                matched = True
+            elif product_name and item_name and item_name == product_name:
+                matched = True
+            
+            if matched:
                 
                 # Tarih parse et
                 invoice_date_str = invoice.get("invoice_date", "")
