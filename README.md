@@ -64,7 +64,7 @@ PORT=8001
 ```
 
 ```bash
-# Admin kullanıcısı oluştur
+# Admin ve muhasebe kullanıcılarını oluştur
 cd ..
 python scripts/seed_database.py
 cd backend
