@@ -50,3 +50,50 @@ async def get_product(product_id: str, current_user: User = Depends(get_current_
         product['created_at'] = datetime.fromisoformat(product['created_at'])
     
     return Product(**product)
+
+@router.put("/{product_id}")
+async def update_product(
+    product_id: str,
+    update_data: dict,
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.ACCOUNTING]))
+):
+    """Ürün bilgilerini güncelle"""
+    product = await db.products.find_one({"id": product_id})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Güncellenebilir alanlar
+    allowed_fields = ['code', 'name', 'category', 'unit', 'price', 'description']
+    update_fields = {k: v for k, v in update_data.items() if k in allowed_fields and v is not None}
+    
+    if not update_fields:
+        raise HTTPException(status_code=400, detail="No valid fields to update")
+    
+    # Güncelle
+    await db.products.update_one(
+        {"id": product_id},
+        {"$set": update_fields}
+    )
+    
+    # Güncellenmiş ürünü getir
+    updated_product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    
+    return {"message": "Product updated successfully", "product": updated_product}
+
+@router.delete("/{product_id}")
+async def delete_product(
+    product_id: str,
+    current_user: User = Depends(require_role([UserRole.ADMIN]))
+):
+    """Ürünü sil (soft delete)"""
+    product = await db.products.find_one({"id": product_id})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Soft delete - is_active = False
+    await db.products.update_one(
+        {"id": product_id},
+        {"$set": {"is_active": False}}
+    )
+    
+    return {"message": "Product deleted successfully"}
