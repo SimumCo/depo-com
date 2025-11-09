@@ -102,20 +102,30 @@ async def calculate_consumption(customer_id: str, product_id: str, start_date: d
     total_ordered = sum(inv["quantity"] for inv in product_invoices)
     invoice_count = len(product_invoices)
     
-    # Faturalar arası gün farkı
+    # İlk ve son fatura tarihleri arasındaki toplam süre
     if invoice_count > 1:
+        first_date = product_invoices[0]["date"]
+        last_date = product_invoices[-1]["date"]
+        total_days = (last_date - first_date).days
+        
+        # En az 1 gün olsun (aynı gün birden fazla fatura olabilir)
+        if total_days == 0:
+            total_days = 1
+        
+        # Faturalar arası ortalama gün (bilgi amaçlı)
         date_diffs = []
         for i in range(1, len(product_invoices)):
             diff = (product_invoices[i]["date"] - product_invoices[i-1]["date"]).days
             if diff > 0:
                 date_diffs.append(diff)
-        
-        avg_days_between = sum(date_diffs) / len(date_diffs) if date_diffs else 1
+        avg_days_between = sum(date_diffs) / len(date_diffs) if date_diffs else total_days
     else:
+        # Tek fatura varsa, 1 günlük tüketim kabul et
+        total_days = 1
         avg_days_between = 1
     
-    # Günlük tüketim = toplam / ortalama gün
-    daily_consumption = total_ordered / max(avg_days_between, 1)
+    # Günlük tüketim = Toplam miktar / Toplam süre
+    daily_consumption = total_ordered / total_days
     weekly_consumption = daily_consumption * 7
     monthly_consumption = daily_consumption * 30
     
@@ -123,6 +133,7 @@ async def calculate_consumption(customer_id: str, product_id: str, start_date: d
         "total_ordered": total_ordered,
         "order_count": invoice_count,
         "days_between_orders": avg_days_between,
+        "total_period_days": total_days,  # Yeni eklendi
         "daily_consumption": daily_consumption,
         "weekly_consumption": weekly_consumption,
         "monthly_consumption": monthly_consumption,
