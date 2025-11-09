@@ -21,9 +21,10 @@ except:
     pass
 
 def hash_password(password: str) -> str:
-    """Basit password hash (production'da bcrypt kullanın)"""
-    import hashlib
-    return hashlib.sha256(password.encode()).hexdigest()
+    """Password hash using bcrypt"""
+    from passlib.context import CryptContext
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+    return pwd_context.hash(password)
 
 async def setup_admin():
     """Admin kullanıcısı oluştur"""
