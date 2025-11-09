@@ -16,45 +16,87 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 async def calculate_consumption(customer_id: str, product_id: str, start_date: datetime, end_date: datetime) -> Dict:
-    """Belirli bir dönem için tüketimi hesapla"""
+    """Belirli bir dönem için tüketimi hesapla - FATURALARDAN"""
     
-    # Müşterinin siparişlerini getir
-    cursor = db.orders.find(
+    # Müşterinin faturalarını getir (customer_id yerine müşteri vergi numarasını kullanarak)
+    # Önce müşteriyi bulalım
+    customer = await db.users.find_one({"id": customer_id}, {"_id": 0, "customer_number": 1})
+    
+    if not customer or not customer.get("customer_number"):
+        return None
+    
+    customer_tax_id = customer["customer_number"]
+    
+    # Fatura tarihine göre filtrele
+    cursor = db.invoices.find(
         {
-            "customer_id": customer_id,
-            "created_at": {
-                "$gte": start_date.isoformat(),
-                "$lte": end_date.isoformat()
+            "customer_tax_id": customer_tax_id,
+            "invoice_date": {
+                "$gte": start_date.strftime("%Y-%m-%d"),
+                "$lte": end_date.strftime("%Y-%m-%d")
             }
         },
         {"_id": 0}
-    ).sort("created_at", 1)
+    ).sort("invoice_date", 1)
     
-    orders = await cursor.to_list(length=None)
+    invoices = await cursor.to_list(length=None)
     
-    # Ürün bazlı siparişleri grupla
-    product_orders = []
-    for order in orders:
-        for item in order.get("items", []):
-            if item["product_id"] == product_id:
-                order_date = datetime.fromisoformat(order["created_at"]) if isinstance(order["created_at"], str) else order["created_at"]
-                product_orders.append({
-                    "date": order_date,
-                    "quantity": item["quantity"]
+    if not invoices:
+        return None
+    
+    # Ürün bilgisini al (product_code ile eşleşecek)
+    product = await db.products.find_one({"id": product_id}, {"_id": 0, "code": 1, "name": 1})
+    if not product:
+        return None
+    
+    product_code = product.get("code", "")
+    product_name = product.get("name", "")
+    
+    # Ürün bazlı fatura kalemlerini grupla
+    product_invoices = []
+    for invoice in invoices:
+        for item in invoice.get("products", []):
+            # Ürün kodu veya ismi ile eşleştir
+            if (item.get("product_code") == product_code or 
+                item.get("product_name", "").lower() == product_name.lower()):
+                
+                # Tarih parse et
+                invoice_date_str = invoice.get("invoice_date", "")
+                try:
+                    if isinstance(invoice_date_str, str):
+                        # YYYY-MM-DD formatında
+                        invoice_date = datetime.strptime(invoice_date_str, "%Y-%m-%d")
+                    else:
+                        invoice_date = invoice_date_str
+                except:
+                    continue
+                
+                # Miktar al (string olabilir)
+                quantity = item.get("quantity", 0)
+                if isinstance(quantity, str):
+                    try:
+                        quantity = float(quantity)
+                    except:
+                        quantity = 0
+                
+                product_invoices.append({
+                    "date": invoice_date,
+                    "quantity": quantity,
+                    "invoice_number": invoice.get("invoice_number", "")
                 })
     
-    if not product_orders:
+    if not product_invoices:
         return None
     
     # Tüketim hesapla
-    total_ordered = sum(o["quantity"] for o in product_orders)
-    order_count = len(product_orders)
+    total_ordered = sum(inv["quantity"] for inv in product_invoices)
+    invoice_count = len(product_invoices)
     
-    # Siparişler arası gün farkı
-    if order_count > 1:
+    # Faturalar arası gün farkı
+    if invoice_count > 1:
         date_diffs = []
-        for i in range(1, len(product_orders)):
-            diff = (product_orders[i]["date"] - product_orders[i-1]["date"]).days
+        for i in range(1, len(product_invoices)):
+            diff = (product_invoices[i]["date"] - product_invoices[i-1]["date"]).days
             if diff > 0:
                 date_diffs.append(diff)
         
@@ -69,12 +111,12 @@ async def calculate_consumption(customer_id: str, product_id: str, start_date: d
     
     return {
         "total_ordered": total_ordered,
-        "order_count": order_count,
+        "order_count": invoice_count,
         "days_between_orders": avg_days_between,
         "daily_consumption": daily_consumption,
         "weekly_consumption": weekly_consumption,
         "monthly_consumption": monthly_consumption,
-        "last_order_date": product_orders[-1]["date"]
+        "last_order_date": product_invoices[-1]["date"]
     }
 
 @router.post("/calculate")
