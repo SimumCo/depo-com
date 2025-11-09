@@ -2,6 +2,8 @@
 
 B2B dağıtım firmaları için sipariş, fatura ve tüketim yönetim sistemi.
 
+> 📋 **[3 Yıllık Geliştirme Yol Haritası](./ROADMAP.md)** | **[Hızlı Özet](./ROADMAP_SUMMARY.md)**
+
 ---
 
 ## 🎯 Özellikler
