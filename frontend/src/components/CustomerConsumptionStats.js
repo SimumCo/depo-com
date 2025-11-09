@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { TrendingUp, Package, ShoppingCart, Calendar, BarChart3, AlertCircle } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
 
@@ -35,6 +36,30 @@ const CustomerConsumptionStats = () => {
     const date = new Date(dateString);
     return date.toLocaleDateString('tr-TR');
   };
+
+  // İstatistik hesaplamaları
+  const calculateStats = () => {
+    if (!consumption || consumption.length === 0) return null;
+
+    const totalProducts = consumption.length;
+    const totalWeeklyConsumption = consumption.reduce((sum, item) => sum + (item.weekly_avg || 0), 0);
+    const totalMonthlyConsumption = consumption.reduce((sum, item) => sum + (item.monthly_avg || 0), 0);
+    const avgGrowth = consumption.filter(item => item.growth_rate !== null).reduce((sum, item, _, arr) => sum + item.growth_rate / arr.length, 0);
+    
+    const topProducts = [...consumption]
+      .sort((a, b) => (b.monthly_avg || 0) - (a.monthly_avg || 0))
+      .slice(0, 5);
+
+    return {
+      totalProducts,
+      totalWeeklyConsumption: Math.round(totalWeeklyConsumption),
+      totalMonthlyConsumption: Math.round(totalMonthlyConsumption),
+      avgGrowth: Math.round(avgGrowth),
+      topProducts
+    };
+  };
+
+  const stats = calculateStats();
 
   if (loading) {
     return (
