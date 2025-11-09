@@ -146,8 +146,9 @@ async def trigger_consumption_calculation(
     products_cursor = db.products.find({}, {"_id": 0})
     products = await products_cursor.to_list(length=None)
     
-    # Şu anki ay ve geçen ay
+    # Son 1 yıl için hesapla (faturalar geçmişte olabilir)
     now = datetime.now(timezone.utc)
+    one_year_ago = now - timedelta(days=365)
     current_month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     last_month_start = (current_month_start - timedelta(days=1)).replace(day=1)
     
@@ -155,11 +156,11 @@ async def trigger_consumption_calculation(
     
     for customer in customers:
         for product in products:
-            # Bu ay
+            # Son 1 yıl için tüketim hesapla
             current_data = await calculate_consumption(
                 customer["id"], 
                 product["id"],
-                current_month_start,
+                one_year_ago,
                 now
             )
             
