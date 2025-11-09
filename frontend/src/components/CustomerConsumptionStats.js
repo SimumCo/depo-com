@@ -70,59 +70,145 @@ const CustomerConsumptionStats = () => {
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Ürün Tüketim İstatistikleri</h1>
-        <p className="text-gray-600 mt-2">Ürün bazlı sarfiyat ve tüketim analizi</p>
-      </div>
-
-      {/* Period Selector */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Dönem Seçin</label>
-        <select
-          value={periodType}
-          onChange={(e) => setPeriodType(e.target.value)}
-          className="mt-1 block w-full md:w-64 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-        >
-          <option value="weekly">Haftalık</option>
-          <option value="monthly">Aylık</option>
-        </select>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800">Sarfiyat Analizi</h1>
+          <p className="text-gray-600 mt-2">Ürün bazlı tüketim istatistikleriniz</p>
+        </div>
+        
+        {/* Period Selector */}
+        <div>
+          <select
+            value={periodType}
+            onChange={(e) => setPeriodType(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="weekly">Haftalık</option>
+            <option value="monthly">Aylık</option>
+          </select>
+        </div>
       </div>
 
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700">
-          <p>{error}</p>
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+          <div className="flex items-center">
+            <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
+            <p className="text-red-700">{error}</p>
+          </div>
         </div>
       )}
 
       {consumption.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-8 text-center">
-          <svg
-            className="mx-auto h-12 w-12 text-gray-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-            />
-          </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">Henüz veri yok</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Tüketim verisi henüz hesaplanmamış. Siparişleriniz sonrası veriler oluşacaktır.
+        <div className="bg-white rounded-lg shadow p-12 text-center">
+          <Package className="mx-auto h-16 w-16 text-gray-400" />
+          <h3 className="mt-4 text-lg font-medium text-gray-900">Henüz Veri Yok</h3>
+          <p className="mt-2 text-sm text-gray-500">
+            Faturalarınız işlendikten sonra tüketim istatistikleri burada görünecektir.
           </p>
         </div>
       ) : (
-        <div className="grid gap-6">
-          {consumption.map((item, index) => (
-            <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
-              <div className="px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600">
-                <h3 className="text-lg font-semibold text-white">{item.product_name}</h3>
+        <>
+          {/* İstatistik Kartları */}
+          {stats && (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Toplam Ürün */}
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg p-6 text-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-blue-100 text-sm font-medium">Toplam Ürün</p>
+                    <p className="text-3xl font-bold mt-2">{stats.totalProducts}</p>
+                  </div>
+                  <Package className="h-12 w-12 text-blue-200" />
+                </div>
               </div>
-              <div className="p-6">
+
+              {/* Haftalık Tüketim */}
+              <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-lg p-6 text-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-green-100 text-sm font-medium">Haftalık Tüketim</p>
+                    <p className="text-3xl font-bold mt-2">{stats.totalWeeklyConsumption}</p>
+                    <p className="text-green-100 text-xs mt-1">adet/hafta</p>
+                  </div>
+                  <Calendar className="h-12 w-12 text-green-200" />
+                </div>
+              </div>
+
+              {/* Aylık Tüketim */}
+              <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-lg p-6 text-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-purple-100 text-sm font-medium">Aylık Tüketim</p>
+                    <p className="text-3xl font-bold mt-2">{stats.totalMonthlyConsumption}</p>
+                    <p className="text-purple-100 text-xs mt-1">adet/ay</p>
+                  </div>
+                  <ShoppingCart className="h-12 w-12 text-purple-200" />
+                </div>
+              </div>
+
+              {/* Ortalama Büyüme */}
+              <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-lg p-6 text-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-orange-100 text-sm font-medium">Ort. Büyüme</p>
+                    <p className="text-3xl font-bold mt-2">
+                      {stats.avgGrowth > 0 ? '+' : ''}{stats.avgGrowth}%
+                    </p>
+                    <p className="text-orange-100 text-xs mt-1">geçen aya göre</p>
+                  </div>
+                  <TrendingUp className="h-12 w-12 text-orange-200" />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* En Çok Tüketilen Ürünler */}
+          {stats && stats.topProducts.length > 0 && (
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <div className="flex items-center mb-4">
+                <BarChart3 className="h-6 w-6 text-blue-600 mr-2" />
+                <h2 className="text-xl font-bold text-gray-800">En Çok Tüketilen Ürünler</h2>
+              </div>
+              <div className="space-y-3">
+                {stats.topProducts.map((item, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-600 font-bold rounded-full">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-800">{item.product_name}</p>
+                        <p className="text-sm text-gray-500">
+                          {periodType === 'weekly' ? 'Haftalık' : 'Aylık'}: {Math.round(periodType === 'weekly' ? item.weekly_avg : item.monthly_avg)} adet
+                        </p>
+                      </div>
+                    </div>
+                    {item.growth_rate !== null && (
+                      <div className={`flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                        item.growth_rate > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                      }`}>
+                        <TrendingUp className={`h-4 w-4 mr-1 ${item.growth_rate < 0 ? 'rotate-180' : ''}`} />
+                        {item.growth_rate > 0 ? '+' : ''}{Math.round(item.growth_rate)}%
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Tüm Ürünler Detaylı Liste */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-xl font-bold text-gray-800 mb-4">Tüm Ürünler Detaylı</h2>
+            <div className="grid gap-4">
+              {consumption.map((item, index) => (
+                <div key={index} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition">
+                  <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100 border-b">
+                    <h3 className="font-semibold text-gray-800">{item.product_name}</h3>
+                  </div>
+                  <div className="p-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Haftalık Tüketim */}
                   <div className="bg-blue-50 rounded-lg p-4">
