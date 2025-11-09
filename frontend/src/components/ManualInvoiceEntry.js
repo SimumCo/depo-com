@@ -220,6 +220,34 @@ const ManualInvoiceEntry = ({ onSuccess }) => {
       
       toast.success('Manuel fatura başarıyla oluşturuldu!');
       
+      // Formu temizle
+      setCustomer({
+        customer_name: '',
+        customer_tax_id: '',
+        address: '',
+        email: '',
+        phone: ''
+      });
+      
+      setInvoice({
+        invoice_number: '',
+        invoice_date: '',
+        subtotal: '',
+        total_discount: '0',
+        total_tax: '',
+        grand_total: ''
+      });
+      
+      setProducts([{
+        product_code: '',
+        product_name: '',
+        category: 'Süt',
+        quantity: '',
+        unit: 'ADET',
+        unit_price: '',
+        total: ''
+      }]);
+      
       if (onSuccess) onSuccess();
       
     } catch (err) {
