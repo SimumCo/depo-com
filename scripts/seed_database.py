@@ -1,7 +1,7 @@
 """
 Minimal Database Setup
 ======================
-Sadece admin kullanıcısı oluşturur.
+Admin ve muhasebe kullanıcılarını oluşturur.
 
 Kullanım:
     python scripts/seed_database.py
