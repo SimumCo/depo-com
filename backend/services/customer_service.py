@@ -34,12 +34,26 @@ class CustomerService:
         Returns:
             Dict with customer_id, username, password
         """
-        # Generate username from name
+        # Generate username from name - normalize Turkish characters
+        import re
         base_username = customer_name.lower()
-        base_username = (base_username.replace(" ", "_")
-                        .replace("ş", "s").replace("ğ", "g")
-                        .replace("ü", "u").replace("ö", "o")
-                        .replace("ç", "c").replace("ı", "i"))
+        
+        # Turkish character replacements (both lowercase and uppercase)
+        replacements = {
+            'ı': 'i', 'İ': 'i', 'i̇': 'i',
+            'ğ': 'g', 'Ğ': 'g',
+            'ü': 'u', 'Ü': 'u',
+            'ş': 's', 'Ş': 's',
+            'ö': 'o', 'Ö': 'o',
+            'ç': 'c', 'Ç': 'c'
+        }
+        
+        for tr_char, en_char in replacements.items():
+            base_username = base_username.replace(tr_char, en_char)
+        
+        # Replace spaces and remove non-alphanumeric
+        base_username = base_username.replace(" ", "_")
+        base_username = re.sub(r'[^a-z0-9_]', '', base_username)
         
         # Find next available number
         existing_customers = await self.customer_repo.find_many(
