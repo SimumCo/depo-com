@@ -93,11 +93,11 @@ const Login = () => {
         </form>
         <div className="px-6 pb-6">
           <div className="text-center text-sm text-gray-600">
-            <p className="font-medium mb-2">Demo Hesaplar:</p>
+            <p className="font-medium mb-2">Giriş Hesapları:</p>
             <div className="space-y-1 text-xs bg-gray-50 p-3 rounded-md">
               <p><strong>👤 Admin:</strong> admin / admin123</p>
               <p><strong>💼 Muhasebe:</strong> muhasebe / muhasebe123</p>
-              <p className="text-gray-500 italic pt-2">Diğer kullanıcılar admin panelinden oluşturulabilir</p>
+              <p className="text-blue-600 font-medium pt-2">💡 Fatura yüklemek için muhasebe hesabını kullanın</p>
             </div>
           </div>
         </div>
