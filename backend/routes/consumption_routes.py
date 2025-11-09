@@ -25,7 +25,8 @@ async def calculate_consumption(customer_id: str, product_id: str, start_date: d
     if not customer or not customer.get("customer_number"):
         return None
     
-    customer_tax_id = customer["customer_number"]
+    # VKN'yi normalize et (boşlukları temizle)
+    customer_tax_id = str(customer["customer_number"]).strip()
     
     # Fatura tarihine göre filtrele
     cursor = db.invoices.find(
