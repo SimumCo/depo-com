@@ -111,11 +111,17 @@ yarn start
 
 ## 🔐 Giriş Bilgileri
 
+Sistem kurulumundan sonra aşağıdaki hesaplar otomatik oluşturulur:
+
 **Admin Hesabı:**
 - Kullanıcı Adı: `admin`
 - Şifre: `admin123`
 
-Diğer kullanıcılar admin panelinden oluşturulabilir.
+**Muhasebe Hesabı:**
+- Kullanıcı Adı: `muhasebe`
+- Şifre: `muhasebe123`
+
+Diğer kullanıcılar (plasiyer, müşteri vb.) admin panelinden oluşturulabilir.
 
 ---
 
