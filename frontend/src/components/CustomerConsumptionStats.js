@@ -209,60 +209,62 @@ const CustomerConsumptionStats = () => {
                     <h3 className="font-semibold text-gray-800">{item.product_name}</h3>
                   </div>
                   <div className="p-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Haftalık Tüketim */}
-                  <div className="bg-blue-50 rounded-lg p-4">
-                    <div className="text-sm font-medium text-blue-600 mb-1">Haftalık Ortalama</div>
-                    <div className="text-2xl font-bold text-blue-900">
-                      {item.weekly_avg.toFixed(2)} adet
-                    </div>
-                  </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* Haftalık Tüketim */}
+                      <div className="bg-blue-50 rounded-lg p-4">
+                        <div className="text-sm font-medium text-blue-600 mb-1">Haftalık Ortalama</div>
+                        <div className="text-2xl font-bold text-blue-900">
+                          {item.weekly_avg.toFixed(2)} adet
+                        </div>
+                      </div>
 
-                  {/* Aylık Tüketim */}
-                  <div className="bg-green-50 rounded-lg p-4">
-                    <div className="text-sm font-medium text-green-600 mb-1">Aylık Ortalama</div>
-                    <div className="text-2xl font-bold text-green-900">
-                      {item.monthly_avg.toFixed(2)} adet
-                    </div>
-                  </div>
+                      {/* Aylık Tüketim */}
+                      <div className="bg-green-50 rounded-lg p-4">
+                        <div className="text-sm font-medium text-green-600 mb-1">Aylık Ortalama</div>
+                        <div className="text-2xl font-bold text-green-900">
+                          {item.monthly_avg.toFixed(2)} adet
+                        </div>
+                      </div>
 
-                  {/* Son Sipariş */}
-                  <div className="bg-purple-50 rounded-lg p-4">
-                    <div className="text-sm font-medium text-purple-600 mb-1">Son Sipariş</div>
-                    <div className="text-lg font-bold text-purple-900">
-                      {formatDate(item.last_order_date)}
+                      {/* Son Sipariş */}
+                      <div className="bg-purple-50 rounded-lg p-4">
+                        <div className="text-sm font-medium text-purple-600 mb-1">Son Fatura</div>
+                        <div className="text-lg font-bold text-purple-900">
+                          {formatDate(item.last_order_date)}
+                        </div>
+                      </div>
                     </div>
+
+                    {/* Growth Rate & Prediction */}
+                    {(item.growth_rate !== null || item.prediction !== null) && (
+                      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {item.growth_rate !== null && (
+                          <div className="border-l-4 border-yellow-500 pl-4">
+                            <div className="text-sm text-gray-600">Değişim Oranı</div>
+                            <div className={`text-xl font-semibold ${
+                              item.growth_rate > 0 ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {item.growth_rate > 0 ? '+' : ''}{item.growth_rate.toFixed(2)}%
+                            </div>
+                          </div>
+                        )}
+                        
+                        {item.prediction !== null && (
+                          <div className="border-l-4 border-indigo-500 pl-4">
+                            <div className="text-sm text-gray-600">Gelecek Dönem Tahmini</div>
+                            <div className="text-xl font-semibold text-indigo-600">
+                              {item.prediction.toFixed(2)} adet
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
-
-                {/* Growth Rate & Prediction */}
-                {(item.growth_rate !== null || item.prediction !== null) && (
-                  <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {item.growth_rate !== null && (
-                      <div className="border-l-4 border-yellow-500 pl-4">
-                        <div className="text-sm text-gray-600">Değişim Oranı</div>
-                        <div className={`text-xl font-semibold ${
-                          item.growth_rate > 0 ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {item.growth_rate > 0 ? '+' : ''}{item.growth_rate.toFixed(2)}%
-                        </div>
-                      </div>
-                    )}
-                    
-                    {item.prediction !== null && (
-                      <div className="border-l-4 border-indigo-500 pl-4">
-                        <div className="text-sm text-gray-600">Gelecek Dönem Tahmini</div>
-                        <div className="text-xl font-semibold text-indigo-600">
-                          {item.prediction.toFixed(2)} adet
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        </>
       )}
     </div>
   );
