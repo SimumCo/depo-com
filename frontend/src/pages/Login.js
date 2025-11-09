@@ -97,7 +97,7 @@ const Login = () => {
             <div className="space-y-1 text-xs bg-gray-50 p-3 rounded-md">
               <p><strong>👤 Admin:</strong> admin / admin123</p>
               <p><strong>💼 Muhasebe:</strong> muhasebe / muhasebe123</p>
-              <p className="text-blue-600 font-medium pt-2">💡 Fatura yüklemek için muhasebe hesabını kullanın</p>
+              <p className="text-blue-600 font-medium pt-2">💡 Fatura yükleyince müşteri hesapları otomatik oluşur</p>
             </div>
           </div>
         </div>
