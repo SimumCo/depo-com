@@ -91,7 +91,9 @@ class InvoiceService:
         doc = invoice_obj.model_dump()
         doc['uploaded_at'] = doc['uploaded_at'].isoformat()
         
-        invoice_id = await self.invoice_repo.create_invoice(doc)
+        # Use the UUID from the invoice object, not the MongoDB ObjectId
+        invoice_id = invoice_obj.id
+        await self.invoice_repo.create_invoice(doc)
         
         # Otomatik tüketim hesaplama
         try:
