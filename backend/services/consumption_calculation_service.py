@@ -190,7 +190,7 @@ class ConsumptionCalculationService:
                     consumption_quantity=consumption_quantity,
                     daily_consumption_rate=daily_rate,
                     can_calculate=True,
-                    notes=f"{days_between} gün içinde {consumption_quantity:.2f} birim tüketim"
+                    notes=f"Son alım: {source_quantity:.2f} birim, {days_between} günde tüketildi"
                 )
             else:
                 # ÜRÜN BULUNAMADI - İlk fatura kaydı
