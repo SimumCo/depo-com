@@ -105,5 +105,37 @@ async def setup_users():
     print("   Admin: admin / admin123")
     print("   Muhasebe: muhasebe / muhasebe123")
 
+async def run_complete_seed():
+    """Tam seed sistemini çalıştır"""
+    print("\n" + "=" * 70)
+    print("FATURA BAZLI TÜKETİM SİSTEMİ - COMPLETE SEED")
+    print("=" * 70)
+    print("\nBu script şunları oluşturacak:")
+    print("  ✓ Admin ve Muhasebe kullanıcıları")
+    print("  ✓ 5 Müşteri (farklı şehirlerden)")
+    print("  ✓ 10 Süt ürünü")
+    print("  ✓ 40 Fatura (2024 ve 2025)")
+    print("  ✓ Otomatik tüketim hesaplamaları")
+    print("  ✓ Periyodik kayıtlar (haftalık/aylık)")
+    
+    response = input("\nDevam etmek istiyor musunuz? (y/n): ")
+    
+    if response.lower() != 'y':
+        print("İptal edildi.")
+        return
+    
+    # Minimal seed (sadece admin ve muhasebe)
+    await setup_users()
+    
+    print("\n" + "=" * 70)
+    print("DİKKAT: Tam seed için backend/seed_complete_system.py çalıştırın!")
+    print("=" * 70)
+    print("\nKomut:")
+    print("  cd backend")
+    print("  python seed_complete_system.py")
+    print("\nVeya hızlı çalıştırma:")
+    print("  cd /app/backend && python seed_complete_system.py")
+
+
 if __name__ == "__main__":
-    asyncio.run(setup_users())
+    asyncio.run(run_complete_seed())
