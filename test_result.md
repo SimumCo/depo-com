@@ -110,6 +110,14 @@ user_problem_statement: |
   2. Plasiyer depoya kendi stoğu için sipariş verebilir (müşteri belirtmeden)
   3. 18 müşteri, Pazartesi-Cumartesi arası rastgele günlerde, karışık channel_type (logistics/dealer)
   4. Müşteri sipariş ekranında teslimat günü gösterilir
+  
+  YENİ ÖZELLIK - FATURA BAZLI TÜKETİM HESAPLAMA:
+  5. Her yeni fatura yüklendiğinde (HTML upload veya manuel giriş) otomatik tüketim hesaplama
+  6. Aynı müşterinin önceki faturalarında aynı ürün aranır (product_code ile)
+  7. Ürün 2-3 önceki faturalarda da olabilir - tümü kontrol edilir
+  8. Tüketim = (Yeni Miktar - Eski Miktar) / Gün Farkı
+  9. CUSTOMER_CONSUMPTION collection'a kayıt: source_invoice_id, target_invoice_id, daily_consumption_rate
+  10. İlk fatura ise: "Tüketim hesaplanamaz" kaydı oluşturulur
 
 backend:
   - task: "Sales Agent API'leri"
