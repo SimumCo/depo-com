@@ -1439,106 +1439,72 @@ class APITester:
             return
         
         try:
-            # First, get a customer and product from existing periodic records
-            # We'll use admin to access all data
-            periods_response = requests.get(f"{BASE_URL}/consumption-periods/customer/test_customer_id?period_type=monthly&year=2024", headers=headers, timeout=30)
+            # Use known data from top consumers - TEST001 product with customer 312010
+            test_customer_id = "312010"
+            test_product_code = "TEST001"
             
-            # If no specific customer, try to find any customer with periodic data
-            # Let's use the customer from previous tests if available
-            customer_headers = self.get_headers("customer")
-            if customer_headers:
-                me_response = requests.get(f"{BASE_URL}/auth/me", headers=customer_headers, timeout=30)
-                if me_response.status_code == 200:
-                    customer_info = me_response.json()
-                    test_customer_id = customer_info.get("id")
-                    
-                    # Get customer's periodic records to find a product
-                    periods_response = requests.get(
-                        f"{BASE_URL}/consumption-periods/customer/{test_customer_id}?period_type=monthly&year=2024",
-                        headers=headers,
-                        timeout=30
-                    )
-                    
-                    if periods_response.status_code == 200:
-                        periods = periods_response.json()
-                        
-                        if periods:
-                            # Use first available product
-                            test_product_code = periods[0].get("product_code")
-                            
-                            if test_product_code:
-                                # Test year-over-year comparison for November (period 11)
-                                response = requests.get(
-                                    f"{BASE_URL}/consumption-periods/compare/year-over-year",
-                                    params={
-                                        "customer_id": test_customer_id,
-                                        "product_code": test_product_code,
-                                        "period_type": "monthly",
-                                        "period_number": 11,  # November
-                                        "current_year": 2024
-                                    },
-                                    headers=headers,
-                                    timeout=30
-                                )
-                                
-                                if response.status_code == 200:
-                                    comparison = response.json()
-                                    
-                                    # Validate response structure
-                                    expected_fields = [
-                                        "customer_id", "product_code", "period_type", "period_number",
-                                        "current_year", "current_year_consumption", "previous_year",
-                                        "previous_year_consumption", "percentage_change", "trend_direction"
-                                    ]
-                                    
-                                    missing_fields = [field for field in expected_fields if field not in comparison]
-                                    
-                                    if missing_fields:
-                                        self.log_test("Year Over Year Comparison", False, f"Missing fields: {missing_fields}")
-                                        return
-                                    
-                                    # Validate values
-                                    if comparison.get("period_number") != 11:
-                                        self.log_test("Year Over Year Comparison", False, f"Wrong period number: {comparison.get('period_number')}")
-                                        return
-                                    
-                                    if comparison.get("current_year") != 2024:
-                                        self.log_test("Year Over Year Comparison", False, f"Wrong current year: {comparison.get('current_year')}")
-                                        return
-                                    
-                                    if comparison.get("previous_year") != 2023:
-                                        self.log_test("Year Over Year Comparison", False, f"Wrong previous year: {comparison.get('previous_year')}")
-                                        return
-                                    
-                                    # Validate trend direction
-                                    trend = comparison.get("trend_direction")
-                                    if trend not in ["growth", "decline", "stable", "no_data"]:
-                                        self.log_test("Year Over Year Comparison", False, f"Invalid trend direction: {trend}")
-                                        return
-                                    
-                                    percentage_change = comparison.get("percentage_change", 0)
-                                    current_consumption = comparison.get("current_year_consumption", 0)
-                                    previous_consumption = comparison.get("previous_year_consumption", 0)
-                                    
-                                    self.log_test("Year Over Year Comparison", True, 
-                                        f"2023 Nov: {previous_consumption} vs 2024 Nov: {current_consumption}, "
-                                        f"Change: {percentage_change:.1f}%, Trend: {trend}")
-                                    
-                                elif response.status_code == 404:
-                                    # This is acceptable - no data for 2024
-                                    self.log_test("Year Over Year Comparison", True, "No 2024 data found (expected for new system)")
-                                else:
-                                    self.log_test("Year Over Year Comparison", False, f"Status: {response.status_code}, Response: {response.text}")
-                            else:
-                                self.log_test("Year Over Year Comparison", False, "No product code found in periodic records")
-                        else:
-                            self.log_test("Year Over Year Comparison", False, "No periodic records found for customer")
-                    else:
-                        self.log_test("Year Over Year Comparison", False, "Could not get customer periodic records")
-                else:
-                    self.log_test("Year Over Year Comparison", False, "Could not get customer info")
+            # Test year-over-year comparison for December (period 12)
+            response = requests.get(
+                f"{BASE_URL}/consumption-periods/compare/year-over-year",
+                params={
+                    "customer_id": test_customer_id,
+                    "product_code": test_product_code,
+                    "period_type": "monthly",
+                    "period_number": 12,  # December
+                    "current_year": 2024
+                },
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                comparison = response.json()
+                
+                # Validate response structure
+                expected_fields = [
+                    "customer_id", "product_code", "period_type", "period_number",
+                    "current_year", "current_year_consumption", "previous_year",
+                    "previous_year_consumption", "percentage_change", "trend_direction"
+                ]
+                
+                missing_fields = [field for field in expected_fields if field not in comparison]
+                
+                if missing_fields:
+                    self.log_test("Year Over Year Comparison", False, f"Missing fields: {missing_fields}")
+                    return
+                
+                # Validate values
+                if comparison.get("period_number") != 12:
+                    self.log_test("Year Over Year Comparison", False, f"Wrong period number: {comparison.get('period_number')}")
+                    return
+                
+                if comparison.get("current_year") != 2024:
+                    self.log_test("Year Over Year Comparison", False, f"Wrong current year: {comparison.get('current_year')}")
+                    return
+                
+                if comparison.get("previous_year") != 2023:
+                    self.log_test("Year Over Year Comparison", False, f"Wrong previous year: {comparison.get('previous_year')}")
+                    return
+                
+                # Validate trend direction
+                trend = comparison.get("trend_direction")
+                if trend not in ["growth", "decline", "stable", "no_data"]:
+                    self.log_test("Year Over Year Comparison", False, f"Invalid trend direction: {trend}")
+                    return
+                
+                percentage_change = comparison.get("percentage_change", 0)
+                current_consumption = comparison.get("current_year_consumption", 0)
+                previous_consumption = comparison.get("previous_year_consumption", 0)
+                
+                self.log_test("Year Over Year Comparison", True, 
+                    f"2023 Dec: {previous_consumption} vs 2024 Dec: {current_consumption}, "
+                    f"Change: {percentage_change:.1f}%, Trend: {trend}")
+                
+            elif response.status_code == 404:
+                # This is acceptable - no data for 2024 December
+                self.log_test("Year Over Year Comparison", True, "No 2024 December data found (expected for new system)")
             else:
-                self.log_test("Year Over Year Comparison", False, "No customer token for test data")
+                self.log_test("Year Over Year Comparison", False, f"Status: {response.status_code}, Response: {response.text}")
                 
         except Exception as e:
             self.log_test("Year Over Year Comparison", False, f"Exception: {str(e)}")
