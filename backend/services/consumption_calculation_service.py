@@ -166,8 +166,10 @@ class ConsumptionCalculationService:
                 source_date_obj = self._parse_invoice_date(source_invoice_date)
                 days_between = (invoice_date_obj - source_date_obj).days
                 
-                # Tüketim miktarı
-                consumption_quantity = target_quantity - source_quantity
+                # Tüketim miktarı = SON ALINAN MİKTAR (source_quantity)
+                # Mantık: Son faturada 50 adet almış, ara faturalarda görünmüyor (stokta var),
+                # yeni faturada görünüyor demek ki stok bitmiş ve 50 adet tüketilmiş
+                consumption_quantity = source_quantity
                 
                 # Günlük tüketim oranı
                 daily_rate = consumption_quantity / days_between if days_between > 0 else 0.0
