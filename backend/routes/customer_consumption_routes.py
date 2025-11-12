@@ -160,13 +160,15 @@ async def calculate_consumption_patterns(
             prod_id = product["id"]
             
             # Son 90 günlük tüketim kayıtlarını al
-            ninety_days_ago = (datetime.now() - timedelta(days=90)).isoformat()
+            ninety_days_ago = (datetime.now() - timedelta(days=90)).strftime("%Y-%m-%d")
             
             records = await db.customer_consumption.find({
                 "customer_id": cust_id,
-                "product_id": prod_id,
-                "consumption_date": {"$gte": ninety_days_ago}
+                "product_id": prod_id
             }).to_list(length=1000)
+            
+            # Tarih filtresi (string karşılaştırma)
+            records = [r for r in records if r.get("consumption_date", "")[:10] >= ninety_days_ago]
             
             if len(records) < 2:
                 continue  # En az 2 kayıt gerekli
