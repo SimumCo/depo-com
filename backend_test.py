@@ -2407,7 +2407,7 @@ class APITester:
 
     def run_all_tests(self):
         """Run all API tests"""
-        print("🧪 Starting Backend API Tests - Fatura Bazlı Tüketim Hesaplama Sistemi")
+        print("🧪 Starting Backend API Tests - Periyodik Tüketim ve Yıllık Karşılaştırma Sistemi")
         print("=" * 80)
         
         # Login all users first
