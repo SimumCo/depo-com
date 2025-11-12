@@ -1,6 +1,6 @@
 """
 Customer Consumption Model
-Müşteri tüketim kayıtları - manuel ve otomatik kayıt
+Müşteri tüketim kayıtları - Fatura bazlı otomatik hesaplama
 """
 
 from pydantic import BaseModel, Field
@@ -9,28 +9,53 @@ from typing import Optional
 import uuid
 
 class CustomerConsumption(BaseModel):
-    """Müşteri tüketim kaydı"""
+    """Müşteri tüketim kaydı - Fatura bazlı"""
     consumption_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     customer_id: str
     product_id: str
-    consumption_date: datetime
-    quantity_used: float
-    consumption_type: str = "manual"  # manual, automatic, estimated
+    product_code: str  # Ürün eşleştirme için
+    product_name: str  # Ürün adı
+    
+    # Kaynak fatura (önceki fatura)
+    source_invoice_id: Optional[str] = None  # None ise ilk fatura
+    source_invoice_date: Optional[str] = None  # Format: "DD MM YYYY"
+    source_quantity: float = 0.0
+    
+    # Hedef fatura (yeni fatura)
+    target_invoice_id: str
+    target_invoice_date: str  # Format: "DD MM YYYY"
+    target_quantity: float
+    
+    # Hesaplanan değerler
+    days_between: int = 0  # Faturalar arası gün farkı
+    consumption_quantity: float = 0.0  # target_quantity - source_quantity
+    daily_consumption_rate: float = 0.0  # consumption_quantity / days_between
+    
+    # Metadata
+    can_calculate: bool = True  # False ise ilk fatura
     notes: Optional[str] = None
-    recorded_at: datetime = Field(default_factory=datetime.now)
-    recorded_by: Optional[str] = None  # User ID who recorded
+    created_at: datetime = Field(default_factory=datetime.utcnow)
     
     class Config:
         json_schema_extra = {
             "example": {
                 "consumption_id": "cons_123456",
-                "customer_id": "910780",
-                "product_id": "prod_1",
-                "consumption_date": "2024-11-01T10:00:00",
-                "quantity_used": 50.0,
-                "consumption_type": "manual",
-                "notes": "Haftalık sayım",
-                "recorded_at": "2024-11-01T10:05:00"
+                "customer_id": "cust_001",
+                "product_id": "prod_001",
+                "product_code": "SUT001",
+                "product_name": "Süzme Yoğurt 5 KG",
+                "source_invoice_id": "inv_001",
+                "source_invoice_date": "01 11 2024",
+                "source_quantity": 50.0,
+                "target_invoice_id": "inv_002",
+                "target_invoice_date": "15 11 2024",
+                "target_quantity": 80.0,
+                "days_between": 14,
+                "consumption_quantity": 30.0,
+                "daily_consumption_rate": 2.14,
+                "can_calculate": True,
+                "notes": "Normal tüketim",
+                "created_at": "2024-11-15T10:00:00"
             }
         }
 
