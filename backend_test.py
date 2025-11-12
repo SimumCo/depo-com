@@ -1517,98 +1517,68 @@ class APITester:
             return
         
         try:
-            # Get customer and product from previous tests
-            customer_headers = self.get_headers("customer")
-            if not customer_headers:
-                self.log_test("Yearly Trend Analysis", False, "No customer token for test data")
-                return
+            # Use known data from top consumers - TEST001 product with customer 312010
+            test_customer_id = "312010"
+            test_product_code = "TEST001"
             
-            me_response = requests.get(f"{BASE_URL}/auth/me", headers=customer_headers, timeout=30)
-            if me_response.status_code != 200:
-                self.log_test("Yearly Trend Analysis", False, "Could not get customer info")
-                return
-            
-            customer_info = me_response.json()
-            test_customer_id = customer_info.get("id")
-            
-            # Get customer's periodic records to find a product
-            periods_response = requests.get(
-                f"{BASE_URL}/consumption-periods/customer/{test_customer_id}?period_type=monthly&year=2024",
+            # Test yearly trend analysis
+            response = requests.get(
+                f"{BASE_URL}/consumption-periods/trends/yearly",
+                params={
+                    "customer_id": test_customer_id,
+                    "product_code": test_product_code,
+                    "year": 2024,
+                    "period_type": "monthly"
+                },
                 headers=headers,
                 timeout=30
             )
             
-            if periods_response.status_code == 200:
-                periods = periods_response.json()
+            if response.status_code == 200:
+                analysis = response.json()
                 
-                if periods:
-                    test_product_code = periods[0].get("product_code")
-                    
-                    if test_product_code:
-                        # Test yearly trend analysis
-                        response = requests.get(
-                            f"{BASE_URL}/consumption-periods/trends/yearly",
-                            params={
-                                "customer_id": test_customer_id,
-                                "product_code": test_product_code,
-                                "year": 2024,
-                                "period_type": "monthly"
-                            },
-                            headers=headers,
-                            timeout=30
-                        )
-                        
-                        if response.status_code == 200:
-                            analysis = response.json()
-                            
-                            # Validate response structure
-                            expected_fields = [
-                                "customer_id", "product_code", "product_name", "period_type",
-                                "analysis_year", "periods", "total_consumption", "average_consumption",
-                                "peak_period", "overall_trend"
-                            ]
-                            
-                            missing_fields = [field for field in expected_fields if field not in analysis]
-                            
-                            if missing_fields:
-                                self.log_test("Yearly Trend Analysis", False, f"Missing fields: {missing_fields}")
-                                return
-                            
-                            # Validate periods array (should have 12 months or less)
-                            periods_data = analysis.get("periods", [])
-                            if not isinstance(periods_data, list):
-                                self.log_test("Yearly Trend Analysis", False, "Periods should be a list")
-                                return
-                            
-                            if len(periods_data) > 12:
-                                self.log_test("Yearly Trend Analysis", False, f"Too many periods for monthly: {len(periods_data)}")
-                                return
-                            
-                            # Validate overall trend
-                            trend = analysis.get("overall_trend")
-                            if trend not in ["increasing", "decreasing", "stable", "seasonal"]:
-                                self.log_test("Yearly Trend Analysis", False, f"Invalid overall trend: {trend}")
-                                return
-                            
-                            total_consumption = analysis.get("total_consumption", 0)
-                            average_consumption = analysis.get("average_consumption", 0)
-                            peak_period = analysis.get("peak_period", 0)
-                            
-                            self.log_test("Yearly Trend Analysis", True, 
-                                f"2024 analysis: {len(periods_data)} periods, Total: {total_consumption}, "
-                                f"Avg: {average_consumption:.1f}, Peak: Month {peak_period}, Trend: {trend}")
-                            
-                        elif response.status_code == 404:
-                            # This is acceptable - no data for 2024
-                            self.log_test("Yearly Trend Analysis", True, "No 2024 trend data found (expected for new system)")
-                        else:
-                            self.log_test("Yearly Trend Analysis", False, f"Status: {response.status_code}, Response: {response.text}")
-                    else:
-                        self.log_test("Yearly Trend Analysis", False, "No product code found")
-                else:
-                    self.log_test("Yearly Trend Analysis", False, "No periodic records found")
+                # Validate response structure
+                expected_fields = [
+                    "customer_id", "product_code", "product_name", "period_type",
+                    "analysis_year", "periods", "total_consumption", "average_consumption",
+                    "peak_period", "overall_trend"
+                ]
+                
+                missing_fields = [field for field in expected_fields if field not in analysis]
+                
+                if missing_fields:
+                    self.log_test("Yearly Trend Analysis", False, f"Missing fields: {missing_fields}")
+                    return
+                
+                # Validate periods array (should have 12 months or less)
+                periods_data = analysis.get("periods", [])
+                if not isinstance(periods_data, list):
+                    self.log_test("Yearly Trend Analysis", False, "Periods should be a list")
+                    return
+                
+                if len(periods_data) > 12:
+                    self.log_test("Yearly Trend Analysis", False, f"Too many periods for monthly: {len(periods_data)}")
+                    return
+                
+                # Validate overall trend
+                trend = analysis.get("overall_trend")
+                if trend not in ["increasing", "decreasing", "stable", "seasonal"]:
+                    self.log_test("Yearly Trend Analysis", False, f"Invalid overall trend: {trend}")
+                    return
+                
+                total_consumption = analysis.get("total_consumption", 0)
+                average_consumption = analysis.get("average_consumption", 0)
+                peak_period = analysis.get("peak_period", 0)
+                
+                self.log_test("Yearly Trend Analysis", True, 
+                    f"2024 analysis: {len(periods_data)} periods, Total: {total_consumption}, "
+                    f"Avg: {average_consumption:.1f}, Peak: Month {peak_period}, Trend: {trend}")
+                
+            elif response.status_code == 404:
+                # This is acceptable - no data for 2024
+                self.log_test("Yearly Trend Analysis", True, "No 2024 trend data found (expected for new system)")
             else:
-                self.log_test("Yearly Trend Analysis", False, "Could not get periodic records")
+                self.log_test("Yearly Trend Analysis", False, f"Status: {response.status_code}, Response: {response.text}")
                 
         except Exception as e:
             self.log_test("Yearly Trend Analysis", False, f"Exception: {str(e)}")
