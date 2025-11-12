@@ -234,6 +234,30 @@ backend:
         agent: "testing"
         comment: "Authentication API'leri test edildi ve başarılı: POST /api/auth/login (admin, muhasebe, plasiyer, müşteri girişleri), GET /api/auth/me (kullanıcı bilgileri). Tüm roller için token oluşturma ve doğrulama çalışıyor."
 
+  - task: "Fatura Bazlı Tüketim Hesaplama Sistemi"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/services/consumption_calculation_service.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          Fatura bazlı otomatik tüketim hesaplama sistemi eklendi:
+          1. ConsumptionCalculationService: Geriye dönük ürün arama mantığı
+          2. CustomerConsumption modeli güncellendi (source/target invoice fields)
+          3. HTML upload ve manuel fatura girişine otomatik tüketim hesaplama eklendi
+          4. Yeni API endpoints: /api/customer-consumption/invoice-based/*
+          5. Bulk calculation script: bulk_calculate_consumption.py
+          6. Özellikler:
+             - Aynı ürün 2-3 önceki faturada aranır
+             - product_code ile eşleştirme
+             - İlk fatura için "Tüketim hesaplanamaz" kaydı
+             - Günlük tüketim oranı hesaplama
+             - Müşteri/ürün bazlı istatistikler
+
   - task: "Manuel Fatura Giriş Sistemi"
     implemented: true
     working: true
