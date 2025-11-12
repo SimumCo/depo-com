@@ -93,6 +93,21 @@ class InvoiceService:
         
         invoice_id = await self.invoice_repo.create_invoice(doc)
         
+        # Otomatik tüketim hesaplama
+        try:
+            from services.consumption_calculation_service import ConsumptionCalculationService
+            import logging
+            logger = logging.getLogger(__name__)
+            
+            consumption_service = ConsumptionCalculationService(self.invoice_repo.db)
+            consumption_result = await consumption_service.calculate_consumption_for_invoice(invoice_id)
+            logger.info(f"Consumption calculation result for manual invoice: {consumption_result}")
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Consumption calculation failed for manual invoice {invoice_id}: {e}")
+            # Hata olsa bile fatura başarılı kaydedildi, devam et
+        
         return {
             "invoice_id": invoice_id,
             "customer_created": customer_created_info is not None,
