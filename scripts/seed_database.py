@@ -1,10 +1,23 @@
 """
-Minimal Database Setup
-======================
-Admin ve muhasebe kullanıcılarını oluşturur.
+Complete Database Setup
+========================
+Fatura bazlı tüketim sistemi için tam demo verileri oluşturur.
+
+Oluşturulacaklar:
+- Admin ve muhasebe kullanıcıları
+- 5 müşteri (farklı şehirlerden)
+- 10 süt ürünü
+- 40 fatura (2024: 30, 2025: 10)
+- Otomatik tüketim hesaplamaları
+- Haftalık ve aylık periyodik kayıtlar
 
 Kullanım:
-    python scripts/seed_database.py
+    cd backend
+    python ../scripts/seed_database.py
+    
+    veya
+    
+    python backend/seed_complete_system.py
 """
 
 import asyncio
