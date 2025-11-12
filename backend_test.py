@@ -2415,10 +2415,32 @@ class APITester:
         for user_type in TEST_USERS.keys():
             self.login_user(user_type)
         
+        print("\n🎯 PERİYODİK TÜKETİM VE YILLIK KARŞILAŞTIRMA SİSTEMİ TESTS:")
+        print("=" * 60)
+        
+        print("\n📊 TEST 1: PERİYODİK KAYIT OLUŞTURMA")
+        self.test_periodic_record_generation_monthly()
+        self.test_periodic_record_generation_weekly()
+        
+        print("\n📈 TEST 2: MÜŞTERİ PERİYODİK TÜKETİM")
+        self.test_customer_periodic_consumption()
+        
+        print("\n🔄 TEST 3: YILLIK KARŞILAŞTIRMA (ÖNEMLİ!)")
+        self.test_year_over_year_comparison()
+        
+        print("\n📊 TEST 4: YILLIK TREND ANALİZİ")
+        self.test_yearly_trend_analysis()
+        
+        print("\n🏆 TEST 5: MÜŞTERİ ÜRÜN TRENDLERİ")
+        self.test_customer_product_trends()
+        
+        print("\n👑 TEST 6: TOP CONSUMERS")
+        self.test_top_consumers()
+        
         print("\n🎯 FATURA BAZLI TÜKETİM HESAPLAMA SİSTEMİ TESTS:")
         print("=" * 60)
         
-        print("\n📊 TEST 1: TEMEL OTOMATİK TÜKETİM HESAPLAMA")
+        print("\n📊 TEST 7: TEMEL OTOMATİK TÜKETİM HESAPLAMA")
         self.test_basic_automatic_consumption_calculation()
         
         print("\n🔍 TEST 2: TÜKETİM MANTIĞI DÜZELTİLDİ - YENİDEN TEST")
