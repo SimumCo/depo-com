@@ -11,6 +11,7 @@ import CustomerFeedback from '../components/CustomerFeedback';
 import CustomerConsumption from '../components/CustomerConsumption';
 import CustomerInvoices from '../components/CustomerInvoices';
 import CustomerConsumptionStats from '../components/CustomerConsumptionStats';
+import ConsumptionRecord from '../components/ConsumptionRecord';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
