@@ -1822,13 +1822,34 @@ class APITester:
 
     def run_all_tests(self):
         """Run all API tests"""
-        print("🧪 Starting Backend API Tests - Güncellenmiş Manuel Fatura Sistemi")
-        print("=" * 70)
+        print("🧪 Starting Backend API Tests - Fatura Bazlı Tüketim Hesaplama Sistemi")
+        print("=" * 80)
         
         # Login all users first
         print("\n🔐 Authentication Tests:")
         for user_type in TEST_USERS.keys():
             self.login_user(user_type)
+        
+        print("\n🎯 FATURA BAZLI TÜKETİM HESAPLAMA SİSTEMİ TESTS:")
+        print("=" * 60)
+        
+        print("\n📊 TEST 1: TEMEL OTOMATİK TÜKETİM HESAPLAMA")
+        self.test_basic_automatic_consumption_calculation()
+        
+        print("\n🔍 TEST 2: GERİYE DÖNÜK ÜRÜN ARAMA (Kritik!)")
+        self.test_backward_product_search_critical()
+        
+        print("\n🆕 TEST 3: İLK FATURA SENARYOSU")
+        self.test_first_invoice_scenario()
+        
+        print("\n⚡ TEST 4: BULK CALCULATION")
+        self.test_bulk_calculation()
+        
+        print("\n📈 TEST 5: MÜŞTERİ İSTATİSTİKLERİ")
+        self.test_customer_statistics()
+        
+        print("\n🔒 TEST 6: YETKİ KONTROLLARI")
+        self.test_authorization_controls()
         
         print("\n🔍 Customer Lookup API Tests:")
         self.test_customer_lookup_existing()
@@ -1861,9 +1882,9 @@ class APITester:
         self.test_sales_agent_stats()
         
         # Summary
-        print("\n" + "=" * 70)
+        print("\n" + "=" * 80)
         print("📊 TEST SUMMARY")
-        print("=" * 70)
+        print("=" * 80)
         
         total_tests = len(self.test_results)
         passed_tests = len([t for t in self.test_results if t["success"]])
