@@ -5,9 +5,13 @@ from models.invoice import Invoice, InvoiceCreate, InvoiceResponse, InvoiceProdu
 from models.user import User, UserRole
 from utils.auth import get_current_user, require_role
 from motor.motor_asyncio import AsyncIOMotorClient
+from services.consumption_calculation_service import ConsumptionCalculationService
 import os
 import re
 from bs4 import BeautifulSoup
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/invoices", tags=["Invoices"])
 
