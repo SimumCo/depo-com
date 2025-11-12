@@ -1912,8 +1912,8 @@ class APITester:
         print("\n📊 TEST 1: TEMEL OTOMATİK TÜKETİM HESAPLAMA")
         self.test_basic_automatic_consumption_calculation()
         
-        print("\n🔍 TEST 2: GERİYE DÖNÜK ÜRÜN ARAMA (Kritik!)")
-        self.test_backward_product_search_critical()
+        print("\n🔍 TEST 2: TÜKETİM MANTIĞI DÜZELTİLDİ - YENİDEN TEST")
+        self.test_corrected_consumption_logic()
         
         print("\n🆕 TEST 3: İLK FATURA SENARYOSU")
         self.test_first_invoice_scenario()
