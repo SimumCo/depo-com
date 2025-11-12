@@ -44,6 +44,7 @@ api_router.include_router(invoice_router)
 api_router.include_router(manual_invoice_router)
 api_router.include_router(customer_lookup_router)
 api_router.include_router(consumption_router)
+api_router.include_router(customer_consumption_router)
 
 # Include old routes temporarily
 # TODO: Refactor these into separate modules
