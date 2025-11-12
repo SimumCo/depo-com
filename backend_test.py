@@ -2443,19 +2443,19 @@ class APITester:
         print("\n📊 TEST 7: TEMEL OTOMATİK TÜKETİM HESAPLAMA")
         self.test_basic_automatic_consumption_calculation()
         
-        print("\n🔍 TEST 2: TÜKETİM MANTIĞI DÜZELTİLDİ - YENİDEN TEST")
+        print("\n🔍 TEST 8: TÜKETİM MANTIĞI DÜZELTİLDİ - YENİDEN TEST")
         self.test_corrected_consumption_logic()
         
-        print("\n🆕 TEST 3: İLK FATURA SENARYOSU")
+        print("\n🆕 TEST 9: İLK FATURA SENARYOSU")
         self.test_first_invoice_scenario()
         
-        print("\n⚡ TEST 4: BULK CALCULATION")
+        print("\n⚡ TEST 10: BULK CALCULATION")
         self.test_bulk_calculation()
         
-        print("\n📈 TEST 5: MÜŞTERİ İSTATİSTİKLERİ")
+        print("\n📈 TEST 11: MÜŞTERİ İSTATİSTİKLERİ")
         self.test_customer_statistics()
         
-        print("\n🔒 TEST 6: YETKİ KONTROLLARI")
+        print("\n🔒 TEST 12: YETKİ KONTROLLARI")
         self.test_authorization_controls()
         
         print("\n🔍 Customer Lookup API Tests:")
