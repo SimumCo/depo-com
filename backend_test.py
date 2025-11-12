@@ -1284,6 +1284,515 @@ class APITester:
         except Exception as e:
             self.log_test("Database Verification", False, f"Exception: {str(e)}")
 
+    # ========== PERİYODİK TÜKETİM VE YILLIK KARŞILAŞTIRMA SİSTEMİ TESTS ==========
+    
+    def test_periodic_record_generation_monthly(self):
+        """TEST 1: PERİYODİK KAYIT OLUŞTURMA - MONTHLY"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Periodic Record Generation - Monthly", False, "No admin token")
+            return
+        
+        try:
+            response = requests.post(
+                f"{BASE_URL}/consumption-periods/generate?period_type=monthly",
+                headers=headers,
+                timeout=60  # Longer timeout for bulk operation
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                
+                # Validate response structure
+                expected_fields = ["message", "success", "period_type", "created", "updated", "total"]
+                missing_fields = [field for field in expected_fields if field not in result]
+                
+                if missing_fields:
+                    self.log_test("Periodic Record Generation - Monthly", False, f"Missing response fields: {missing_fields}")
+                    return
+                
+                if result.get("success") != True:
+                    self.log_test("Periodic Record Generation - Monthly", False, f"Operation not successful: {result}")
+                    return
+                
+                if result.get("period_type") != "monthly":
+                    self.log_test("Periodic Record Generation - Monthly", False, f"Wrong period type: {result.get('period_type')}")
+                    return
+                
+                created = result.get("created", 0)
+                updated = result.get("updated", 0)
+                total = result.get("total", 0)
+                
+                self.log_test("Periodic Record Generation - Monthly", True, 
+                    f"Created: {created}, Updated: {updated}, Total: {total} monthly records")
+                
+            else:
+                self.log_test("Periodic Record Generation - Monthly", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Periodic Record Generation - Monthly", False, f"Exception: {str(e)}")
+    
+    def test_periodic_record_generation_weekly(self):
+        """TEST 1: PERİYODİK KAYIT OLUŞTURMA - WEEKLY"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Periodic Record Generation - Weekly", False, "No admin token")
+            return
+        
+        try:
+            response = requests.post(
+                f"{BASE_URL}/consumption-periods/generate?period_type=weekly",
+                headers=headers,
+                timeout=60  # Longer timeout for bulk operation
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                
+                if result.get("success") != True:
+                    self.log_test("Periodic Record Generation - Weekly", False, f"Operation not successful: {result}")
+                    return
+                
+                if result.get("period_type") != "weekly":
+                    self.log_test("Periodic Record Generation - Weekly", False, f"Wrong period type: {result.get('period_type')}")
+                    return
+                
+                created = result.get("created", 0)
+                updated = result.get("updated", 0)
+                total = result.get("total", 0)
+                
+                self.log_test("Periodic Record Generation - Weekly", True, 
+                    f"Created: {created}, Updated: {updated}, Total: {total} weekly records")
+                
+            else:
+                self.log_test("Periodic Record Generation - Weekly", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Periodic Record Generation - Weekly", False, f"Exception: {str(e)}")
+    
+    def test_customer_periodic_consumption(self):
+        """TEST 2: MÜŞTERİ PERİYODİK TÜKETİM"""
+        # First get a customer ID
+        customer_headers = self.get_headers("customer")
+        if not customer_headers:
+            self.log_test("Customer Periodic Consumption", False, "No customer token")
+            return
+        
+        try:
+            # Get customer info
+            me_response = requests.get(f"{BASE_URL}/auth/me", headers=customer_headers, timeout=30)
+            if me_response.status_code != 200:
+                self.log_test("Customer Periodic Consumption", False, "Could not get customer info")
+                return
+            
+            customer_info = me_response.json()
+            customer_id = customer_info.get("id")
+            
+            if not customer_id:
+                self.log_test("Customer Periodic Consumption", False, "No customer ID found")
+                return
+            
+            # Test monthly consumption for 2024
+            response = requests.get(
+                f"{BASE_URL}/consumption-periods/customer/{customer_id}?period_type=monthly&year=2024",
+                headers=customer_headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                records = response.json()
+                
+                if isinstance(records, list):
+                    self.log_test("Customer Periodic Consumption", True, 
+                        f"Customer has {len(records)} monthly consumption records for 2024")
+                    
+                    # Validate structure if records exist
+                    if records:
+                        record = records[0]
+                        expected_fields = ["period_number", "total_consumption", "daily_average", "year_over_year_change"]
+                        missing_fields = [field for field in expected_fields if field not in record]
+                        
+                        if missing_fields:
+                            self.log_test("Customer Periodic Consumption Structure", False, f"Missing fields: {missing_fields}")
+                        else:
+                            # Validate period_number is between 1-12 for monthly
+                            period_num = record.get("period_number")
+                            if 1 <= period_num <= 12:
+                                self.log_test("Customer Periodic Consumption Structure", True, 
+                                    f"Valid monthly record: Period {period_num}, Consumption: {record.get('total_consumption')}")
+                            else:
+                                self.log_test("Customer Periodic Consumption Structure", False, 
+                                    f"Invalid period number for monthly: {period_num}")
+                else:
+                    self.log_test("Customer Periodic Consumption", False, "Response is not a list")
+            else:
+                self.log_test("Customer Periodic Consumption", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Customer Periodic Consumption", False, f"Exception: {str(e)}")
+    
+    def test_year_over_year_comparison(self):
+        """TEST 3: YILLIK KARŞILAŞTIRMA (ÖNEMLİ!)"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Year Over Year Comparison", False, "No admin token")
+            return
+        
+        try:
+            # First, get a customer and product from existing periodic records
+            # We'll use admin to access all data
+            periods_response = requests.get(f"{BASE_URL}/consumption-periods/customer/test_customer_id?period_type=monthly&year=2024", headers=headers, timeout=30)
+            
+            # If no specific customer, try to find any customer with periodic data
+            # Let's use the customer from previous tests if available
+            customer_headers = self.get_headers("customer")
+            if customer_headers:
+                me_response = requests.get(f"{BASE_URL}/auth/me", headers=customer_headers, timeout=30)
+                if me_response.status_code == 200:
+                    customer_info = me_response.json()
+                    test_customer_id = customer_info.get("id")
+                    
+                    # Get customer's periodic records to find a product
+                    periods_response = requests.get(
+                        f"{BASE_URL}/consumption-periods/customer/{test_customer_id}?period_type=monthly&year=2024",
+                        headers=headers,
+                        timeout=30
+                    )
+                    
+                    if periods_response.status_code == 200:
+                        periods = periods_response.json()
+                        
+                        if periods:
+                            # Use first available product
+                            test_product_code = periods[0].get("product_code")
+                            
+                            if test_product_code:
+                                # Test year-over-year comparison for November (period 11)
+                                response = requests.get(
+                                    f"{BASE_URL}/consumption-periods/compare/year-over-year",
+                                    params={
+                                        "customer_id": test_customer_id,
+                                        "product_code": test_product_code,
+                                        "period_type": "monthly",
+                                        "period_number": 11,  # November
+                                        "current_year": 2024
+                                    },
+                                    headers=headers,
+                                    timeout=30
+                                )
+                                
+                                if response.status_code == 200:
+                                    comparison = response.json()
+                                    
+                                    # Validate response structure
+                                    expected_fields = [
+                                        "customer_id", "product_code", "period_type", "period_number",
+                                        "current_year", "current_year_consumption", "previous_year",
+                                        "previous_year_consumption", "percentage_change", "trend_direction"
+                                    ]
+                                    
+                                    missing_fields = [field for field in expected_fields if field not in comparison]
+                                    
+                                    if missing_fields:
+                                        self.log_test("Year Over Year Comparison", False, f"Missing fields: {missing_fields}")
+                                        return
+                                    
+                                    # Validate values
+                                    if comparison.get("period_number") != 11:
+                                        self.log_test("Year Over Year Comparison", False, f"Wrong period number: {comparison.get('period_number')}")
+                                        return
+                                    
+                                    if comparison.get("current_year") != 2024:
+                                        self.log_test("Year Over Year Comparison", False, f"Wrong current year: {comparison.get('current_year')}")
+                                        return
+                                    
+                                    if comparison.get("previous_year") != 2023:
+                                        self.log_test("Year Over Year Comparison", False, f"Wrong previous year: {comparison.get('previous_year')}")
+                                        return
+                                    
+                                    # Validate trend direction
+                                    trend = comparison.get("trend_direction")
+                                    if trend not in ["growth", "decline", "stable", "no_data"]:
+                                        self.log_test("Year Over Year Comparison", False, f"Invalid trend direction: {trend}")
+                                        return
+                                    
+                                    percentage_change = comparison.get("percentage_change", 0)
+                                    current_consumption = comparison.get("current_year_consumption", 0)
+                                    previous_consumption = comparison.get("previous_year_consumption", 0)
+                                    
+                                    self.log_test("Year Over Year Comparison", True, 
+                                        f"2023 Nov: {previous_consumption} vs 2024 Nov: {current_consumption}, "
+                                        f"Change: {percentage_change:.1f}%, Trend: {trend}")
+                                    
+                                elif response.status_code == 404:
+                                    # This is acceptable - no data for 2024
+                                    self.log_test("Year Over Year Comparison", True, "No 2024 data found (expected for new system)")
+                                else:
+                                    self.log_test("Year Over Year Comparison", False, f"Status: {response.status_code}, Response: {response.text}")
+                            else:
+                                self.log_test("Year Over Year Comparison", False, "No product code found in periodic records")
+                        else:
+                            self.log_test("Year Over Year Comparison", False, "No periodic records found for customer")
+                    else:
+                        self.log_test("Year Over Year Comparison", False, "Could not get customer periodic records")
+                else:
+                    self.log_test("Year Over Year Comparison", False, "Could not get customer info")
+            else:
+                self.log_test("Year Over Year Comparison", False, "No customer token for test data")
+                
+        except Exception as e:
+            self.log_test("Year Over Year Comparison", False, f"Exception: {str(e)}")
+    
+    def test_yearly_trend_analysis(self):
+        """TEST 4: YILLIK TREND ANALİZİ"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Yearly Trend Analysis", False, "No admin token")
+            return
+        
+        try:
+            # Get customer and product from previous tests
+            customer_headers = self.get_headers("customer")
+            if not customer_headers:
+                self.log_test("Yearly Trend Analysis", False, "No customer token for test data")
+                return
+            
+            me_response = requests.get(f"{BASE_URL}/auth/me", headers=customer_headers, timeout=30)
+            if me_response.status_code != 200:
+                self.log_test("Yearly Trend Analysis", False, "Could not get customer info")
+                return
+            
+            customer_info = me_response.json()
+            test_customer_id = customer_info.get("id")
+            
+            # Get customer's periodic records to find a product
+            periods_response = requests.get(
+                f"{BASE_URL}/consumption-periods/customer/{test_customer_id}?period_type=monthly&year=2024",
+                headers=headers,
+                timeout=30
+            )
+            
+            if periods_response.status_code == 200:
+                periods = periods_response.json()
+                
+                if periods:
+                    test_product_code = periods[0].get("product_code")
+                    
+                    if test_product_code:
+                        # Test yearly trend analysis
+                        response = requests.get(
+                            f"{BASE_URL}/consumption-periods/trends/yearly",
+                            params={
+                                "customer_id": test_customer_id,
+                                "product_code": test_product_code,
+                                "year": 2024,
+                                "period_type": "monthly"
+                            },
+                            headers=headers,
+                            timeout=30
+                        )
+                        
+                        if response.status_code == 200:
+                            analysis = response.json()
+                            
+                            # Validate response structure
+                            expected_fields = [
+                                "customer_id", "product_code", "product_name", "period_type",
+                                "analysis_year", "periods", "total_consumption", "average_consumption",
+                                "peak_period", "overall_trend"
+                            ]
+                            
+                            missing_fields = [field for field in expected_fields if field not in analysis]
+                            
+                            if missing_fields:
+                                self.log_test("Yearly Trend Analysis", False, f"Missing fields: {missing_fields}")
+                                return
+                            
+                            # Validate periods array (should have 12 months or less)
+                            periods_data = analysis.get("periods", [])
+                            if not isinstance(periods_data, list):
+                                self.log_test("Yearly Trend Analysis", False, "Periods should be a list")
+                                return
+                            
+                            if len(periods_data) > 12:
+                                self.log_test("Yearly Trend Analysis", False, f"Too many periods for monthly: {len(periods_data)}")
+                                return
+                            
+                            # Validate overall trend
+                            trend = analysis.get("overall_trend")
+                            if trend not in ["increasing", "decreasing", "stable", "seasonal"]:
+                                self.log_test("Yearly Trend Analysis", False, f"Invalid overall trend: {trend}")
+                                return
+                            
+                            total_consumption = analysis.get("total_consumption", 0)
+                            average_consumption = analysis.get("average_consumption", 0)
+                            peak_period = analysis.get("peak_period", 0)
+                            
+                            self.log_test("Yearly Trend Analysis", True, 
+                                f"2024 analysis: {len(periods_data)} periods, Total: {total_consumption}, "
+                                f"Avg: {average_consumption:.1f}, Peak: Month {peak_period}, Trend: {trend}")
+                            
+                        elif response.status_code == 404:
+                            # This is acceptable - no data for 2024
+                            self.log_test("Yearly Trend Analysis", True, "No 2024 trend data found (expected for new system)")
+                        else:
+                            self.log_test("Yearly Trend Analysis", False, f"Status: {response.status_code}, Response: {response.text}")
+                    else:
+                        self.log_test("Yearly Trend Analysis", False, "No product code found")
+                else:
+                    self.log_test("Yearly Trend Analysis", False, "No periodic records found")
+            else:
+                self.log_test("Yearly Trend Analysis", False, "Could not get periodic records")
+                
+        except Exception as e:
+            self.log_test("Yearly Trend Analysis", False, f"Exception: {str(e)}")
+    
+    def test_customer_product_trends(self):
+        """TEST 5: MÜŞTERİ ÜRÜN TRENDLERİ"""
+        headers = self.get_headers("customer")
+        if not headers:
+            self.log_test("Customer Product Trends", False, "No customer token")
+            return
+        
+        try:
+            # Get customer info
+            me_response = requests.get(f"{BASE_URL}/auth/me", headers=headers, timeout=30)
+            if me_response.status_code != 200:
+                self.log_test("Customer Product Trends", False, "Could not get customer info")
+                return
+            
+            customer_info = me_response.json()
+            customer_id = customer_info.get("id")
+            
+            # Test customer products with trends
+            response = requests.get(
+                f"{BASE_URL}/consumption-periods/customer/{customer_id}/products?year=2024&period_type=monthly",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                
+                # Validate response structure
+                expected_fields = ["customer_id", "year", "period_type", "total_products", "products"]
+                missing_fields = [field for field in expected_fields if field not in result]
+                
+                if missing_fields:
+                    self.log_test("Customer Product Trends", False, f"Missing fields: {missing_fields}")
+                    return
+                
+                if result.get("customer_id") != customer_id:
+                    self.log_test("Customer Product Trends", False, f"Wrong customer ID in response")
+                    return
+                
+                if result.get("year") != 2024:
+                    self.log_test("Customer Product Trends", False, f"Wrong year in response")
+                    return
+                
+                products = result.get("products", [])
+                total_products = result.get("total_products", 0)
+                
+                if len(products) != total_products:
+                    self.log_test("Customer Product Trends", False, f"Product count mismatch: {len(products)} vs {total_products}")
+                    return
+                
+                # Validate product structure if products exist
+                if products:
+                    product = products[0]
+                    expected_product_fields = ["product_code", "product_name", "total_consumption", "average_daily", "trend_direction"]
+                    missing_product_fields = [field for field in expected_product_fields if field not in product]
+                    
+                    if missing_product_fields:
+                        self.log_test("Customer Product Trends", False, f"Missing product fields: {missing_product_fields}")
+                        return
+                
+                self.log_test("Customer Product Trends", True, 
+                    f"Customer has {total_products} products with trend data for 2024")
+                
+            else:
+                self.log_test("Customer Product Trends", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Customer Product Trends", False, f"Exception: {str(e)}")
+    
+    def test_top_consumers(self):
+        """TEST 6: TOP CONSUMERS"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Top Consumers", False, "No admin token")
+            return
+        
+        try:
+            # First, try to find a product code from existing data
+            # We'll use a common product code or create a test scenario
+            test_product_code = "TEST001"  # Use a test product code
+            
+            response = requests.get(
+                f"{BASE_URL}/consumption-periods/top-consumers",
+                params={
+                    "product_code": test_product_code,
+                    "year": 2024,
+                    "period_type": "monthly",
+                    "limit": 10
+                },
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                
+                # Validate response structure
+                expected_fields = ["product_code", "product_name", "year", "period_type", "top_consumers"]
+                missing_fields = [field for field in expected_fields if field not in result]
+                
+                if missing_fields:
+                    self.log_test("Top Consumers", False, f"Missing fields: {missing_fields}")
+                    return
+                
+                if result.get("product_code") != test_product_code:
+                    self.log_test("Top Consumers", False, f"Wrong product code in response")
+                    return
+                
+                if result.get("year") != 2024:
+                    self.log_test("Top Consumers", False, f"Wrong year in response")
+                    return
+                
+                top_consumers = result.get("top_consumers", [])
+                
+                # Validate consumer structure if consumers exist
+                if top_consumers:
+                    consumer = top_consumers[0]
+                    expected_consumer_fields = ["customer_id", "customer_name", "total_consumption", "average_daily"]
+                    missing_consumer_fields = [field for field in expected_consumer_fields if field not in consumer]
+                    
+                    if missing_consumer_fields:
+                        self.log_test("Top Consumers", False, f"Missing consumer fields: {missing_consumer_fields}")
+                        return
+                    
+                    # Validate that consumers are sorted by total_consumption (descending)
+                    if len(top_consumers) > 1:
+                        first_consumption = top_consumers[0].get("total_consumption", 0)
+                        second_consumption = top_consumers[1].get("total_consumption", 0)
+                        
+                        if first_consumption < second_consumption:
+                            self.log_test("Top Consumers", False, "Consumers not sorted by consumption (descending)")
+                            return
+                
+                self.log_test("Top Consumers", True, 
+                    f"Found {len(top_consumers)} top consumers for product {test_product_code} in 2024")
+                
+            else:
+                # If no data found, that's acceptable for a new system
+                if response.status_code == 404 or (response.status_code == 200 and response.json().get("top_consumers", []) == []):
+                    self.log_test("Top Consumers", True, f"No consumption data found for {test_product_code} (expected for new system)")
+                else:
+                    self.log_test("Top Consumers", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Top Consumers", False, f"Exception: {str(e)}")
+
     # ========== FATURA BAZLI TÜKETİM HESAPLAMA SİSTEMİ TESTS ==========
     
     def test_basic_automatic_consumption_calculation(self):
