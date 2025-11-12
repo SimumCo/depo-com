@@ -1284,6 +1284,542 @@ class APITester:
         except Exception as e:
             self.log_test("Database Verification", False, f"Exception: {str(e)}")
 
+    # ========== FATURA BAZLI TÜKETİM HESAPLAMA SİSTEMİ TESTS ==========
+    
+    def test_basic_automatic_consumption_calculation(self):
+        """TEST 1: TEMEL OTOMATİK TÜKETİM HESAPLAMA"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Basic Automatic Consumption Calculation", False, "No admin token")
+            return
+        
+        try:
+            # First, check if there are any existing customers with invoices
+            customers_response = requests.get(f"{BASE_URL}/invoices/all/list", headers=headers, timeout=30)
+            if customers_response.status_code != 200:
+                self.log_test("Basic Automatic Consumption Calculation", False, "Could not fetch invoices")
+                return
+            
+            invoices = customers_response.json()
+            if not invoices:
+                self.log_test("Basic Automatic Consumption Calculation", False, "No invoices found in system")
+                return
+            
+            # Find a customer with at least 2 invoices
+            customer_invoices = {}
+            for invoice in invoices:
+                customer_id = invoice.get("customer_id")
+                if customer_id:
+                    if customer_id not in customer_invoices:
+                        customer_invoices[customer_id] = []
+                    customer_invoices[customer_id].append(invoice)
+            
+            # Find customer with multiple invoices
+            target_customer_id = None
+            target_invoice_id = None
+            
+            for customer_id, inv_list in customer_invoices.items():
+                if len(inv_list) >= 2:
+                    target_customer_id = customer_id
+                    # Get the latest invoice
+                    target_invoice_id = inv_list[0].get("id")
+                    break
+            
+            if not target_invoice_id:
+                self.log_test("Basic Automatic Consumption Calculation", False, "No customer with multiple invoices found")
+                return
+            
+            # Test consumption records for this invoice
+            response = requests.get(
+                f"{BASE_URL}/customer-consumption/invoice-based/invoice/{target_invoice_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                consumption_records = response.json()
+                
+                if consumption_records:
+                    # Validate required fields
+                    record = consumption_records[0]
+                    required_fields = ["source_invoice_id", "target_invoice_id", "consumption_quantity", "daily_consumption_rate"]
+                    missing_fields = [field for field in required_fields if field not in record]
+                    
+                    if missing_fields:
+                        self.log_test("Basic Automatic Consumption Calculation", False, f"Missing fields in consumption record: {missing_fields}")
+                    else:
+                        self.log_test("Basic Automatic Consumption Calculation", True, 
+                            f"Found {len(consumption_records)} consumption records for invoice {target_invoice_id}")
+                else:
+                    self.log_test("Basic Automatic Consumption Calculation", False, "No consumption records found for invoice")
+            else:
+                self.log_test("Basic Automatic Consumption Calculation", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Basic Automatic Consumption Calculation", False, f"Exception: {str(e)}")
+    
+    def test_backward_product_search_critical(self):
+        """TEST 2: GERİYE DÖNÜK ÜRÜN ARAMA (Kritik!)"""
+        headers = self.get_headers("accounting")
+        if not headers:
+            self.log_test("Backward Product Search (Critical)", False, "No accounting token")
+            return
+        
+        try:
+            import time
+            timestamp = int(time.time()) % 10000
+            unique_tax_id = f"777777{timestamp:04d}"
+            
+            # Create a unique customer for this test
+            customer_data = {
+                "customer_name": "GERİYE DÖNÜK ARAMA TEST MÜŞTERİSİ",
+                "customer_tax_id": unique_tax_id,
+                "address": "Test Adresi",
+                "email": "geriyedonuk@test.com",
+                "phone": "0312 777 88 99"
+            }
+            
+            # Create 3 invoices with specific scenario
+            # Invoice 1 (01/11/2024): Product A (TEST001, 50 units)
+            invoice1_data = {
+                "customer": customer_data,
+                "invoice_number": f"BACK001-{timestamp}",
+                "invoice_date": "01 11 2024",
+                "products": [
+                    {
+                        "product_code": "TEST001",
+                        "product_name": "TEST ÜRÜN A",
+                        "category": "Test Kategori",
+                        "quantity": 50,
+                        "unit": "ADET",
+                        "unit_price": "10.00",
+                        "total": "500.00"
+                    }
+                ],
+                "subtotal": "500.00",
+                "total_discount": "0",
+                "total_tax": "5.00",
+                "grand_total": "505.00"
+            }
+            
+            # Create Invoice 1
+            response1 = requests.post(f"{BASE_URL}/invoices/manual-entry", json=invoice1_data, headers=headers, timeout=30)
+            if response1.status_code != 200:
+                self.log_test("Backward Product Search (Critical)", False, f"Failed to create invoice 1: {response1.text}")
+                return
+            
+            invoice1_result = response1.json()
+            invoice1_id = invoice1_result.get("invoice_id")
+            
+            # Invoice 2 (15/11/2024): Product B (TEST002, 30 units) - Product A NOT present
+            invoice2_data = {
+                "customer": customer_data,
+                "invoice_number": f"BACK002-{timestamp}",
+                "invoice_date": "15 11 2024",
+                "products": [
+                    {
+                        "product_code": "TEST002",
+                        "product_name": "TEST ÜRÜN B",
+                        "category": "Test Kategori",
+                        "quantity": 30,
+                        "unit": "ADET",
+                        "unit_price": "15.00",
+                        "total": "450.00"
+                    }
+                ],
+                "subtotal": "450.00",
+                "total_discount": "0",
+                "total_tax": "4.50",
+                "grand_total": "454.50"
+            }
+            
+            # Create Invoice 2
+            response2 = requests.post(f"{BASE_URL}/invoices/manual-entry", json=invoice2_data, headers=headers, timeout=30)
+            if response2.status_code != 200:
+                self.log_test("Backward Product Search (Critical)", False, f"Failed to create invoice 2: {response2.text}")
+                return
+            
+            invoice2_result = response2.json()
+            invoice2_id = invoice2_result.get("invoice_id")
+            
+            # Invoice 3 (01/12/2024): Product A (TEST001, 80 units) - Product B NOT present
+            invoice3_data = {
+                "customer": customer_data,
+                "invoice_number": f"BACK003-{timestamp}",
+                "invoice_date": "01 12 2024",
+                "products": [
+                    {
+                        "product_code": "TEST001",  # Same as Invoice 1
+                        "product_name": "TEST ÜRÜN A",
+                        "category": "Test Kategori",
+                        "quantity": 80,
+                        "unit": "ADET",
+                        "unit_price": "10.00",
+                        "total": "800.00"
+                    }
+                ],
+                "subtotal": "800.00",
+                "total_discount": "0",
+                "total_tax": "8.00",
+                "grand_total": "808.00"
+            }
+            
+            # Create Invoice 3
+            response3 = requests.post(f"{BASE_URL}/invoices/manual-entry", json=invoice3_data, headers=headers, timeout=30)
+            if response3.status_code != 200:
+                self.log_test("Backward Product Search (Critical)", False, f"Failed to create invoice 3: {response3.text}")
+                return
+            
+            invoice3_result = response3.json()
+            invoice3_id = invoice3_result.get("invoice_id")
+            
+            # Now check consumption record for Invoice 3
+            # It should find Product A from Invoice 1 (not Invoice 2)
+            consumption_response = requests.get(
+                f"{BASE_URL}/customer-consumption/invoice-based/invoice/{invoice3_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if consumption_response.status_code == 200:
+                consumption_records = consumption_response.json()
+                
+                if not consumption_records:
+                    self.log_test("Backward Product Search (Critical)", False, "No consumption records found for invoice 3")
+                    return
+                
+                # Find the TEST001 product record
+                test001_record = None
+                for record in consumption_records:
+                    if record.get("product_code") == "TEST001":
+                        test001_record = record
+                        break
+                
+                if not test001_record:
+                    self.log_test("Backward Product Search (Critical)", False, "No consumption record found for TEST001 product")
+                    return
+                
+                # Validate the backward search worked correctly
+                source_invoice_id = test001_record.get("source_invoice_id")
+                consumption_quantity = test001_record.get("consumption_quantity")
+                days_between = test001_record.get("days_between")
+                daily_rate = test001_record.get("daily_consumption_rate")
+                
+                # Expected values
+                expected_consumption = 80 - 50  # 30
+                expected_days = 30  # 1 December - 1 November
+                expected_daily_rate = 30 / 30  # 1.0
+                
+                validation_errors = []
+                
+                if source_invoice_id != invoice1_id:
+                    validation_errors.append(f"source_invoice_id should be {invoice1_id} (Invoice 1), got {source_invoice_id}")
+                
+                if consumption_quantity != expected_consumption:
+                    validation_errors.append(f"consumption_quantity should be {expected_consumption}, got {consumption_quantity}")
+                
+                if days_between != expected_days:
+                    validation_errors.append(f"days_between should be {expected_days}, got {days_between}")
+                
+                if abs(daily_rate - expected_daily_rate) > 0.01:
+                    validation_errors.append(f"daily_consumption_rate should be ~{expected_daily_rate}, got {daily_rate}")
+                
+                if validation_errors:
+                    self.log_test("Backward Product Search (Critical)", False, f"Validation errors: {'; '.join(validation_errors)}")
+                else:
+                    self.log_test("Backward Product Search (Critical)", True, 
+                        f"✅ Backward search worked! Found Product A from Invoice 1 (skipped Invoice 2). Consumption: {consumption_quantity}, Days: {days_between}, Rate: {daily_rate:.2f}")
+                
+            else:
+                self.log_test("Backward Product Search (Critical)", False, f"Failed to get consumption records: {consumption_response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Backward Product Search (Critical)", False, f"Exception: {str(e)}")
+    
+    def test_first_invoice_scenario(self):
+        """TEST 3: İLK FATURA SENARYOSU"""
+        headers = self.get_headers("accounting")
+        if not headers:
+            self.log_test("First Invoice Scenario", False, "No accounting token")
+            return
+        
+        try:
+            import time
+            timestamp = int(time.time()) % 10000
+            unique_tax_id = f"888888{timestamp:04d}"
+            
+            # Create a completely new customer with first invoice
+            first_invoice_data = {
+                "customer": {
+                    "customer_name": "İLK FATURA TEST MÜŞTERİSİ",
+                    "customer_tax_id": unique_tax_id,
+                    "address": "İlk Fatura Test Adresi",
+                    "email": "ilkfatura@test.com",
+                    "phone": "0312 888 99 00"
+                },
+                "invoice_number": f"FIRST-{timestamp}",
+                "invoice_date": "01 01 2025",
+                "products": [
+                    {
+                        "product_code": f"FIRST{timestamp:03d}",
+                        "product_name": "İLK FATURA TEST ÜRÜNÜ",
+                        "category": "Test Kategori",
+                        "quantity": 100,
+                        "unit": "ADET",
+                        "unit_price": "20.00",
+                        "total": "2000.00"
+                    }
+                ],
+                "subtotal": "2000.00",
+                "total_discount": "0",
+                "total_tax": "20.00",
+                "grand_total": "2020.00"
+            }
+            
+            # Create the first invoice
+            response = requests.post(f"{BASE_URL}/invoices/manual-entry", json=first_invoice_data, headers=headers, timeout=30)
+            if response.status_code != 200:
+                self.log_test("First Invoice Scenario", False, f"Failed to create first invoice: {response.text}")
+                return
+            
+            result = response.json()
+            invoice_id = result.get("invoice_id")
+            
+            # Check consumption record for this first invoice
+            consumption_response = requests.get(
+                f"{BASE_URL}/customer-consumption/invoice-based/invoice/{invoice_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if consumption_response.status_code == 200:
+                consumption_records = consumption_response.json()
+                
+                if not consumption_records:
+                    self.log_test("First Invoice Scenario", False, "No consumption records found for first invoice")
+                    return
+                
+                record = consumption_records[0]
+                
+                # Validate first invoice characteristics
+                validation_errors = []
+                
+                if record.get("can_calculate") != False:
+                    validation_errors.append(f"can_calculate should be False, got {record.get('can_calculate')}")
+                
+                if record.get("source_invoice_id") is not None:
+                    validation_errors.append(f"source_invoice_id should be None, got {record.get('source_invoice_id')}")
+                
+                if record.get("consumption_quantity") != 0:
+                    validation_errors.append(f"consumption_quantity should be 0, got {record.get('consumption_quantity')}")
+                
+                expected_notes = "İlk fatura - Tüketim hesaplanamaz"
+                if record.get("notes") != expected_notes:
+                    validation_errors.append(f"notes should be '{expected_notes}', got '{record.get('notes')}'")
+                
+                if validation_errors:
+                    self.log_test("First Invoice Scenario", False, f"Validation errors: {'; '.join(validation_errors)}")
+                else:
+                    self.log_test("First Invoice Scenario", True, 
+                        f"✅ First invoice scenario correct: can_calculate=False, source_invoice_id=None, consumption_quantity=0, notes='{record.get('notes')}'")
+                
+            else:
+                self.log_test("First Invoice Scenario", False, f"Failed to get consumption records: {consumption_response.status_code}")
+                
+        except Exception as e:
+            self.log_test("First Invoice Scenario", False, f"Exception: {str(e)}")
+    
+    def test_bulk_calculation(self):
+        """TEST 4: BULK CALCULATION"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Bulk Calculation", False, "No admin token")
+            return
+        
+        try:
+            response = requests.post(
+                f"{BASE_URL}/customer-consumption/invoice-based/bulk-calculate",
+                headers=headers,
+                timeout=60  # Longer timeout for bulk operation
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                
+                # Validate response structure
+                required_fields = ["total_invoices", "invoices_processed", "total_consumption_records_created"]
+                missing_fields = [field for field in required_fields if field not in result]
+                
+                if missing_fields:
+                    self.log_test("Bulk Calculation", False, f"Missing response fields: {missing_fields}")
+                else:
+                    total_invoices = result.get("total_invoices", 0)
+                    processed = result.get("invoices_processed", 0)
+                    records_created = result.get("total_consumption_records_created", 0)
+                    
+                    self.log_test("Bulk Calculation", True, 
+                        f"✅ Bulk calculation completed: {processed}/{total_invoices} invoices processed, {records_created} consumption records created")
+                
+            else:
+                self.log_test("Bulk Calculation", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Bulk Calculation", False, f"Exception: {str(e)}")
+    
+    def test_customer_statistics(self):
+        """TEST 5: MÜŞTERİ İSTATİSTİKLERİ"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Customer Statistics", False, "No admin token")
+            return
+        
+        try:
+            # First get a customer ID that has consumption records
+            customers_response = requests.get(f"{BASE_URL}/invoices/all/list", headers=headers, timeout=30)
+            if customers_response.status_code != 200:
+                self.log_test("Customer Statistics", False, "Could not fetch invoices to find customer")
+                return
+            
+            invoices = customers_response.json()
+            if not invoices:
+                self.log_test("Customer Statistics", False, "No invoices found")
+                return
+            
+            # Get first customer ID
+            customer_id = invoices[0].get("customer_id")
+            if not customer_id:
+                self.log_test("Customer Statistics", False, "No customer_id found in invoices")
+                return
+            
+            # Test customer statistics API
+            response = requests.get(
+                f"{BASE_URL}/customer-consumption/invoice-based/stats/customer/{customer_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                stats = response.json()
+                
+                # Validate response structure
+                required_fields = ["total_products", "top_products", "average_daily_consumption"]
+                missing_fields = [field for field in required_fields if field not in stats]
+                
+                if missing_fields:
+                    self.log_test("Customer Statistics", False, f"Missing response fields: {missing_fields}")
+                else:
+                    total_products = stats.get("total_products", 0)
+                    top_products = stats.get("top_products", [])
+                    avg_daily = stats.get("average_daily_consumption", 0)
+                    
+                    self.log_test("Customer Statistics", True, 
+                        f"✅ Customer stats: {total_products} products, {len(top_products)} top products, avg daily: {avg_daily:.2f}")
+                
+            else:
+                self.log_test("Customer Statistics", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Customer Statistics", False, f"Exception: {str(e)}")
+    
+    def test_authorization_controls(self):
+        """TEST 6: YETKİ KONTROLLARI"""
+        try:
+            # Test 1: Customer can only see their own consumption records
+            customer_headers = self.get_headers("customer")
+            if customer_headers:
+                # Get customer's own ID
+                me_response = requests.get(f"{BASE_URL}/auth/me", headers=customer_headers, timeout=30)
+                if me_response.status_code == 200:
+                    customer_info = me_response.json()
+                    customer_id = customer_info.get("id")
+                    
+                    if customer_id:
+                        # Customer accessing their own data - should work
+                        response = requests.get(
+                            f"{BASE_URL}/customer-consumption/invoice-based/customer/{customer_id}",
+                            headers=customer_headers,
+                            timeout=30
+                        )
+                        
+                        if response.status_code == 200:
+                            self.log_test("Authorization - Customer Own Data", True, "Customer can access own consumption data")
+                        else:
+                            self.log_test("Authorization - Customer Own Data", False, f"Customer cannot access own data: {response.status_code}")
+                        
+                        # Customer accessing other customer's data - should fail
+                        fake_customer_id = "fake-customer-id-12345"
+                        response = requests.get(
+                            f"{BASE_URL}/customer-consumption/invoice-based/customer/{fake_customer_id}",
+                            headers=customer_headers,
+                            timeout=30
+                        )
+                        
+                        if response.status_code == 403:
+                            self.log_test("Authorization - Customer Other Data", True, "Customer correctly blocked from other customer's data")
+                        else:
+                            self.log_test("Authorization - Customer Other Data", False, f"Customer should be blocked, got: {response.status_code}")
+                    else:
+                        self.log_test("Authorization - Customer Tests", False, "Could not get customer ID")
+                else:
+                    self.log_test("Authorization - Customer Tests", False, "Could not get customer info")
+            else:
+                self.log_test("Authorization - Customer Tests", False, "No customer token")
+            
+            # Test 2: Sales agent can only see their customers
+            plasiyer_headers = self.get_headers("plasiyer")
+            if plasiyer_headers:
+                # Try to access a customer (this might fail if no route exists, which is expected)
+                fake_customer_id = "fake-customer-id-67890"
+                response = requests.get(
+                    f"{BASE_URL}/customer-consumption/invoice-based/customer/{fake_customer_id}",
+                    headers=plasiyer_headers,
+                    timeout=30
+                )
+                
+                if response.status_code == 403:
+                    self.log_test("Authorization - Sales Agent Restriction", True, "Sales agent correctly restricted to own customers")
+                else:
+                    self.log_test("Authorization - Sales Agent Restriction", False, f"Sales agent restriction not working: {response.status_code}")
+            else:
+                self.log_test("Authorization - Sales Agent Tests", False, "No plasiyer token")
+            
+            # Test 3: Admin/Accounting can see all data
+            admin_headers = self.get_headers("admin")
+            accounting_headers = self.get_headers("accounting")
+            
+            for role, headers in [("Admin", admin_headers), ("Accounting", accounting_headers)]:
+                if headers:
+                    # Try bulk calculation (admin only)
+                    if role == "Admin":
+                        response = requests.post(
+                            f"{BASE_URL}/customer-consumption/invoice-based/bulk-calculate",
+                            headers=headers,
+                            timeout=30
+                        )
+                        
+                        if response.status_code in [200, 500]:  # 500 might happen if already calculated
+                            self.log_test(f"Authorization - {role} Bulk Access", True, f"{role} can access bulk calculation")
+                        else:
+                            self.log_test(f"Authorization - {role} Bulk Access", False, f"{role} cannot access bulk calculation: {response.status_code}")
+                    
+                    # Try customer stats (both should work)
+                    fake_customer_id = "any-customer-id"
+                    response = requests.get(
+                        f"{BASE_URL}/customer-consumption/invoice-based/stats/customer/{fake_customer_id}",
+                        headers=headers,
+                        timeout=30
+                    )
+                    
+                    if response.status_code in [200, 404]:  # 404 is OK if customer doesn't exist
+                        self.log_test(f"Authorization - {role} Stats Access", True, f"{role} can access customer stats")
+                    else:
+                        self.log_test(f"Authorization - {role} Stats Access", False, f"{role} cannot access stats: {response.status_code}")
+                else:
+                    self.log_test(f"Authorization - {role} Tests", False, f"No {role.lower()} token")
+                    
+        except Exception as e:
+            self.log_test("Authorization Controls", False, f"Exception: {str(e)}")
+
     def run_all_tests(self):
         """Run all API tests"""
         print("🧪 Starting Backend API Tests - Güncellenmiş Manuel Fatura Sistemi")
