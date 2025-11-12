@@ -408,6 +408,83 @@ test_plan:
   test_priority: "high_first"
 
 agent_communication:
+  - agent: "main"
+    message: |
+      🎯 FATURA BAZLI TÜKETİM HESAPLAMA SİSTEMİ EKLENDİ
+      
+      **Geliştirilen Özellikler:**
+      
+      1. **ConsumptionCalculationService** (/app/backend/services/consumption_calculation_service.py)
+         - calculate_consumption_for_invoice(): Tek fatura için tüketim hesapla
+         - bulk_calculate_all_invoices(): Tüm faturalar için toplu hesaplama
+         - Geriye dönük ürün arama: 2-3 önceki faturalarda da arar
+         - product_code ile eşleştirme
+      
+      2. **CustomerConsumption Model Güncellemesi** (/app/backend/models/customer_consumption.py)
+         - source_invoice_id, source_invoice_date, source_quantity
+         - target_invoice_id, target_invoice_date, target_quantity
+         - days_between, consumption_quantity, daily_consumption_rate
+         - can_calculate (False ise ilk fatura)
+      
+      3. **Otomatik Tüketim Hesaplama Entegrasyonu**
+         - HTML fatura upload: invoice_routes.py'ye eklendi
+         - Manuel fatura girişi: invoice_service.py'ye eklendi
+         - Her fatura kaydedildikten sonra otomatik çalışır
+      
+      4. **Yeni API Endpoints** (/api/customer-consumption/invoice-based/*)
+         - GET /customer/{customer_id} - Müşteri tüketim geçmişi
+         - GET /invoice/{invoice_id} - Fatura bazlı tüketim kayıtları
+         - GET /product/{product_code} - Ürün bazlı tüketim (tüm müşteriler)
+         - POST /recalculate/{invoice_id} - Yeniden hesaplama
+         - POST /bulk-calculate - Toplu hesaplama (tüm faturalar)
+         - GET /stats/customer/{customer_id} - İstatistikler
+      
+      5. **Bulk Calculation Script** (/app/backend/bulk_calculate_consumption.py)
+         - Mevcut tüm faturalar için tüketim hesaplama
+         - Tarih sırasına göre işleme (eskiden yeniye)
+      
+      **Test Senaryoları:**
+      
+      TEST 1: Yeni Fatura Upload - Otomatik Tüketim Hesaplama
+      - Muhasebe ile giriş yap
+      - HTML fatura yükle (SED formatı)
+      - Tüketim kayıtlarının otomatik oluşturulduğunu doğrula
+      - GET /api/customer-consumption/invoice-based/invoice/{invoice_id}
+      
+      TEST 2: Manuel Fatura Girişi - Otomatik Tüketim Hesaplama
+      - Muhasebe ile giriş yap
+      - Manuel fatura gir
+      - Tüketim kayıtlarının otomatik oluşturulduğunu doğrula
+      
+      TEST 3: Geriye Dönük Ürün Arama
+      - Aynı müşteri için 3 fatura yükle (farklı tarihler)
+      - 1. fatura: Ürün A (50 adet)
+      - 2. fatura: Ürün B (30 adet) [Ürün A yok]
+      - 3. fatura: Ürün A (80 adet) [Ürün B yok]
+      - 3. fatura için tüketim kaydı: 1. faturadaki Ürün A'yı bulmalı
+      - Beklenen: consumption_quantity = 80-50=30, days_between = fark
+      
+      TEST 4: İlk Fatura Senaryosu
+      - Yeni bir müşteri oluştur
+      - İlk fatura yükle
+      - Beklenen: can_calculate=False, source_invoice_id=None
+      
+      TEST 5: Bulk Calculation
+      - POST /api/customer-consumption/invoice-based/bulk-calculate
+      - Tüm faturaların işlendiğini kontrol et
+      
+      TEST 6: Müşteri İstatistikleri
+      - GET /api/customer-consumption/invoice-based/stats/customer/{id}
+      - En çok tüketilen ürünleri doğrula
+      - Ortalama günlük tüketimi kontrol et
+      
+      **Kritik Noktalar:**
+      - product_code ile eşleştirme (InvoiceProduct.product_code ve Product.sku)
+      - Tarih parsing: "DD MM YYYY" formatı
+      - Geriye dönük arama: En yakın önceki faturayı bulur
+      - İlk fatura kontrolü: Hiç bulamazsa can_calculate=False
+      
+      Backend hazır, test edilmeye hazır!
   - agent: "testing"
     message: |
       🎯 MANUEL FATURA GİRİŞ SİSTEMİ TEST TAMAMLANDI - %100 BAŞARILI!
