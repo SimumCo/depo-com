@@ -1358,38 +1358,56 @@ class APITester:
         except Exception as e:
             self.log_test("Basic Automatic Consumption Calculation", False, f"Exception: {str(e)}")
     
-    def test_backward_product_search_critical(self):
-        """TEST 2: GERİYE DÖNÜK ÜRÜN ARAMA (Kritik!)"""
-        headers = self.get_headers("accounting")
+    def test_corrected_consumption_logic(self):
+        """TEST: TÜKETİM MANTIĞI DÜZELTİLDİ - YENİDEN TEST"""
+        headers = self.get_headers("admin")
         if not headers:
-            self.log_test("Backward Product Search (Critical)", False, "No accounting token")
+            self.log_test("Corrected Consumption Logic", False, "No admin token")
             return
         
         try:
+            # 1. Clear existing consumption records and recalculate
+            self.log_test("Step 1: Bulk Calculate", True, "Clearing and recalculating consumption records...")
+            
+            bulk_response = requests.post(
+                f"{BASE_URL}/customer-consumption/invoice-based/bulk-calculate",
+                headers=headers,
+                timeout=30
+            )
+            
+            if bulk_response.status_code != 200:
+                self.log_test("Corrected Consumption Logic", False, f"Bulk calculate failed: {bulk_response.text}")
+                return
+            
+            # 2. Create test invoices with accounting credentials
+            accounting_headers = self.get_headers("accounting")
+            if not accounting_headers:
+                self.log_test("Corrected Consumption Logic", False, "No accounting token")
+                return
+            
             import time
             timestamp = int(time.time()) % 10000
-            unique_tax_id = f"777777{timestamp:04d}"
+            unique_tax_id = f"1111111111"  # Use the specific tax ID from review request
             
-            # Create a unique customer for this test
+            # Create customer data
             customer_data = {
-                "customer_name": "GERİYE DÖNÜK ARAMA TEST MÜŞTERİSİ",
+                "customer_name": "TEST_CUSTOMER_001",
                 "customer_tax_id": unique_tax_id,
-                "address": "Test Adresi",
-                "email": "geriyedonuk@test.com",
-                "phone": "0312 777 88 99"
+                "address": "Test Address",
+                "email": "test@customer001.com",
+                "phone": "0312 555 99 88"
             }
             
-            # Create 3 invoices with specific scenario
-            # Invoice 1 (01/11/2024): Product A (TEST001, 50 units)
-            invoice1_data = {
+            # FATURA 1: Ürün A = 50 adet (01/11/2024)
+            invoice_1_data = {
                 "customer": customer_data,
-                "invoice_number": f"BACK001-{timestamp}",
+                "invoice_number": f"TEST{timestamp}001",
                 "invoice_date": "01 11 2024",
                 "products": [
                     {
-                        "product_code": "TEST001",
-                        "product_name": "TEST ÜRÜN A",
-                        "category": "Test Kategori",
+                        "product_code": "TEST_PRODUCT_A",
+                        "product_name": "Test Yoğurt",
+                        "category": "Yoğurt",
                         "quantity": 50,
                         "unit": "ADET",
                         "unit_price": "10.00",
@@ -1403,24 +1421,31 @@ class APITester:
             }
             
             # Create Invoice 1
-            response1 = requests.post(f"{BASE_URL}/invoices/manual-entry", json=invoice1_data, headers=headers, timeout=30)
-            if response1.status_code != 200:
-                self.log_test("Backward Product Search (Critical)", False, f"Failed to create invoice 1: {response1.text}")
+            response_1 = requests.post(
+                f"{BASE_URL}/invoices/manual-entry",
+                json=invoice_1_data,
+                headers=accounting_headers,
+                timeout=30
+            )
+            
+            if response_1.status_code != 200:
+                self.log_test("Corrected Consumption Logic", False, f"Failed to create Invoice 1: {response_1.text}")
                 return
             
-            invoice1_result = response1.json()
-            invoice1_id = invoice1_result.get("invoice_id")
+            invoice_1_result = response_1.json()
+            invoice_1_id = invoice_1_result.get("invoice_id")
+            self.log_test("Step 2: Invoice 1 Created", True, f"Invoice 1 ID: {invoice_1_id}")
             
-            # Invoice 2 (15/11/2024): Product B (TEST002, 30 units) - Product A NOT present
-            invoice2_data = {
+            # FATURA 2: Ürün B = 30 adet (Ürün A YOK) (15/11/2024)
+            invoice_2_data = {
                 "customer": customer_data,
-                "invoice_number": f"BACK002-{timestamp}",
+                "invoice_number": f"TEST{timestamp}002",
                 "invoice_date": "15 11 2024",
                 "products": [
                     {
-                        "product_code": "TEST002",
-                        "product_name": "TEST ÜRÜN B",
-                        "category": "Test Kategori",
+                        "product_code": "TEST_PRODUCT_B",
+                        "product_name": "Test Peynir",
+                        "category": "Peynir",
                         "quantity": 30,
                         "unit": "ADET",
                         "unit_price": "15.00",
@@ -1434,24 +1459,31 @@ class APITester:
             }
             
             # Create Invoice 2
-            response2 = requests.post(f"{BASE_URL}/invoices/manual-entry", json=invoice2_data, headers=headers, timeout=30)
-            if response2.status_code != 200:
-                self.log_test("Backward Product Search (Critical)", False, f"Failed to create invoice 2: {response2.text}")
+            response_2 = requests.post(
+                f"{BASE_URL}/invoices/manual-entry",
+                json=invoice_2_data,
+                headers=accounting_headers,
+                timeout=30
+            )
+            
+            if response_2.status_code != 200:
+                self.log_test("Corrected Consumption Logic", False, f"Failed to create Invoice 2: {response_2.text}")
                 return
             
-            invoice2_result = response2.json()
-            invoice2_id = invoice2_result.get("invoice_id")
+            invoice_2_result = response_2.json()
+            invoice_2_id = invoice_2_result.get("invoice_id")
+            self.log_test("Step 3: Invoice 2 Created", True, f"Invoice 2 ID: {invoice_2_id}")
             
-            # Invoice 3 (01/12/2024): Product A (TEST001, 80 units) - Product B NOT present
-            invoice3_data = {
+            # FATURA 3: Ürün A = 80 adet (01/12/2024)
+            invoice_3_data = {
                 "customer": customer_data,
-                "invoice_number": f"BACK003-{timestamp}",
+                "invoice_number": f"TEST{timestamp}003",
                 "invoice_date": "01 12 2024",
                 "products": [
                     {
-                        "product_code": "TEST001",  # Same as Invoice 1
-                        "product_name": "TEST ÜRÜN A",
-                        "category": "Test Kategori",
+                        "product_code": "TEST_PRODUCT_A",
+                        "product_name": "Test Yoğurt",
+                        "category": "Yoğurt",
                         "quantity": 80,
                         "unit": "ADET",
                         "unit_price": "10.00",
@@ -1465,76 +1497,120 @@ class APITester:
             }
             
             # Create Invoice 3
-            response3 = requests.post(f"{BASE_URL}/invoices/manual-entry", json=invoice3_data, headers=headers, timeout=30)
-            if response3.status_code != 200:
-                self.log_test("Backward Product Search (Critical)", False, f"Failed to create invoice 3: {response3.text}")
+            response_3 = requests.post(
+                f"{BASE_URL}/invoices/manual-entry",
+                json=invoice_3_data,
+                headers=accounting_headers,
+                timeout=30
+            )
+            
+            if response_3.status_code != 200:
+                self.log_test("Corrected Consumption Logic", False, f"Failed to create Invoice 3: {response_3.text}")
                 return
             
-            invoice3_result = response3.json()
-            invoice3_id = invoice3_result.get("invoice_id")
+            invoice_3_result = response_3.json()
+            invoice_3_id = invoice_3_result.get("invoice_id")
+            self.log_test("Step 4: Invoice 3 Created", True, f"Invoice 3 ID: {invoice_3_id}")
             
-            # Now check consumption record for Invoice 3
-            # It should find Product A from Invoice 1 (not Invoice 2)
+            # Wait for consumption calculation to complete
+            time.sleep(3)
+            
+            # 4. Check consumption record for Invoice 3
             consumption_response = requests.get(
-                f"{BASE_URL}/customer-consumption/invoice-based/invoice/{invoice3_id}",
+                f"{BASE_URL}/customer-consumption/invoice-based/invoice/{invoice_3_id}",
                 headers=headers,
                 timeout=30
             )
             
-            if consumption_response.status_code == 200:
-                consumption_records = consumption_response.json()
-                
-                if not consumption_records:
-                    self.log_test("Backward Product Search (Critical)", False, "No consumption records found for invoice 3")
-                    return
-                
-                # Find the TEST001 product record
-                test001_record = None
-                for record in consumption_records:
-                    if record.get("product_code") == "TEST001":
-                        test001_record = record
-                        break
-                
-                if not test001_record:
-                    self.log_test("Backward Product Search (Critical)", False, "No consumption record found for TEST001 product")
-                    return
-                
-                # Validate the backward search worked correctly
-                source_invoice_id = test001_record.get("source_invoice_id")
-                consumption_quantity = test001_record.get("consumption_quantity")
-                days_between = test001_record.get("days_between")
-                daily_rate = test001_record.get("daily_consumption_rate")
-                
-                # Expected values
-                expected_consumption = 80 - 50  # 30
-                expected_days = 30  # 1 December - 1 November
-                expected_daily_rate = 30 / 30  # 1.0
-                
-                validation_errors = []
-                
-                if source_invoice_id != invoice1_id:
-                    validation_errors.append(f"source_invoice_id should be {invoice1_id} (Invoice 1), got {source_invoice_id}")
-                
-                if consumption_quantity != expected_consumption:
-                    validation_errors.append(f"consumption_quantity should be {expected_consumption}, got {consumption_quantity}")
-                
-                if days_between != expected_days:
-                    validation_errors.append(f"days_between should be {expected_days}, got {days_between}")
-                
-                if abs(daily_rate - expected_daily_rate) > 0.01:
-                    validation_errors.append(f"daily_consumption_rate should be ~{expected_daily_rate}, got {daily_rate}")
-                
-                if validation_errors:
-                    self.log_test("Backward Product Search (Critical)", False, f"Validation errors: {'; '.join(validation_errors)}")
-                else:
-                    self.log_test("Backward Product Search (Critical)", True, 
-                        f"✅ Backward search worked! Found Product A from Invoice 1 (skipped Invoice 2). Consumption: {consumption_quantity}, Days: {days_between}, Rate: {daily_rate:.2f}")
-                
+            if consumption_response.status_code != 200:
+                self.log_test("Corrected Consumption Logic", False, f"Failed to get consumption records: {consumption_response.text}")
+                return
+            
+            consumption_records = consumption_response.json()
+            
+            if not consumption_records:
+                self.log_test("Corrected Consumption Logic", False, "No consumption records found for Invoice 3")
+                return
+            
+            # Find the record for TEST_PRODUCT_A
+            product_a_record = None
+            for record in consumption_records:
+                if record.get("product_code") == "TEST_PRODUCT_A":
+                    product_a_record = record
+                    break
+            
+            if not product_a_record:
+                self.log_test("Corrected Consumption Logic", False, "No consumption record found for TEST_PRODUCT_A")
+                return
+            
+            # 5. Validate the CORRECTED consumption logic
+            errors = []
+            
+            # Check source_invoice_id (should be Invoice 1, not Invoice 2)
+            if product_a_record.get("source_invoice_id") != invoice_1_id:
+                errors.append(f"❌ source_invoice_id should be {invoice_1_id}, got {product_a_record.get('source_invoice_id')}")
             else:
-                self.log_test("Backward Product Search (Critical)", False, f"Failed to get consumption records: {consumption_response.status_code}")
+                self.log_test("✅ Source Invoice ID", True, f"Correct: {invoice_1_id}")
+            
+            # CRITICAL: Check consumption_quantity (should be SOURCE quantity = 50, NOT target-source = 30!)
+            expected_consumption = 50.0  # NEW LOGIC: source_quantity (last purchased amount)
+            actual_consumption = product_a_record.get("consumption_quantity")
+            if abs(actual_consumption - expected_consumption) > 0.01:
+                errors.append(f"❌ consumption_quantity should be {expected_consumption} (source_quantity), got {actual_consumption}")
+            else:
+                self.log_test("✅ Consumption Quantity (CORRECTED)", True, f"Correct: {actual_consumption} (source_quantity)")
+            
+            # Check days_between (should be 30 days: 01/12 - 01/11)
+            expected_days = 30
+            actual_days = product_a_record.get("days_between")
+            if actual_days != expected_days:
+                errors.append(f"❌ days_between should be {expected_days}, got {actual_days}")
+            else:
+                self.log_test("✅ Days Between", True, f"Correct: {actual_days}")
+            
+            # Check daily_consumption_rate (should be 50/30 = 1.67, NOT 30/30 = 1.0!)
+            expected_rate = 50.0 / 30.0  # NEW LOGIC: source_quantity / days_between
+            actual_rate = product_a_record.get("daily_consumption_rate")
+            if abs(actual_rate - expected_rate) > 0.01:
+                errors.append(f"❌ daily_consumption_rate should be {expected_rate:.2f}, got {actual_rate}")
+            else:
+                self.log_test("✅ Daily Consumption Rate (CORRECTED)", True, f"Correct: {actual_rate:.2f}")
+            
+            # Check notes
+            expected_notes = f"Son alım: 50.00 birim, 30 günde tüketildi"
+            actual_notes = product_a_record.get("notes", "")
+            if expected_notes not in actual_notes:
+                errors.append(f"❌ notes should contain '{expected_notes}', got '{actual_notes}'")
+            else:
+                self.log_test("✅ Notes", True, f"Correct: {actual_notes}")
+            
+            if errors:
+                self.log_test("Corrected Consumption Logic", False, f"Validation errors: {'; '.join(errors)}")
+            else:
+                self.log_test("Corrected Consumption Logic", True, 
+                    f"🎉 YENİ TÜKETİM MANTIĞI BAŞARILI! Source: Invoice 1, Consumption: {actual_consumption} (source_quantity), Days: {actual_days}, Rate: {actual_rate:.2f}")
+                
+                # 6. Test customer statistics
+                customer_id = product_a_record.get("customer_id")
+                if customer_id:
+                    stats_response = requests.get(
+                        f"{BASE_URL}/customer-consumption/invoice-based/stats/customer/{customer_id}",
+                        headers=headers,
+                        timeout=30
+                    )
+                    
+                    if stats_response.status_code == 200:
+                        stats = stats_response.json()
+                        avg_daily = stats.get("average_daily_consumption", 0)
+                        if abs(avg_daily - expected_rate) < 0.01:
+                            self.log_test("✅ Customer Statistics", True, f"Average daily consumption: {avg_daily:.2f}")
+                        else:
+                            self.log_test("❌ Customer Statistics", False, f"Expected avg daily: {expected_rate:.2f}, got: {avg_daily}")
+                    else:
+                        self.log_test("❌ Customer Statistics", False, f"Failed to get stats: {stats_response.text}")
                 
         except Exception as e:
-            self.log_test("Backward Product Search (Critical)", False, f"Exception: {str(e)}")
+            self.log_test("Corrected Consumption Logic", False, f"Exception: {str(e)}")
     
     def test_first_invoice_scenario(self):
         """TEST 3: İLK FATURA SENARYOSU"""
