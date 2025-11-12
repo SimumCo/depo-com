@@ -230,6 +230,15 @@ async def upload_invoice(
     
     await db.invoices.insert_one(doc)
     
+    # Otomatik tüketim hesaplama
+    try:
+        consumption_service = ConsumptionCalculationService(db)
+        consumption_result = await consumption_service.calculate_consumption_for_invoice(invoice_obj.id)
+        logger.info(f"Consumption calculation result: {consumption_result}")
+    except Exception as e:
+        logger.error(f"Consumption calculation failed for invoice {invoice_obj.id}: {e}")
+        # Hata olsa bile fatura başarılı kaydedildi, devam et
+    
     return {
         "message": "Invoice uploaded successfully",
         "invoice_id": invoice_obj.id
