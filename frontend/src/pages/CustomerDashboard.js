@@ -158,6 +158,10 @@ const CustomerDashboard = () => {
           <CustomerConsumptionStats />
         </TabsContent>
 
+        <TabsContent value="records">
+          <ConsumptionRecord />
+        </TabsContent>
+
         <TabsContent value="feedback">
           <CustomerFeedback />
         </TabsContent>
