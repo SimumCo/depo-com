@@ -64,6 +64,53 @@ const ProductManagement = () => {
     }
   };
 
+  const handleEdit = (product) => {
+    setEditingProduct(product.id);
+    setEditFormData({
+      name: product.name,
+      sku: product.sku,
+      category: product.category,
+      weight: product.weight,
+      units_per_case: product.units_per_case,
+      description: product.description || '',
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingProduct(null);
+    setEditFormData(null);
+  };
+
+  const handleUpdateProduct = async (productId) => {
+    try {
+      await productsAPI.update(productId, {
+        ...editFormData,
+        weight: parseFloat(editFormData.weight),
+        units_per_case: parseInt(editFormData.units_per_case),
+      });
+      toast.success('Ürün başarıyla güncellendi');
+      setEditingProduct(null);
+      setEditFormData(null);
+      loadProducts();
+    } catch (error) {
+      toast.error('Ürün güncellenemedi');
+      console.error('Update error:', error);
+    }
+  };
+
+  const handleDeleteProduct = async (productId, productName) => {
+    if (window.confirm(`"${productName}" ürününü silmek istediğinizden emin misiniz?`)) {
+      try {
+        await productsAPI.delete(productId);
+        toast.success('Ürün başarıyla silindi');
+        loadProducts();
+      } catch (error) {
+        toast.error('Ürün silinemedi');
+        console.error('Delete error:', error);
+      }
+    }
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
