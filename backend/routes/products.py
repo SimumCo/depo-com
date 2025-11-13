@@ -62,8 +62,9 @@ async def update_product(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     
-    # Güncellenebilir alanlar
-    allowed_fields = ['code', 'name', 'category', 'unit', 'price', 'description']
+    # Güncellenebilir alanlar - sku güncelleme engellendi (primary key gibi)
+    allowed_fields = ['name', 'category', 'weight', 'units_per_case', 'description', 
+                     'logistics_price', 'dealer_price']
     update_fields = {k: v for k, v in update_data.items() if k in allowed_fields and v is not None}
     
     if not update_fields:
@@ -78,7 +79,11 @@ async def update_product(
     # Güncellenmiş ürünü getir
     updated_product = await db.products.find_one({"id": product_id}, {"_id": 0})
     
-    return {"message": "Product updated successfully", "product": updated_product}
+    from datetime import datetime
+    if isinstance(updated_product.get('created_at'), str):
+        updated_product['created_at'] = datetime.fromisoformat(updated_product['created_at'])
+    
+    return Product(**updated_product)
 
 @router.delete("/{product_id}")
 async def delete_product(
