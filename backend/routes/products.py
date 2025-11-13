@@ -62,19 +62,41 @@ async def update_product(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     
-    # Güncellenebilir alanlar - sku güncelleme engellendi (primary key gibi)
-    allowed_fields = ['name', 'category', 'weight', 'units_per_case', 'description', 
-                     'logistics_price', 'dealer_price']
-    update_fields = {k: v for k, v in update_data.items() if k in allowed_fields and v is not None}
+    # Güncellenebilir alanlar - sku ve id güncelleme engellendi
+    allowed_fields = [
+        'name', 'category', 'description',
+        'unit', 'units_per_case', 'sales_unit',
+        'gross_weight', 'net_weight', 'weight', 'case_dimensions',
+        'production_cost', 'sales_price', 'logistics_price', 'dealer_price', 'vat_rate',
+        'barcode', 'warehouse_code', 'shelf_code', 'location_code',
+        'lot_number', 'expiry_date',
+        'stock_quantity', 'stock_status', 'min_stock_level', 'max_stock_level',
+        'supply_time', 'turnover_rate',
+        'image_url', 'is_active'
+    ]
+    
+    # Sadece gönderilen ve izin verilen alanları al
+    update_fields = {}
+    for k, v in update_data.items():
+        if k in allowed_fields:
+            # Boş string kontrolü
+            if isinstance(v, str) and v.strip() == '':
+                update_fields[k] = None
+            else:
+                update_fields[k] = v
     
     if not update_fields:
         raise HTTPException(status_code=400, detail="No valid fields to update")
     
     # Güncelle
-    await db.products.update_one(
+    result = await db.products.update_one(
         {"id": product_id},
         {"$set": update_fields}
     )
+    
+    if result.modified_count == 0:
+        # Kayıt bulundu ama değişiklik yapılmadı (aynı değerler)
+        pass
     
     # Güncellenmiş ürünü getir
     updated_product = await db.products.find_one({"id": product_id}, {"_id": 0})
