@@ -21,13 +21,31 @@ class ConsumptionCalculationService:
     def _parse_invoice_date(self, date_str: str) -> datetime:
         """
         Fatura tarihini parse et
-        Format: "DD MM YYYY" veya "DD-MM-YYYY" veya "DD/MM/YYYY"
+        Desteklenen formatlar:
+        - "DD MM YYYY" (15 11 2024)
+        - "DD-MM-YYYY" (15-11-2024)
+        - "DD/MM/YYYY" (15/11/2024)
+        - "YYYY-MM-DD" (2024-11-15) - ISO format
         """
         try:
-            # Boşluk, tire veya slash ile ayrılmış
+            # ISO format kontrolü (YYYY-MM-DD)
+            if len(date_str) == 10 and date_str[4] == '-' and date_str[7] == '-':
+                # ISO format: 2024-11-15
+                parts = date_str.split('-')
+                year, month, day = parts
+                return datetime(int(year), int(month), int(day))
+            
+            # Diğer formatlar (DD MM YYYY, DD-MM-YYYY, DD/MM/YYYY)
             parts = date_str.replace("-", " ").replace("/", " ").split()
             if len(parts) == 3:
-                day, month, year = parts
+                # Hangi format olduğunu tespit et
+                if len(parts[0]) == 4:
+                    # YYYY MM DD format
+                    year, month, day = parts
+                else:
+                    # DD MM YYYY format
+                    day, month, year = parts
+                
                 return datetime(int(year), int(month), int(day))
         except Exception as e:
             logger.error(f"Date parsing error for {date_str}: {e}")
