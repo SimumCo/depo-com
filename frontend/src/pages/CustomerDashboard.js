@@ -123,15 +123,7 @@ const CustomerDashboard = () => {
           </TabsTrigger>
           <TabsTrigger value="consumption" data-testid="tab-consumption">
             <TrendingUp className="mr-2 h-4 w-4" />
-            Sarfiyat Analizi
-          </TabsTrigger>
-          <TabsTrigger value="stats" data-testid="tab-stats">
-            <BarChart3 className="mr-2 h-4 w-4" />
-            Tüketim İstatistikleri
-          </TabsTrigger>
-          <TabsTrigger value="records" data-testid="tab-records">
-            <Calendar className="mr-2 h-4 w-4" />
-            Tüketim Kayıtları
+            Fatura Bazlı Tüketim
           </TabsTrigger>
           <TabsTrigger value="feedback" data-testid="tab-feedback">Geri Bildirimler</TabsTrigger>
         </TabsList>
@@ -149,15 +141,7 @@ const CustomerDashboard = () => {
         </TabsContent>
 
         <TabsContent value="consumption">
-          <CustomerConsumption customerId={user.id} />
-        </TabsContent>
-
-        <TabsContent value="stats">
-          <CustomerConsumptionStats />
-        </TabsContent>
-
-        <TabsContent value="records">
-          <ConsumptionRecord />
+          <InvoiceBasedConsumption />
         </TabsContent>
 
         <TabsContent value="feedback">
