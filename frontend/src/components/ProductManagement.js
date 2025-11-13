@@ -222,16 +222,116 @@ const ProductManagement = () => {
                 <TableHead>Kategori</TableHead>
                 <TableHead>Ağırlık (kg)</TableHead>
                 <TableHead>Koli/Birim</TableHead>
+                <TableHead>Açıklama</TableHead>
+                <TableHead className="text-right">İşlemler</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {products.map((product) => (
                 <TableRow key={product.id} data-testid={`product-row-${product.sku}`}>
-                  <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>{product.sku}</TableCell>
-                  <TableCell>{product.category}</TableCell>
-                  <TableCell>{product.weight}</TableCell>
-                  <TableCell>{product.units_per_case}</TableCell>
+                  {editingProduct === product.id ? (
+                    // Düzenleme Modu
+                    <>
+                      <TableCell>
+                        <Input
+                          value={editFormData.name}
+                          onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                          className="w-full"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          value={editFormData.sku}
+                          onChange={(e) => setEditFormData({ ...editFormData, sku: e.target.value })}
+                          className="w-32"
+                          disabled
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          value={editFormData.category}
+                          onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value })}
+                          className="w-32"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={editFormData.weight}
+                          onChange={(e) => setEditFormData({ ...editFormData, weight: e.target.value })}
+                          className="w-24"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          value={editFormData.units_per_case}
+                          onChange={(e) => setEditFormData({ ...editFormData, units_per_case: e.target.value })}
+                          className="w-24"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          value={editFormData.description}
+                          onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                          className="w-full"
+                        />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleUpdateProduct(product.id)}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            <Save className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleCancelEdit}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </>
+                  ) : (
+                    // Görüntüleme Modu
+                    <>
+                      <TableCell className="font-medium">{product.name}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{product.sku}</Badge>
+                      </TableCell>
+                      <TableCell>{product.category}</TableCell>
+                      <TableCell>{product.weight}</TableCell>
+                      <TableCell>{product.units_per_case}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {product.description || '-'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEdit(product)}
+                            data-testid={`edit-product-${product.sku}`}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeleteProduct(product.id, product.name)}
+                            data-testid={`delete-product-${product.sku}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </>
+                  )}
                 </TableRow>
               ))}
             </TableBody>
