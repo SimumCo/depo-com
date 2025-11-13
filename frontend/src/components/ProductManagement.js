@@ -6,8 +6,9 @@ import { Label } from './ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
+import { Badge } from './ui/badge';
 import { toast } from 'sonner';
-import { Plus, Package } from 'lucide-react';
+import { Plus, Package, Edit, Trash2, Save, X } from 'lucide-react';
 
 const ProductManagement = () => {
   const [products, setProducts] = useState([]);
