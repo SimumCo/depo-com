@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { dashboardAPI, productsAPI, inventoryAPI } from '../services/api';
 import { Package, Warehouse, TrendingUp, AlertCircle } from 'lucide-react';
-import ProductManagement from '../components/ProductManagement';
+import ProductManagement from '../components/ProductManagementNew';
 import InventoryView from '../components/InventoryView';
 import UserManagement from '../components/UserManagement';
 
