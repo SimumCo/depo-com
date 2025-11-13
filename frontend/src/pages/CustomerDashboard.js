@@ -8,10 +8,8 @@ import { ShoppingCart, Package, MessageSquare, Calendar, TrendingUp, FileText, B
 import ProductCatalog from '../components/ProductCatalog';
 import CustomerOrders from '../components/CustomerOrders';
 import CustomerFeedback from '../components/CustomerFeedback';
-import CustomerConsumption from '../components/CustomerConsumption';
 import CustomerInvoices from '../components/CustomerInvoices';
-import CustomerConsumptionStats from '../components/CustomerConsumptionStats';
-import ConsumptionRecord from '../components/ConsumptionRecord';
+import InvoiceBasedConsumption from '../components/InvoiceBasedConsumption';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
