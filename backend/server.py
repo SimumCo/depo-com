@@ -13,6 +13,7 @@ from routes.customer_lookup_routes import router as customer_lookup_router
 from routes.consumption_routes import router as consumption_router
 from routes.customer_consumption_routes import router as customer_consumption_router
 from routes.consumption_period_routes import router as consumption_period_router
+from routes.products import router as products_router
 
 # Import old routes temporarily (will be refactored)
 import server_old as old_server
