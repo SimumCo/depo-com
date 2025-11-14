@@ -32,6 +32,12 @@ const STOCK_STATUS = [
   { value: 'passive', label: 'Pasif' }
 ];
 
+// Ürün durumu
+const PRODUCT_STATUS = [
+  { value: true, label: 'Aktif' },
+  { value: false, label: 'Pasif' }
+];
+
 const ProductManagementNew = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
