@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup
 import re
 
 # Configuration
-BASE_URL = "https://sarfiyat-kayit.preview.emergentagent.com/api"
+BASE_URL = "https://user-control-12.preview.emergentagent.com/api"
 
 def debug_sed_parsing():
     """Debug SED invoice parsing step by step"""
