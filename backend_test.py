@@ -3441,6 +3441,28 @@ class APITester:
         except Exception as e:
             self.log_test("Permanent Delete Test Customer", False, f"Exception: {str(e)}")
 
+    def print_test_summary(self):
+        """Print test summary"""
+        print("\n" + "=" * 80)
+        print("📊 TEST SUMMARY")
+        print("=" * 80)
+        
+        total_tests = len(self.test_results)
+        passed_tests = len([t for t in self.test_results if t["success"]])
+        failed_tests = len(self.failed_tests)
+        
+        print(f"Total Tests: {total_tests}")
+        print(f"Passed: {passed_tests}")
+        print(f"Failed: {failed_tests}")
+        print(f"Success Rate: {(passed_tests/total_tests*100):.1f}%")
+        
+        if self.failed_tests:
+            print(f"\n❌ Failed Tests:")
+            for test in self.failed_tests:
+                print(f"  - {test}")
+        else:
+            print("\n✅ All tests passed!")
+
     def run_user_management_tests(self):
         """Run User Management System Tests based on Review Request"""
         print("🚀 Starting User Management System Tests...")
