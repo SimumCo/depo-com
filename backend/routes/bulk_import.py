@@ -4,11 +4,18 @@ import pandas as pd
 import io
 from datetime import datetime, timezone
 import uuid
-from server import (
-    User, UserRole, require_role, db, 
-    CustomerProfile, Product, Order, OrderStatus, ChannelType,
-    hash_password
-)
+from models.user import User, UserRole
+from models.customer_profile import CustomerProfile
+from models.product import Product
+from models.order import Order, OrderStatus, ChannelType
+from utils.auth import require_role, hash_password
+from motor.motor_asyncio import AsyncIOMotorClient
+import os
+
+# MongoDB connection
+mongo_url = os.environ['MONGO_URL']
+client = AsyncIOMotorClient(mongo_url)
+db = client[os.environ['DB_NAME']]
 
 router = APIRouter(prefix="/bulk-import", tags=["Bulk Import"])
 
