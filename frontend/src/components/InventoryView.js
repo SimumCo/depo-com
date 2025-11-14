@@ -58,53 +58,65 @@ const InventoryView = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Ürün</TableHead>
-                  <TableHead>SKU</TableHead>
-                  <TableHead>Toplam Birim</TableHead>
-                  <TableHead>Koli + Birim</TableHead>
-                  <TableHead>Ağırlık (kg)</TableHead>
-                  <TableHead>Son Tedarik</TableHead>
+                  <TableHead>Ürün Adı</TableHead>
+                  <TableHead>Stok Kodu</TableHead>
+                  <TableHead>Kategori</TableHead>
+                  <TableHead>Stok Miktarı</TableHead>
+                  <TableHead>Birim</TableHead>
+                  <TableHead>Koli İçi Adet</TableHead>
+                  <TableHead>Satış Fiyatı</TableHead>
                   <TableHead>SKT</TableHead>
                   <TableHead>Durum</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {inventory.map((item) => (
-                  <TableRow key={item.id} data-testid={`inventory-row-${item.product?.sku}`}>
-                    <TableCell className="font-medium">{item.product?.name}</TableCell>
-                    <TableCell>{item.product?.sku}</TableCell>
-                    <TableCell className="font-semibold">{item.total_units}</TableCell>
-                    <TableCell>
-                      {item.full_cases > 0 && (
-                        <span className="text-blue-600">{item.full_cases} koli</span>
-                      )}
-                      {item.full_cases > 0 && item.remaining_units > 0 && ' + '}
-                      {item.remaining_units > 0 && (
-                        <span className="text-gray-600">{item.remaining_units} birim</span>
-                      )}
-                      {item.total_units === 0 && <span className="text-red-600">Stokta yok</span>}
-                    </TableCell>
-                    <TableCell>{item.product?.weight * item.total_units}</TableCell>
-                    <TableCell>{formatDate(item.last_supply_date)}</TableCell>
-                    <TableCell>{formatDate(item.expiry_date)}</TableCell>
-                    <TableCell>
-                      {item.is_out_of_stock ? (
-                        <Badge variant="destructive" className="flex items-center gap-1 w-fit">
-                          <AlertCircle className="h-3 w-3" />
-                          Stokta Yok
-                        </Badge>
-                      ) : item.total_units < 50 ? (
-                        <Badge variant="outline" className="bg-orange-50 text-orange-600 border-orange-200">
-                          Düşük Stok
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">
-                          Stokta
-                        </Badge>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {inventory.map((item) => {
+                  const fullCases = Math.floor(item.stock_quantity / (item.units_per_case || 1));
+                  const remainingUnits = item.stock_quantity % (item.units_per_case || 1);
+                  const isLowStock = item.stock_quantity < (item.min_stock_level || 10);
+                  
+                  return (
+                    <TableRow key={item.id} data-testid={`inventory-row-${item.sku}`}>
+                      <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{item.sku}</Badge>
+                      </TableCell>
+                      <TableCell>{item.category}</TableCell>
+                      <TableCell className="font-semibold text-blue-600">
+                        {item.stock_quantity || 0} {item.unit || 'ADET'}
+                      </TableCell>
+                      <TableCell>{item.unit || 'ADET'}</TableCell>
+                      <TableCell>
+                        {fullCases > 0 && (
+                          <span className="text-blue-600">{fullCases} koli</span>
+                        )}
+                        {fullCases > 0 && remainingUnits > 0 && ' + '}
+                        {remainingUnits > 0 && (
+                          <span className="text-gray-600">{remainingUnits} birim</span>
+                        )}
+                        {item.stock_quantity === 0 && <span className="text-red-600">-</span>}
+                      </TableCell>
+                      <TableCell>{item.sales_price || 0} ₺</TableCell>
+                      <TableCell>{formatDate(item.expiry_date)}</TableCell>
+                      <TableCell>
+                        {item.stock_quantity === 0 ? (
+                          <Badge variant="destructive" className="flex items-center gap-1 w-fit">
+                            <AlertCircle className="h-3 w-3" />
+                            Stokta Yok
+                          </Badge>
+                        ) : isLowStock ? (
+                          <Badge variant="outline" className="bg-orange-50 text-orange-600 border-orange-200">
+                            Düşük Stok
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">
+                            Stokta
+                          </Badge>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
