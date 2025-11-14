@@ -3376,13 +3376,16 @@ class APITester:
             if response.status_code == 200:
                 result = response.json()
                 
+                # Check if response has user object
+                user_data = result.get("user", result)
+                
                 # Validate the created user
-                if (result.get("username") == "test_customer" and 
-                    result.get("role") == "customer" and 
-                    result.get("full_name") == "Test Müşteri"):
+                if (user_data.get("username") == "test_customer" and 
+                    user_data.get("role") == "customer" and 
+                    user_data.get("full_name") == "Test Müşteri"):
                     
-                    self.test_customer_id = result.get("id")
-                    self.log_test("Create Test Customer", True, f"User created successfully: {result.get('username')} (ID: {self.test_customer_id})")
+                    self.test_customer_id = user_data.get("id")
+                    self.log_test("Create Test Customer", True, f"User created successfully: {user_data.get('username')} (ID: {self.test_customer_id})")
                 else:
                     self.log_test("Create Test Customer", False, f"User data mismatch: {result}")
             else:
