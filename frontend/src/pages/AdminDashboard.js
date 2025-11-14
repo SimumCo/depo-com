@@ -90,7 +90,7 @@ const AdminDashboard = () => {
         </TabsContent>
 
         <TabsContent value="users">
-          <UserManagement />
+          <UsersManagement />
         </TabsContent>
       </Tabs>
     </Layout>
