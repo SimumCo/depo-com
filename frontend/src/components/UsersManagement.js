@@ -277,146 +277,39 @@ const UsersManagement = () => {
               <TableBody>
                 {users.map((user) => (
                   <TableRow key={user.id}>
-                    {editingUser === user.id && editFormData ? (
-                      <>
-                        <TableCell>
-                          <Input
-                            value={editFormData.username}
-                            onChange={(e) => setEditFormData({ ...editFormData, username: e.target.value })}
-                            className="w-32"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            value={editFormData.full_name}
-                            onChange={(e) => setEditFormData({ ...editFormData, full_name: e.target.value })}
-                            className="w-48"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            value={editFormData.email}
-                            onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
-                            className="w-48"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Select value={editFormData.role} onValueChange={(val) => setEditFormData({ ...editFormData, role: val })}>
-                            <SelectTrigger className="w-40">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {ROLES.map(role => (
-                                <SelectItem key={role.value} value={role.value}>{role.label}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell>
-                          <Select 
-                            value={editFormData.is_active ? 'true' : 'false'} 
-                            onValueChange={(val) => setEditFormData({ ...editFormData, is_active: val === 'true' })}
-                          >
-                            <SelectTrigger className="w-24">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="true">Aktif</SelectItem>
-                              <SelectItem value="false">Pasif</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button size="sm" onClick={() => handleUpdateUser(user.id)} className="bg-green-600 hover:bg-green-700">
-                              Kaydet
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={handleCancelEdit}>
-                              İptal
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </>
-                    ) : (
-                      <>
-                        <TableCell>
-                          <Badge variant="outline">{user.username}</Badge>
-                        </TableCell>
-                        <TableCell className="font-medium">{user.full_name || '-'}</TableCell>
-                        <TableCell>{user.email || '-'}</TableCell>
-                        <TableCell>
-                          <Badge>{getRoleLabel(user.role)}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={user.is_active ? 'default' : 'secondary'}>
-                            {user.is_active ? 'Aktif' : 'Pasif'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleEdit(user)}
-                              title="Düzenle"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleChangePassword(user)}
-                              title="Şifre Değiştir"
-                            >
-                              <Key className="h-4 w-4" />
-                            </Button>
-                            {user.is_active ? (
-                              <>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleDeleteUser(user.id, user.username)}
-                                  title="Devre Dışı Bırak"
-                                  className="border-orange-500 text-orange-600 hover:bg-orange-50"
-                                >
-                                  <UserX className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => handlePermanentDeleteUser(user.id, user.username)}
-                                  title="Kalıcı Sil"
-                                  className="bg-red-600 hover:bg-red-700"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </>
-                            ) : (
-                              <>
-                                <Button
-                                  size="sm"
-                                  variant="default"
-                                  onClick={() => handleActivateUser(user.id, user.username)}
-                                  title="Aktif Et"
-                                  className="bg-green-600 hover:bg-green-700"
-                                >
-                                  <UserCheck className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => handlePermanentDeleteUser(user.id, user.username)}
-                                  title="Kalıcı Sil"
-                                  className="bg-red-600 hover:bg-red-700"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </TableCell>
-                      </>
-                    )}
+                    <TableCell>
+                      <Badge variant="outline">{user.username}</Badge>
+                    </TableCell>
+                    <TableCell className="font-medium">{user.full_name || '-'}</TableCell>
+                    <TableCell>{user.email || '-'}</TableCell>
+                    <TableCell>
+                      <Badge>{getRoleLabel(user.role)}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={user.is_active ? 'default' : 'secondary'}>
+                        {user.is_active ? 'Aktif' : 'Pasif'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEdit(user)}
+                          title="Düzenle"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleChangePassword(user)}
+                          title="Şifre Değiştir"
+                        >
+                          <Key className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
