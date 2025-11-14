@@ -2824,6 +2824,300 @@ class APITester:
         except Exception as e:
             self.log_test("Error Handling Test", False, f"Exception: {str(e)}")
 
+    def test_permanent_user_deletion_complete_scenario(self):
+        """
+        Kalıcı Kullanıcı Silme Özelliğini Test Et - Tam Senaryo
+        Review Request'teki tüm test senaryolarını kapsar
+        """
+        print("\n🗑️ KALICI KULLANICI SİLME ÖZELLİĞİ TEST SENARYOLARI")
+        print("=" * 60)
+        
+        # 1. Admin Girişi
+        print("\n1️⃣ Admin Girişi")
+        admin_success = self.login_user("admin")
+        if not admin_success:
+            self.log_test("Permanent Delete - Admin Login", False, "Admin login failed")
+            return
+        
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Permanent Delete - Admin Headers", False, "No admin token")
+            return
+        
+        # 2. Test Kullanıcısı Oluştur
+        print("\n2️⃣ Test Kullanıcısı Oluştur")
+        try:
+            import time
+            timestamp = int(time.time()) % 10000
+            test_username = f"test_permanent_delete_{timestamp}"
+            
+            user_data = {
+                "username": test_username,
+                "password": "test123456",
+                "role": "customer",
+                "full_name": "Test Permanent Delete User",
+                "email": f"test{timestamp}@example.com",
+                "phone": "0555 123 45 67"
+            }
+            
+            response = requests.post(
+                f"{BASE_URL}/users/create",
+                json=user_data,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                test_user_id = result.get("user", {}).get("id")
+                if test_user_id:
+                    self.log_test("Permanent Delete - Create Test User", True, f"User created: {test_username} (ID: {test_user_id})")
+                    self.test_user_id = test_user_id
+                    self.test_username = test_username
+                else:
+                    self.log_test("Permanent Delete - Create Test User", False, "No user ID in response")
+                    return
+            else:
+                self.log_test("Permanent Delete - Create Test User", False, f"Status: {response.status_code}, Response: {response.text}")
+                return
+                
+        except Exception as e:
+            self.log_test("Permanent Delete - Create Test User", False, f"Exception: {str(e)}")
+            return
+        
+        # 3. Kullanıcı Listesinde Kontrol
+        print("\n3️⃣ Kullanıcı Listesinde Kontrol")
+        try:
+            response = requests.get(
+                f"{BASE_URL}/users",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                users = response.json()
+                user_found = False
+                for user in users:
+                    if user.get("id") == self.test_user_id:
+                        user_found = True
+                        break
+                
+                if user_found:
+                    self.log_test("Permanent Delete - User in List", True, f"Test user found in user list")
+                else:
+                    self.log_test("Permanent Delete - User in List", False, "Test user not found in user list")
+                    return
+            else:
+                self.log_test("Permanent Delete - User in List", False, f"Status: {response.status_code}")
+                return
+                
+        except Exception as e:
+            self.log_test("Permanent Delete - User in List", False, f"Exception: {str(e)}")
+            return
+        
+        # 4. Kalıcı Silme (Hard Delete)
+        print("\n4️⃣ Kalıcı Silme (Hard Delete)")
+        try:
+            response = requests.delete(
+                f"{BASE_URL}/users/{self.test_user_id}/permanent",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                expected_message = "User permanently deleted"
+                if result.get("message") == expected_message:
+                    self.log_test("Permanent Delete - Hard Delete", True, f"User permanently deleted: {result.get('username')}")
+                else:
+                    self.log_test("Permanent Delete - Hard Delete", False, f"Wrong message: {result.get('message')}")
+                    return
+            else:
+                self.log_test("Permanent Delete - Hard Delete", False, f"Status: {response.status_code}, Response: {response.text}")
+                return
+                
+        except Exception as e:
+            self.log_test("Permanent Delete - Hard Delete", False, f"Exception: {str(e)}")
+            return
+        
+        # 5. Silindikten Sonra Kontrol - Kullanıcı Listesi
+        print("\n5️⃣ Silindikten Sonra Kontrol - Kullanıcı Listesi")
+        try:
+            response = requests.get(
+                f"{BASE_URL}/users",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                users = response.json()
+                user_found = False
+                for user in users:
+                    if user.get("id") == self.test_user_id:
+                        user_found = True
+                        break
+                
+                if not user_found:
+                    self.log_test("Permanent Delete - User Not in List", True, "Test user correctly removed from user list")
+                else:
+                    self.log_test("Permanent Delete - User Not in List", False, "Test user still found in user list")
+            else:
+                self.log_test("Permanent Delete - User Not in List", False, f"Status: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Permanent Delete - User Not in List", False, f"Exception: {str(e)}")
+        
+        # 6. Silindikten Sonra Kontrol - Direkt Kullanıcı Getirme
+        print("\n6️⃣ Silindikten Sonra Kontrol - Direkt Kullanıcı Getirme")
+        try:
+            response = requests.get(
+                f"{BASE_URL}/users/{self.test_user_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 404:
+                result = response.json()
+                if result.get("detail") == "User not found":
+                    self.log_test("Permanent Delete - User 404", True, "Deleted user correctly returns 404 Not Found")
+                else:
+                    self.log_test("Permanent Delete - User 404", False, f"Wrong error message: {result.get('detail')}")
+            else:
+                self.log_test("Permanent Delete - User 404", False, f"Expected 404, got: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Permanent Delete - User 404", False, f"Exception: {str(e)}")
+        
+        # 7. Admin Kendini Silememe Kontrolü
+        print("\n7️⃣ Admin Kendini Silememe Kontrolü")
+        try:
+            # Get admin user ID
+            admin_response = requests.get(f"{BASE_URL}/auth/me", headers=headers, timeout=30)
+            if admin_response.status_code == 200:
+                admin_info = admin_response.json()
+                admin_id = admin_info.get("id")
+                
+                if admin_id:
+                    response = requests.delete(
+                        f"{BASE_URL}/users/{admin_id}/permanent",
+                        headers=headers,
+                        timeout=30
+                    )
+                    
+                    if response.status_code == 400:
+                        result = response.json()
+                        expected_message = "Cannot delete your own account"
+                        if result.get("detail") == expected_message:
+                            self.log_test("Permanent Delete - Admin Self Delete Prevention", True, "Admin cannot delete own account")
+                        else:
+                            self.log_test("Permanent Delete - Admin Self Delete Prevention", False, f"Wrong error message: {result.get('detail')}")
+                    else:
+                        self.log_test("Permanent Delete - Admin Self Delete Prevention", False, f"Expected 400, got: {response.status_code}")
+                else:
+                    self.log_test("Permanent Delete - Admin Self Delete Prevention", False, "Could not get admin ID")
+            else:
+                self.log_test("Permanent Delete - Admin Self Delete Prevention", False, "Could not get admin info")
+                
+        except Exception as e:
+            self.log_test("Permanent Delete - Admin Self Delete Prevention", False, f"Exception: {str(e)}")
+        
+        # 8. Soft Delete vs Hard Delete Karşılaştırması
+        print("\n8️⃣ Soft Delete vs Hard Delete Karşılaştırması")
+        try:
+            # Create another test user for soft delete comparison
+            import time
+            timestamp2 = int(time.time()) % 10000 + 1
+            test_username_soft = f"test_soft_delete_{timestamp2}"
+            
+            user_data_soft = {
+                "username": test_username_soft,
+                "password": "test123456",
+                "role": "customer",
+                "full_name": "Test Soft Delete User",
+                "email": f"testsoft{timestamp2}@example.com",
+                "phone": "0555 987 65 43"
+            }
+            
+            # Create user for soft delete test
+            response = requests.post(
+                f"{BASE_URL}/users/create",
+                json=user_data_soft,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                soft_user_id = result.get("user", {}).get("id")
+                
+                if soft_user_id:
+                    # First do soft delete
+                    soft_delete_response = requests.delete(
+                        f"{BASE_URL}/users/{soft_user_id}",
+                        headers=headers,
+                        timeout=30
+                    )
+                    
+                    if soft_delete_response.status_code == 200:
+                        # Check if user is still in list but deactivated
+                        list_response = requests.get(f"{BASE_URL}/users", headers=headers, timeout=30)
+                        if list_response.status_code == 200:
+                            users = list_response.json()
+                            soft_user_found = False
+                            soft_user_active = None
+                            
+                            for user in users:
+                                if user.get("id") == soft_user_id:
+                                    soft_user_found = True
+                                    soft_user_active = user.get("is_active")
+                                    break
+                            
+                            if soft_user_found and soft_user_active == False:
+                                self.log_test("Permanent Delete - Soft Delete Check", True, "Soft deleted user still in list but is_active=false")
+                                
+                                # Now do hard delete
+                                hard_delete_response = requests.delete(
+                                    f"{BASE_URL}/users/{soft_user_id}/permanent",
+                                    headers=headers,
+                                    timeout=30
+                                )
+                                
+                                if hard_delete_response.status_code == 200:
+                                    # Check if user is completely removed
+                                    final_list_response = requests.get(f"{BASE_URL}/users", headers=headers, timeout=30)
+                                    if final_list_response.status_code == 200:
+                                        final_users = final_list_response.json()
+                                        hard_user_found = False
+                                        
+                                        for user in final_users:
+                                            if user.get("id") == soft_user_id:
+                                                hard_user_found = True
+                                                break
+                                        
+                                        if not hard_user_found:
+                                            self.log_test("Permanent Delete - Hard Delete After Soft", True, "Hard deleted user completely removed from database")
+                                        else:
+                                            self.log_test("Permanent Delete - Hard Delete After Soft", False, "Hard deleted user still in database")
+                                    else:
+                                        self.log_test("Permanent Delete - Hard Delete After Soft", False, "Could not get final user list")
+                                else:
+                                    self.log_test("Permanent Delete - Hard Delete After Soft", False, f"Hard delete failed: {hard_delete_response.status_code}")
+                            else:
+                                self.log_test("Permanent Delete - Soft Delete Check", False, f"Soft delete failed: found={soft_user_found}, active={soft_user_active}")
+                        else:
+                            self.log_test("Permanent Delete - Soft Delete Check", False, "Could not get user list after soft delete")
+                    else:
+                        self.log_test("Permanent Delete - Soft Delete Check", False, f"Soft delete failed: {soft_delete_response.status_code}")
+                else:
+                    self.log_test("Permanent Delete - Soft Delete Check", False, "Could not create soft delete test user")
+            else:
+                self.log_test("Permanent Delete - Soft Delete Check", False, f"Could not create soft delete test user: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Permanent Delete - Soft Delete vs Hard Delete", False, f"Exception: {str(e)}")
+        
+        print("\n✅ Kalıcı Kullanıcı Silme Test Senaryoları Tamamlandı")
+
     def run_all_tests(self):
         """Run all API tests - Admin User Management System"""
         print("🧪 Starting Backend API Tests - Admin Kullanıcı Yönetimi Sistemi")
