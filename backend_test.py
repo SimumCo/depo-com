@@ -3483,7 +3483,7 @@ class APITester:
         self.test_permanent_delete_test_customer()
         
         # Print summary
-        self.print_summary()
+        self.print_test_summary()
 
 def main():
     """Main test function"""
