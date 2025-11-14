@@ -168,6 +168,7 @@ const ProductManagementNew = () => {
       supply_time: product.supply_time || 0,
       turnover_rate: product.turnover_rate || 0,
       description: product.description || '',
+      is_active: product.is_active !== undefined ? product.is_active : true,
     });
   };
 
