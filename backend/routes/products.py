@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import List
 from models.user import User, UserRole
 from models.product import Product
-from models.inventory import Inventory
+# Inventory model artık kullanılmıyor - products.stock_quantity kullanılıyor
 from schemas.product import ProductCreate
 from middleware.auth import get_current_user, require_role
 from config.database import db
