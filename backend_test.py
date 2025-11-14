@@ -3395,7 +3395,7 @@ class APITester:
                 user_data = result.get("user", result)
                 
                 # Validate the created user
-                if (user_data.get("username") == "test_customer" and 
+                if (user_data.get("username") == unique_username and 
                     user_data.get("role") == "customer" and 
                     user_data.get("full_name") == "Test Müşteri"):
                     
