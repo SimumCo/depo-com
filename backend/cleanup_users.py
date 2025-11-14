@@ -60,16 +60,11 @@ async def cleanup_users():
         if len(users_to_delete) > 20:
             print(f"   ... ve {len(users_to_delete) - 20} kullanıcı daha")
     
-    # Onay iste
+    # Otomatik onay (script parametresi ile kontrol edilecek)
     print("\n" + "=" * 60)
     print("⚠️  DİKKAT: BU İŞLEM GERİ DÖNDÜRÜLEMEZ!")
     print("=" * 60)
-    confirmation = input("\nDevam etmek için 'EVET' yazın: ")
-    
-    if confirmation.upper() != 'EVET':
-        print("\n❌ İşlem iptal edildi.")
-        client.close()
-        return
+    print("\n🔄 Silme işlemi başlatılıyor...")
     
     # Kullanıcıları sil
     result = await db.users.delete_many(
