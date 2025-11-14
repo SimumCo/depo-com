@@ -227,6 +227,35 @@ async def activate_user(
     }
 
 
+
+@router.delete("/{user_id}/permanent")
+async def permanently_delete_user(
+    user_id: str,
+    current_user: User = Depends(require_role([UserRole.ADMIN]))
+):
+    """
+    Kullanıcıyı kalıcı olarak sil (hard delete - veritabanından tamamen siler)
+    """
+    # Kendini silmeye çalışıyor mu?
+    if current_user.id == user_id:
+        raise HTTPException(status_code=400, detail="Cannot delete your own account")
+    
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Kalıcı silme (hard delete)
+    result = await db.users.delete_one({"id": user_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=500, detail="Failed to delete user")
+    
+    return {
+        "message": "User permanently deleted",
+        "username": user.get("username")
+    }
+
+
 @router.get("/stats/summary")
 async def get_users_stats(
     current_user: User = Depends(require_role([UserRole.ADMIN]))
