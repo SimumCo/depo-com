@@ -135,6 +135,23 @@ const UsersManagement = () => {
     }
   };
 
+
+  const handlePermanentDeleteUser = async (userId, username) => {
+    if (window.confirm(`⚠️ DİKKAT: "${username}" kullanıcısını KALICI OLARAK silmek istediğinizden emin misiniz?\n\nBu işlem GERİ DÖNDÜRÜLEMEZ!`)) {
+      // İkinci bir onay daha iste
+      if (window.confirm(`Son onay: "${username}" kullanıcısı veritabanından tamamen silinecek. Devam etmek istiyor musunuz?`)) {
+        try {
+          await api.delete(`/users/${userId}/permanent`);
+          toast.success('Kullanıcı kalıcı olarak silindi');
+          loadUsers();
+        } catch (error) {
+          toast.error('Kullanıcı kalıcı olarak silinemedi: ' + (error.response?.data?.detail || error.message));
+        }
+      }
+    }
+  };
+
+
   const handleCreateUser = async (e) => {
     e.preventDefault();
     
