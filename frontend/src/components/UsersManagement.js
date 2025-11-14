@@ -129,43 +129,7 @@ const UsersManagement = () => {
     }
   };
 
-  const handleDeleteUser = async (userId, username) => {
-    if (window.confirm(`"${username}" kullanıcısını devre dışı bırakmak istediğinizden emin misiniz?`)) {
-      try {
-        await api.delete(`/users/${userId}`);
-        toast.success('Kullanıcı devre dışı bırakıldı');
-        loadUsers();
-      } catch (error) {
-        toast.error('Kullanıcı silinemedi: ' + (error.response?.data?.detail || error.message));
-      }
-    }
-  };
-
-  const handleActivateUser = async (userId, username) => {
-    try {
-      await api.post(`/users/${userId}/activate`);
-      toast.success('Kullanıcı aktif edildi');
-      loadUsers();
-    } catch (error) {
-      toast.error('Kullanıcı aktif edilemedi');
-    }
-  };
-
-
-  const handlePermanentDeleteUser = async (userId, username) => {
-    if (window.confirm(`⚠️ DİKKAT: "${username}" kullanıcısını KALICI OLARAK silmek istediğinizden emin misiniz?\n\nBu işlem GERİ DÖNDÜRÜLEMEZ!`)) {
-      // İkinci bir onay daha iste
-      if (window.confirm(`Son onay: "${username}" kullanıcısı veritabanından tamamen silinecek. Devam etmek istiyor musunuz?`)) {
-        try {
-          await api.delete(`/users/${userId}/permanent`);
-          toast.success('Kullanıcı kalıcı olarak silindi');
-          loadUsers();
-        } catch (error) {
-          toast.error('Kullanıcı kalıcı olarak silinemedi: ' + (error.response?.data?.detail || error.message));
-        }
-      }
-    }
-  };
+  // Fonksiyonlar kaldırıldı - artık popup içinden yapılıyor
 
 
   const handleCreateUser = async (e) => {
