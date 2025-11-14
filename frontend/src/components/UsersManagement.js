@@ -55,8 +55,8 @@ const UsersManagement = () => {
   };
 
   const handleEdit = (user) => {
-    setEditingUser(user.id);
     setEditFormData({
+      id: user.id,
       username: user.username,
       full_name: user.full_name || '',
       email: user.email || '',
@@ -66,22 +66,38 @@ const UsersManagement = () => {
       address: user.address || '',
       customer_number: user.customer_number || ''
     });
+    setEditDialogOpen(true);
   };
 
-  const handleCancelEdit = () => {
-    setEditingUser(null);
-    setEditFormData(null);
-  };
-
-  const handleUpdateUser = async (userId) => {
+  const handleUpdateUser = async (e) => {
+    e.preventDefault();
     try {
-      await api.put(`/users/${userId}`, editFormData);
+      const { id, ...updateData } = editFormData;
+      await api.put(`/users/${id}`, updateData);
       toast.success('Kullanıcı güncellendi');
-      setEditingUser(null);
+      setEditDialogOpen(false);
       setEditFormData(null);
       loadUsers();
     } catch (error) {
       toast.error('Kullanıcı güncellenemedi: ' + (error.response?.data?.detail || error.message));
+    }
+  };
+
+  const handleDeleteUserFromDialog = async () => {
+    if (!editFormData) return;
+    
+    if (window.confirm(`⚠️ DİKKAT: "${editFormData.username}" kullanıcısını KALICI OLARAK silmek istediğinizden emin misiniz?\n\nBu işlem GERİ DÖNDÜRÜLEMEZ!`)) {
+      if (window.confirm(`Son onay: "${editFormData.username}" kullanıcısı veritabanından tamamen silinecek. Devam etmek istiyor musunuz?`)) {
+        try {
+          await api.delete(`/users/${editFormData.id}/permanent`);
+          toast.success('Kullanıcı kalıcı olarak silindi');
+          setEditDialogOpen(false);
+          setEditFormData(null);
+          loadUsers();
+        } catch (error) {
+          toast.error('Kullanıcı silinemedi: ' + (error.response?.data?.detail || error.message));
+        }
+      }
     }
   };
 
