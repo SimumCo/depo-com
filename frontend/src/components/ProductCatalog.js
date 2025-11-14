@@ -29,7 +29,11 @@ const ProductCatalog = ({ isSalesRep = false, onOrderCreated, onUpdate }) => {
   const loadProducts = async () => {
     try {
       const response = await catalogAPI.getAll();
-      setProducts(response.data);
+      // Sadece aktif ve stokta olan ürünleri göster
+      const availableProducts = response.data.filter(product => 
+        product.is_active === true && (product.stock_quantity || 0) > 0
+      );
+      setProducts(availableProducts);
     } catch (error) {
       toast.error('Ürünler yüklenemedi');
     } finally {
