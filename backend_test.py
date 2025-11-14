@@ -3303,11 +3303,21 @@ class APITester:
             if response.status_code == 200:
                 result = response.json()
                 
-                # Verify the update
-                if result.get("full_name") == "Test Plasiyer 1":
-                    self.log_test("Update Plasiyer1", True, f"Successfully updated full_name to: {result.get('full_name')}")
+                # Check if update was successful by getting the user again
+                get_response = requests.get(
+                    f"{BASE_URL}/users/{self.plasiyer1_id}",
+                    headers=headers,
+                    timeout=30
+                )
+                
+                if get_response.status_code == 200:
+                    updated_user = get_response.json()
+                    if updated_user.get("full_name") == "Test Plasiyer 1":
+                        self.log_test("Update Plasiyer1", True, f"Successfully updated full_name to: {updated_user.get('full_name')}")
+                    else:
+                        self.log_test("Update Plasiyer1", False, f"Update failed. Expected: 'Test Plasiyer 1', Got: {updated_user.get('full_name')}")
                 else:
-                    self.log_test("Update Plasiyer1", False, f"Update failed. Expected: 'Test Plasiyer 1', Got: {result.get('full_name')}")
+                    self.log_test("Update Plasiyer1", False, f"Failed to verify update: {get_response.status_code}")
             else:
                 self.log_test("Update Plasiyer1", False, f"Status: {response.status_code}, Response: {response.text}")
                 
