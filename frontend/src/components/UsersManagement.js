@@ -24,7 +24,7 @@ const ROLES = [
 const UsersManagement = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [editingUser, setEditingUser] = useState(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [passwordUser, setPasswordUser] = useState(null);
   const [newPasswordData, setNewPasswordData] = useState({ new_password: '', confirm_password: '' });
   const [editFormData, setEditFormData] = useState(null);
