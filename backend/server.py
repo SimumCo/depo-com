@@ -51,7 +51,7 @@ api_router.include_router(consumption_period_router)
 
 # Include old routes temporarily
 # TODO: Refactor these into separate modules
-api_router.include_router(old_server.api_router, tags=["Legacy"])
+# Legacy routes removed - all routes are now modular
 
 # Register main router
 app.include_router(api_router)
