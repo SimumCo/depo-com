@@ -15,6 +15,7 @@ from routes.customer_consumption_routes import router as customer_consumption_ro
 from routes.consumption_period_routes import router as consumption_period_router
 from routes.products import router as products_router
 from routes.bulk_import import router as bulk_import_router
+from routes.users_routes import router as users_router
 
 # Old server import removed - all routes modular now
 
