@@ -2341,62 +2341,514 @@ class APITester:
         except Exception as e:
             self.log_test("Authorization Controls", False, f"Exception: {str(e)}")
 
+    # ========== ADMIN USER MANAGEMENT TESTS ==========
+    
+    def test_admin_login(self):
+        """TEST 1: Admin Girişi"""
+        try:
+            user_creds = {"username": "admin", "password": "admin123"}
+            response = requests.post(
+                f"{BASE_URL}/auth/login",
+                json=user_creds,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                token = data.get("access_token")
+                if token:
+                    self.tokens["admin"] = token
+                    self.log_test("Admin Login", True, "Admin successfully logged in")
+                    return True
+                else:
+                    self.log_test("Admin Login", False, "No token in response")
+                    return False
+            else:
+                self.log_test("Admin Login", False, f"Status: {response.status_code}, Response: {response.text}")
+                return False
+                
+        except Exception as e:
+            self.log_test("Admin Login", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_get_all_users(self):
+        """TEST 2: Kullanıcı Listesi"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Get All Users", False, "No admin token")
+            return
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/users",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                users = response.json()
+                if isinstance(users, list):
+                    # Check that we have at least 5-10 users as expected
+                    if len(users) >= 5:
+                        self.log_test("Get All Users", True, f"Found {len(users)} users (admin, muhasebe, plasiyer, müşteriler)")
+                        
+                        # Verify password_hash is not in response
+                        password_leak = False
+                        for user in users:
+                            if "password_hash" in user:
+                                password_leak = True
+                                break
+                        
+                        if password_leak:
+                            self.log_test("Password Security Check", False, "password_hash found in user list response")
+                        else:
+                            self.log_test("Password Security Check", True, "password_hash correctly excluded from response")
+                        
+                        # Store a test user ID for later tests
+                        customer_users = [u for u in users if u.get("role") == "customer"]
+                        if customer_users:
+                            self.test_customer_user = customer_users[0]
+                            self.log_test("Test User Selection", True, f"Selected test customer: {self.test_customer_user.get('username')}")
+                        
+                    else:
+                        self.log_test("Get All Users", False, f"Expected at least 5 users, found {len(users)}")
+                else:
+                    self.log_test("Get All Users", False, "Response is not a list")
+            else:
+                self.log_test("Get All Users", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Get All Users", False, f"Exception: {str(e)}")
+    
+    def test_get_user_by_id(self):
+        """TEST 3: Belirli Kullanıcı Bilgisi"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Get User By ID", False, "No admin token")
+            return
+        
+        if not hasattr(self, 'test_customer_user'):
+            self.log_test("Get User By ID", False, "No test customer user available")
+            return
+        
+        try:
+            user_id = self.test_customer_user.get("id")
+            response = requests.get(
+                f"{BASE_URL}/users/{user_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                user = response.json()
+                if isinstance(user, dict):
+                    # Verify required fields are present
+                    required_fields = ["id", "username", "full_name", "role"]
+                    missing_fields = [field for field in required_fields if field not in user]
+                    
+                    if missing_fields:
+                        self.log_test("Get User By ID", False, f"Missing fields: {missing_fields}")
+                    else:
+                        # Verify password_hash is not in response
+                        if "password_hash" in user:
+                            self.log_test("Get User By ID", False, "password_hash found in response")
+                        else:
+                            self.log_test("Get User By ID", True, f"User details retrieved: {user.get('username')} ({user.get('role')})")
+                else:
+                    self.log_test("Get User By ID", False, "Response is not a dict")
+            else:
+                self.log_test("Get User By ID", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Get User By ID", False, f"Exception: {str(e)}")
+    
+    def test_update_user(self):
+        """TEST 4: Kullanıcı Güncelleme"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Update User", False, "No admin token")
+            return
+        
+        if not hasattr(self, 'test_customer_user'):
+            self.log_test("Update User", False, "No test customer user available")
+            return
+        
+        try:
+            user_id = self.test_customer_user.get("id")
+            original_name = self.test_customer_user.get("full_name", "")
+            
+            # Update user info
+            update_data = {
+                "full_name": f"Updated {original_name}",
+                "email": "updated@test.com",
+                "phone": "0312 999 88 77"
+            }
+            
+            response = requests.put(
+                f"{BASE_URL}/users/{user_id}",
+                json=update_data,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                if result.get("message") == "User updated successfully":
+                    updated_user = result.get("user", {})
+                    
+                    # Verify updates
+                    if (updated_user.get("full_name") == update_data["full_name"] and
+                        updated_user.get("email") == update_data["email"] and
+                        updated_user.get("phone") == update_data["phone"]):
+                        
+                        self.log_test("Update User", True, f"User updated: {updated_user.get('username')} - {updated_user.get('full_name')}")
+                        
+                        # Store updated info for verification
+                        self.updated_user_info = updated_user
+                    else:
+                        self.log_test("Update User", False, "Update data not reflected in response")
+                else:
+                    self.log_test("Update User", False, f"Unexpected message: {result.get('message')}")
+            else:
+                self.log_test("Update User", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Update User", False, f"Exception: {str(e)}")
+    
+    def test_change_user_password(self):
+        """TEST 5: Şifre Değiştirme"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Change User Password", False, "No admin token")
+            return
+        
+        if not hasattr(self, 'test_customer_user'):
+            self.log_test("Change User Password", False, "No test customer user available")
+            return
+        
+        try:
+            user_id = self.test_customer_user.get("id")
+            
+            # Change password
+            password_data = {
+                "new_password": "newpassword123"
+            }
+            
+            response = requests.put(
+                f"{BASE_URL}/users/{user_id}/password",
+                json=password_data,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                if result.get("message") == "Password changed successfully":
+                    username = result.get("username")
+                    self.log_test("Change User Password", True, f"Password changed for user: {username}")
+                    
+                    # Store new password for login test
+                    self.new_password = password_data["new_password"]
+                else:
+                    self.log_test("Change User Password", False, f"Unexpected message: {result.get('message')}")
+            else:
+                self.log_test("Change User Password", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Change User Password", False, f"Exception: {str(e)}")
+    
+    def test_deactivate_user(self):
+        """TEST 6: Kullanıcı Deaktif Etme"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Deactivate User", False, "No admin token")
+            return
+        
+        if not hasattr(self, 'test_customer_user'):
+            self.log_test("Deactivate User", False, "No test customer user available")
+            return
+        
+        try:
+            user_id = self.test_customer_user.get("id")
+            
+            response = requests.delete(
+                f"{BASE_URL}/users/{user_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                if result.get("message") == "User deleted successfully (deactivated)":
+                    username = result.get("username")
+                    self.log_test("Deactivate User", True, f"User deactivated: {username}")
+                    
+                    # Verify user is deactivated by checking user details
+                    check_response = requests.get(
+                        f"{BASE_URL}/users/{user_id}",
+                        headers=headers,
+                        timeout=30
+                    )
+                    
+                    if check_response.status_code == 200:
+                        user_data = check_response.json()
+                        if user_data.get("is_active") == False:
+                            self.log_test("Deactivation Verification", True, "User is_active=false confirmed")
+                        else:
+                            self.log_test("Deactivation Verification", False, f"User is_active={user_data.get('is_active')}, expected False")
+                    else:
+                        self.log_test("Deactivation Verification", False, "Could not verify deactivation")
+                        
+                else:
+                    self.log_test("Deactivate User", False, f"Unexpected message: {result.get('message')}")
+            else:
+                self.log_test("Deactivate User", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Deactivate User", False, f"Exception: {str(e)}")
+    
+    def test_activate_user(self):
+        """TEST 7: Kullanıcı Aktif Etme"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Activate User", False, "No admin token")
+            return
+        
+        if not hasattr(self, 'test_customer_user'):
+            self.log_test("Activate User", False, "No test customer user available")
+            return
+        
+        try:
+            user_id = self.test_customer_user.get("id")
+            
+            response = requests.post(
+                f"{BASE_URL}/users/{user_id}/activate",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                if result.get("message") == "User activated successfully":
+                    username = result.get("username")
+                    self.log_test("Activate User", True, f"User activated: {username}")
+                    
+                    # Verify user is activated by checking user details
+                    check_response = requests.get(
+                        f"{BASE_URL}/users/{user_id}",
+                        headers=headers,
+                        timeout=30
+                    )
+                    
+                    if check_response.status_code == 200:
+                        user_data = check_response.json()
+                        if user_data.get("is_active") == True:
+                            self.log_test("Activation Verification", True, "User is_active=true confirmed")
+                        else:
+                            self.log_test("Activation Verification", False, f"User is_active={user_data.get('is_active')}, expected True")
+                    else:
+                        self.log_test("Activation Verification", False, "Could not verify activation")
+                        
+                else:
+                    self.log_test("Activate User", False, f"Unexpected message: {result.get('message')}")
+            else:
+                self.log_test("Activate User", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Activate User", False, f"Exception: {str(e)}")
+    
+    def test_create_new_user(self):
+        """TEST 8: Yeni Kullanıcı Oluşturma"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Create New User", False, "No admin token")
+            return
+        
+        try:
+            import time
+            timestamp = int(time.time()) % 10000
+            
+            # Create new user data as specified in review request
+            user_data = {
+                "username": "test_user_new",
+                "password": "test123456",
+                "role": "customer",
+                "full_name": "Test Kullanıcı",
+                "email": f"test{timestamp}@example.com",
+                "phone": "0312 555 99 88"
+            }
+            
+            response = requests.post(
+                f"{BASE_URL}/users/create",
+                json=user_data,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                if result.get("message") == "User created successfully":
+                    created_user = result.get("user", {})
+                    
+                    # Verify user data
+                    if (created_user.get("username") == user_data["username"] and
+                        created_user.get("role") == user_data["role"] and
+                        created_user.get("full_name") == user_data["full_name"]):
+                        
+                        self.log_test("Create New User", True, f"User created: {created_user.get('username')} ({created_user.get('role')})")
+                        
+                        # Verify password_hash is not in response
+                        if "password_hash" in created_user:
+                            self.log_test("Create User Password Security", False, "password_hash found in response")
+                        else:
+                            self.log_test("Create User Password Security", True, "password_hash correctly excluded from response")
+                        
+                        # Store for login test
+                        self.new_created_user = {
+                            "username": user_data["username"],
+                            "password": user_data["password"],
+                            "id": created_user.get("id")
+                        }
+                        
+                    else:
+                        self.log_test("Create New User", False, "Created user data doesn't match input")
+                else:
+                    self.log_test("Create New User", False, f"Unexpected message: {result.get('message')}")
+            else:
+                self.log_test("Create New User", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Create New User", False, f"Exception: {str(e)}")
+    
+    def test_new_user_login(self):
+        """TEST: Yeni oluşturulan kullanıcının giriş yapabildiğini doğrula"""
+        if not hasattr(self, 'new_created_user'):
+            self.log_test("New User Login Test", False, "No new created user available")
+            return
+        
+        try:
+            login_data = {
+                "username": self.new_created_user["username"],
+                "password": self.new_created_user["password"]
+            }
+            
+            response = requests.post(
+                f"{BASE_URL}/auth/login",
+                json=login_data,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                token = data.get("access_token")
+                if token:
+                    self.log_test("New User Login Test", True, f"New user {login_data['username']} can login successfully")
+                else:
+                    self.log_test("New User Login Test", False, "No token in response")
+            else:
+                self.log_test("New User Login Test", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("New User Login Test", False, f"Exception: {str(e)}")
+    
+    def test_admin_authorization(self):
+        """TEST: Admin authorization kontrolü"""
+        # Try to access admin endpoint with non-admin user
+        customer_headers = self.get_headers("customer")
+        if not customer_headers:
+            self.log_test("Admin Authorization Test", False, "No customer token for negative test")
+            return
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/users",
+                headers=customer_headers,
+                timeout=30
+            )
+            
+            # Should get 403 Forbidden
+            if response.status_code == 403:
+                self.log_test("Admin Authorization Test", True, "Non-admin user correctly denied access (403)")
+            elif response.status_code == 401:
+                self.log_test("Admin Authorization Test", True, "Non-admin user correctly denied access (401)")
+            else:
+                self.log_test("Admin Authorization Test", False, f"Expected 403/401, got {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Admin Authorization Test", False, f"Exception: {str(e)}")
+    
+    def test_error_handling(self):
+        """TEST: Error handling doğru çalışmalı"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Error Handling Test", False, "No admin token")
+            return
+        
+        try:
+            # Test 1: Non-existent user
+            response = requests.get(
+                f"{BASE_URL}/users/non-existent-user-id",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 404:
+                self.log_test("Error Handling - User Not Found", True, "404 returned for non-existent user")
+            else:
+                self.log_test("Error Handling - User Not Found", False, f"Expected 404, got {response.status_code}")
+            
+            # Test 2: Invalid user creation (duplicate username)
+            duplicate_user_data = {
+                "username": "admin",  # Already exists
+                "password": "test123",
+                "role": "customer",
+                "full_name": "Duplicate Test"
+            }
+            
+            response = requests.post(
+                f"{BASE_URL}/users/create",
+                json=duplicate_user_data,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 400:
+                result = response.json()
+                if "already exists" in result.get("detail", "").lower():
+                    self.log_test("Error Handling - Duplicate Username", True, "400 returned for duplicate username")
+                else:
+                    self.log_test("Error Handling - Duplicate Username", False, f"Wrong error message: {result.get('detail')}")
+            else:
+                self.log_test("Error Handling - Duplicate Username", False, f"Expected 400, got {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Error Handling Test", False, f"Exception: {str(e)}")
+
     def run_all_tests(self):
-        """Run all API tests"""
-        print("🧪 Starting Backend API Tests - Periyodik Tüketim ve Yıllık Karşılaştırma Sistemi")
+        """Run all API tests - Admin User Management System"""
+        print("🧪 Starting Backend API Tests - Admin Kullanıcı Yönetimi Sistemi")
         print("=" * 80)
         
-        # Login all users first
-        print("\n🔐 Authentication Tests:")
-        for user_type in TEST_USERS.keys():
-            self.login_user(user_type)
+        print("\n👤 ADMIN USER MANAGEMENT TESTS")
+        print("-" * 40)
+        self.test_admin_login()
+        self.test_get_all_users()
+        self.test_get_user_by_id()
+        self.test_update_user()
+        self.test_change_user_password()
+        self.test_deactivate_user()
+        self.test_activate_user()
+        self.test_create_new_user()
+        self.test_new_user_login()
+        self.test_admin_authorization()
+        self.test_error_handling()
         
-        print("\n🎯 PERİYODİK TÜKETİM VE YILLIK KARŞILAŞTIRMA SİSTEMİ TESTS:")
-        print("=" * 60)
-        
-        print("\n📊 TEST 1: PERİYODİK KAYIT OLUŞTURMA")
-        self.test_periodic_record_generation_monthly()
-        self.test_periodic_record_generation_weekly()
-        
-        print("\n📈 TEST 2: MÜŞTERİ PERİYODİK TÜKETİM")
-        self.test_customer_periodic_consumption()
-        
-        print("\n🔄 TEST 3: YILLIK KARŞILAŞTIRMA (ÖNEMLİ!)")
-        self.test_year_over_year_comparison()
-        
-        print("\n📊 TEST 4: YILLIK TREND ANALİZİ")
-        self.test_yearly_trend_analysis()
-        
-        print("\n🏆 TEST 5: MÜŞTERİ ÜRÜN TRENDLERİ")
-        self.test_customer_product_trends()
-        
-        print("\n👑 TEST 6: TOP CONSUMERS")
-        self.test_top_consumers()
-        
-        print("\n🎯 FATURA BAZLI TÜKETİM HESAPLAMA SİSTEMİ TESTS:")
-        print("=" * 60)
-        
-        print("\n📊 TEST 7: TEMEL OTOMATİK TÜKETİM HESAPLAMA")
-        self.test_basic_automatic_consumption_calculation()
-        
-        print("\n🔍 TEST 8: TÜKETİM MANTIĞI DÜZELTİLDİ - YENİDEN TEST")
-        self.test_corrected_consumption_logic()
-        
-        print("\n🆕 TEST 9: İLK FATURA SENARYOSU")
-        self.test_first_invoice_scenario()
-        
-        print("\n⚡ TEST 10: BULK CALCULATION")
-        self.test_bulk_calculation()
-        
-        print("\n📈 TEST 11: MÜŞTERİ İSTATİSTİKLERİ")
-        self.test_customer_statistics()
-        
-        print("\n🔒 TEST 12: YETKİ KONTROLLARI")
-        self.test_authorization_controls()
-        
-        print("\n🔍 Customer Lookup API Tests:")
-        self.test_customer_lookup_existing()
-        self.test_customer_lookup_not_found()
+        # Login remaining users for any additional tests
+        print("\n📋 AUTHENTICATION TESTS")
+        print("-" * 40)
+        for user_type in ["accounting", "plasiyer", "customer"]:
+            if user_type in TEST_USERS:
+                self.login_user(user_type)
         
         print("\n📝 Manuel Fatura Giriş API Tests (New Categories):")
         self.test_manual_invoice_new_categories()
