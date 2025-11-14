@@ -391,24 +391,47 @@ const UsersManagement = () => {
                               <Key className="h-4 w-4" />
                             </Button>
                             {user.is_active ? (
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleDeleteUser(user.id, user.username)}
-                                title="Devre Dışı Bırak"
-                              >
-                                <UserX className="h-4 w-4" />
-                              </Button>
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleDeleteUser(user.id, user.username)}
+                                  title="Devre Dışı Bırak"
+                                  className="border-orange-500 text-orange-600 hover:bg-orange-50"
+                                >
+                                  <UserX className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handlePermanentDeleteUser(user.id, user.username)}
+                                  title="Kalıcı Sil"
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
                             ) : (
-                              <Button
-                                size="sm"
-                                variant="default"
-                                onClick={() => handleActivateUser(user.id, user.username)}
-                                title="Aktif Et"
-                                className="bg-green-600 hover:bg-green-700"
-                              >
-                                <UserCheck className="h-4 w-4" />
-                              </Button>
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  onClick={() => handleActivateUser(user.id, user.username)}
+                                  title="Aktif Et"
+                                  className="bg-green-600 hover:bg-green-700"
+                                >
+                                  <UserCheck className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handlePermanentDeleteUser(user.id, user.username)}
+                                  title="Kalıcı Sil"
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
                             )}
                           </div>
                         </TableCell>
