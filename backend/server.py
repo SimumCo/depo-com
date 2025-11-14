@@ -15,8 +15,7 @@ from routes.customer_consumption_routes import router as customer_consumption_ro
 from routes.consumption_period_routes import router as consumption_period_router
 from routes.products import router as products_router
 
-# Import old routes temporarily (will be refactored)
-import server_old as old_server
+# Old server import removed - all routes modular now
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
