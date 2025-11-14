@@ -18,7 +18,7 @@ TEST_USERS = {
     "admin": {"username": "admin", "password": "admin123"},
     "accounting": {"username": "muhasebe", "password": "muhasebe123"},
     "plasiyer": {"username": "plasiyer1", "password": "plasiyer123"},
-    "customer": {"username": "musteri1", "password": "musteri123"}
+    "customer": {"username": "musteri2", "password": "musteri223"}
 }
 
 class APITester:
