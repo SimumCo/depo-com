@@ -3369,8 +3369,13 @@ class APITester:
             return
         
         try:
+            # Use unique username to avoid conflicts
+            import time
+            timestamp = int(time.time()) % 10000
+            unique_username = f"test_customer_{timestamp}"
+            
             user_data = {
-                "username": "test_customer",
+                "username": unique_username,
                 "password": "test123",
                 "role": "customer",
                 "full_name": "Test Müşteri"
