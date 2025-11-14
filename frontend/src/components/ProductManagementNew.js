@@ -593,16 +593,9 @@ const ProductManagementNew = () => {
                     </TableCell>
                     <TableCell>{product.sales_price || 0} ₺</TableCell>
                     <TableCell>
-                      <div className="flex flex-col gap-1">
-                        <Badge variant={product.is_active ? 'default' : 'secondary'}>
-                          {product.is_active ? 'Aktif' : 'Pasif'}
-                        </Badge>
-                        {product.stock_status && (
-                          <Badge variant="outline" className="text-xs">
-                            Stok: {product.stock_status === 'active' ? 'Aktif' : 'Pasif'}
-                          </Badge>
-                        )}
-                      </div>
+                      <Badge variant={product.is_active ? 'default' : 'secondary'}>
+                        {product.is_active ? 'Aktif' : 'Pasif'}
+                      </Badge>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
