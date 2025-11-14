@@ -332,13 +332,30 @@ const ProductManagementNew = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Açıklama</Label>
-                    <Input
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="description">Açıklama</Label>
+                      <Input
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="is_active">Ürün Durumu</Label>
+                      <Select 
+                        value={formData.is_active ? 'true' : 'false'} 
+                        onValueChange={(val) => setFormData({ ...formData, is_active: val === 'true' })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="true">Aktif</SelectItem>
+                          <SelectItem value="false">Pasif</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </TabsContent>
 
