@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { inventoryAPI } from '../services/api';
+import { productsAPI } from '../services/api';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Badge } from './ui/badge';
@@ -18,10 +18,12 @@ const InventoryView = () => {
 
   const loadInventory = async () => {
     try {
-      const response = await inventoryAPI.getAll();
+      // Products API'den aktif ve stoklu ürünleri al
+      const response = await productsAPI.getAll({ active_only: true, in_stock_only: true });
       setInventory(response.data);
     } catch (error) {
       toast.error('Envanter yüklenemedi');
+      console.error('Inventory load error:', error);
     } finally {
       setLoading(false);
     }
