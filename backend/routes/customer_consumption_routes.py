@@ -7,10 +7,9 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import List, Optional
 from datetime import datetime, timedelta
 from models.user import User, UserRole
-from models.customer_consumption import CustomerConsumption, ConsumptionPattern
+from models.customer_consumption import CustomerConsumption
 from middleware.auth import get_current_user, require_role
 from config.database import db
-import statistics
 
 router = APIRouter(prefix="/customer-consumption", tags=["Customer Consumption"])
 
