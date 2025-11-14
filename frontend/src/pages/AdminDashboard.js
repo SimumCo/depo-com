@@ -6,7 +6,7 @@ import { dashboardAPI, productsAPI, inventoryAPI } from '../services/api';
 import { Package, Warehouse, TrendingUp, AlertCircle } from 'lucide-react';
 import ProductManagement from '../components/ProductManagementNew';
 import InventoryView from '../components/InventoryView';
-import UserManagement from '../components/UserManagement';
+import UsersManagement from '../components/UsersManagement';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
