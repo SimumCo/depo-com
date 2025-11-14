@@ -2850,6 +2850,11 @@ class APITester:
             if user_type in TEST_USERS:
                 self.login_user(user_type)
         
+        # Now test admin authorization with accounting token
+        print("\n🔒 ADMIN AUTHORIZATION RE-TEST")
+        print("-" * 40)
+        self.test_admin_authorization()
+        
         print("\n📝 Manuel Fatura Giriş API Tests (New Categories):")
         self.test_manual_invoice_new_categories()
         
