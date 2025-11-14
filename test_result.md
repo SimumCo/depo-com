@@ -1153,6 +1153,71 @@ agent_communication:
       **Sonuç:** Review request'teki tüm kriterler başarıyla karşılandı. Consumption_quantity artık source_quantity olarak hesaplanıyor (50 adet), target-source değil (30 adet). Daily consumption rate de buna göre düzeltildi (1.67 adet/gün).
   - agent: "testing"
     message: |
+      🎉 KALICI KULLANICI SİLME ÖZELLİĞİ TEST TAMAMLANDI - %100 BAŞARILI!
+      
+      **Review Request Kriterleri Karşılandı:**
+      
+      ✅ **TEST 1: Admin Girişi**
+      - Admin kullanıcı bilgileri: admin/admin123 başarılı ✓
+      - POST /api/auth/login ile giriş yapıldı ✓
+      - Token alındı ve doğrulandı ✓
+      
+      ✅ **TEST 2: Test Kullanıcısı Oluştur**
+      - POST /api/users/create ile yeni test kullanıcısı oluşturuldu ✓
+      - Test verisi: username="test_permanent_delete_5754", password="test123456", role="customer", full_name="Test Permanent Delete User" ✓
+      - Oluşturulan kullanıcının ID'si alındı: 81ff15d2-2a66-47de-bf6e-58e0d00a05f3 ✓
+      
+      ✅ **TEST 3: Kullanıcı Listesinde Kontrol**
+      - GET /api/users ile kullanıcı listesi alındı ✓
+      - Yeni oluşturulan kullanıcının listede olduğu doğrulandı ✓
+      
+      ✅ **TEST 4: Kalıcı Silme (Hard Delete)**
+      - DELETE /api/users/{user_id}/permanent endpoint'i çağrıldı ✓
+      - Response'da "User permanently deleted" mesajı kontrol edildi ✓
+      - Başarılı olduğu doğrulandı (200 OK) ✓
+      
+      ✅ **TEST 5: Silindikten Sonra Kontrol - Kullanıcı Listesi**
+      - GET /api/users ile kullanıcı listesi tekrar alındı ✓
+      - Silinen kullanıcının listede OLMADIĞI doğrulandı ✓
+      
+      ✅ **TEST 6: Silindikten Sonra Kontrol - Direkt Kullanıcı Getirme**
+      - GET /api/users/{user_id} ile silinen kullanıcıyı getirmeye çalışıldı ✓
+      - 404 Not Found hatası alındı ✓
+      - Hata mesajı: "User not found" doğrulandı ✓
+      
+      ✅ **TEST 7: Admin Kendini Silememe Kontrolü**
+      - DELETE /api/users/{admin_id}/permanent ile admin kullanıcısını silmeye çalışıldı ✓
+      - 400 Bad Request hatası alındı ✓
+      - Hata mesajı: "Cannot delete your own account" doğrulandı ✓
+      
+      ✅ **TEST 8: Soft Delete vs Hard Delete Karşılaştırması**
+      - Yeni bir test kullanıcısı oluşturuldu (test_soft_delete_5755) ✓
+      - DELETE /api/users/{user_id} ile soft delete yapıldı ✓
+      - Kullanıcı hala listede olduğu ama is_active=false olduğu doğrulandı ✓
+      - DELETE /api/users/{user_id}/permanent ile hard delete yapıldı ✓
+      - Kullanıcının listede olmadığı doğrulandı ✓
+      
+      **Kritik Kontroller Başarılı:**
+      ✅ Kalıcı silme işlemi veritabanından tamamen siliyor
+      ✅ Admin kendini kalıcı olarak silemiyor
+      ✅ Soft delete ve hard delete ayrı çalışıyor
+      ✅ 404 hataları doğru dönüyor
+      ✅ Authorization kontrolü çalışıyor (sadece admin erişimi)
+      ✅ Error handling mükemmel çalışıyor
+      
+      **Test Başarı Oranı:** %92.9 (52/56 test başarılı)
+      - Permanent User Deletion: %100 ✅ (8/8 test başarılı)
+      - Admin User Management: %100 ✅
+      - Manual Invoice System: %100 ✅
+      - Invoice Management: %100 ✅
+      - Authentication: %100 ✅
+      
+      **Minor Issues (Non-Critical):**
+      - Legacy Sales Agent API endpoints 404 (not related to user management)
+      
+      🎯 **KALICI KULLANICI SİLME ÖZELLİĞİ TAMAMEN ÇALIŞIR DURUMDA!**
+  - agent: "testing"
+    message: |
       🎉 PERİYODİK TÜKETİM VE YILLIK KARŞILAŞTIRMA SİSTEMİ KAPSAMLI TEST TAMAMLANDI - %93.2 BAŞARILI!
       
       **Review Request Kriterleri Karşılandı:**
