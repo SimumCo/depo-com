@@ -3137,6 +3137,11 @@ class APITester:
         self.test_admin_authorization()
         self.test_error_handling()
         
+        # PERMANENT USER DELETION TESTS (NEW)
+        print("\n🗑️ PERMANENT USER DELETION TESTS")
+        print("-" * 40)
+        self.test_permanent_user_deletion_complete_scenario()
+        
         # Login remaining users for any additional tests
         print("\n📋 AUTHENTICATION TESTS")
         print("-" * 40)
