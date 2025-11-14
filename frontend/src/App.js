@@ -107,6 +107,14 @@ function App() {
             }
           />
           <Route
+            path="/plasiyer/*"
+            element={
+              <ProtectedRoute allowedRoles={['sales_agent']}>
+                <PlasiyerDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/customer/*"
             element={
               <ProtectedRoute allowedRoles={['customer']}>
