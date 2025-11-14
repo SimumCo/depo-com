@@ -2668,9 +2668,9 @@ class APITester:
             import time
             timestamp = int(time.time()) % 10000
             
-            # Create new user data as specified in review request
+            # Create new user data as specified in review request with unique username
             user_data = {
-                "username": "test_user_new",
+                "username": f"test_user_new_{timestamp}",
                 "password": "test123456",
                 "role": "customer",
                 "full_name": "Test Kullanıcı",
