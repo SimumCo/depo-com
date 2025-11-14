@@ -29,8 +29,29 @@ async def create_product(
     return product_obj
 
 @router.get("", response_model=List[Product])
-async def get_products(current_user: User = Depends(get_current_user)):
-    products = await db.products.find({"is_active": True}, {"_id": 0}).to_list(1000)
+async def get_products(
+    current_user: User = Depends(get_current_user),
+    active_only: bool = False,
+    in_stock_only: bool = False
+):
+    """
+    Ürünleri listele
+    - active_only: Sadece aktif ürünler (is_active=True)
+    - in_stock_only: Sadece stokta olanlar (stock_quantity > 0)
+    """
+    query = {}
+    
+    # Admin ve warehouse manager tüm ürünleri görebilir
+    if current_user.role not in [UserRole.ADMIN, UserRole.WAREHOUSE_MANAGER]:
+        query["is_active"] = True
+    elif active_only:
+        query["is_active"] = True
+    
+    # Stok filtresi
+    if in_stock_only:
+        query["stock_quantity"] = {"$gt": 0}
+    
+    products = await db.products.find(query, {"_id": 0}).to_list(1000)
     
     from datetime import datetime
     for product in products:
