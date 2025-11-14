@@ -134,6 +134,7 @@ const ProductManagementNew = () => {
       supply_time: 0,
       turnover_rate: 0,
       description: '',
+      is_active: true,
     });
   };
 
