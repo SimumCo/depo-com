@@ -639,7 +639,7 @@ const ProductManagementNew = () => {
                   </TabsList>
 
                   <TabsContent value="basic" className="space-y-4 mt-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                       <div className="space-y-2">
                         <Label>Ürün Adı</Label>
                         <Input
@@ -657,6 +657,21 @@ const ProductManagementNew = () => {
                             {CATEGORIES.map(cat => (
                               <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                             ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Ürün Durumu</Label>
+                        <Select 
+                          value={editFormData.is_active ? 'true' : 'false'} 
+                          onValueChange={(val) => setEditFormData({ ...editFormData, is_active: val === 'true' })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="true">Aktif</SelectItem>
+                            <SelectItem value="false">Pasif</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
