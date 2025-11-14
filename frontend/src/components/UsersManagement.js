@@ -317,6 +317,114 @@ const UsersManagement = () => {
           </div>
         )}
 
+        {/* Edit User Dialog */}
+        {editDialogOpen && editFormData && (
+          <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Kullanıcı Düzenle: {editFormData.username}</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleUpdateUser} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit_username">Kullanıcı Adı *</Label>
+                    <Input
+                      id="edit_username"
+                      value={editFormData.username}
+                      onChange={(e) => setEditFormData({ ...editFormData, username: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit_full_name">Ad Soyad</Label>
+                    <Input
+                      id="edit_full_name"
+                      value={editFormData.full_name}
+                      onChange={(e) => setEditFormData({ ...editFormData, full_name: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit_email">E-posta</Label>
+                    <Input
+                      id="edit_email"
+                      type="email"
+                      value={editFormData.email}
+                      onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit_phone">Telefon</Label>
+                    <Input
+                      id="edit_phone"
+                      value={editFormData.phone}
+                      onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit_role">Rol *</Label>
+                    <Select value={editFormData.role} onValueChange={(val) => setEditFormData({ ...editFormData, role: val })}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ROLES.map(role => (
+                          <SelectItem key={role.value} value={role.value}>{role.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit_status">Durum *</Label>
+                    <Select 
+                      value={editFormData.is_active ? 'true' : 'false'} 
+                      onValueChange={(val) => setEditFormData({ ...editFormData, is_active: val === 'true' })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="true">Aktif</SelectItem>
+                        <SelectItem value="false">Pasif</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit_address">Adres</Label>
+                  <Input
+                    id="edit_address"
+                    value={editFormData.address}
+                    onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+                  />
+                </div>
+                <div className="flex justify-between pt-4 border-t">
+                  <Button 
+                    type="button" 
+                    variant="destructive" 
+                    onClick={handleDeleteUserFromDialog}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Kullanıcıyı Sil
+                  </Button>
+                  <div className="flex gap-2">
+                    <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
+                      İptal
+                    </Button>
+                    <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                      Güncelle
+                    </Button>
+                  </div>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        )}
+
         {/* Password Change Dialog */}
         {passwordUser && (
           <Dialog open={!!passwordUser} onOpenChange={(open) => !open && setPasswordUser(null)}>
