@@ -2753,16 +2753,16 @@ class APITester:
     
     def test_admin_authorization(self):
         """TEST: Admin authorization kontrolü"""
-        # Try to access admin endpoint with non-admin user
-        customer_headers = self.get_headers("customer")
-        if not customer_headers:
-            self.log_test("Admin Authorization Test", False, "No customer token for negative test")
+        # Try to access admin endpoint with accounting user (non-admin)
+        accounting_headers = self.get_headers("accounting")
+        if not accounting_headers:
+            self.log_test("Admin Authorization Test", False, "No accounting token for negative test")
             return
         
         try:
             response = requests.get(
                 f"{BASE_URL}/users",
-                headers=customer_headers,
+                headers=accounting_headers,
                 timeout=30
             )
             
