@@ -3362,6 +3362,200 @@ class APITester:
         print("\n🎯 GURBET DURMUŞ TÜKETİM İSTATİSTİKLERİ TEST TAMAMLANDI")
         print("=" * 60)
 
+    def test_haftalik_tuketim_sistemi(self):
+        """Test Haftalık Tüketim Sistemi - Review Request Scenarios"""
+        print("\n🎯 HAFTALİK TÜKETİM SİSTEMİ TEST SENARYOLARI")
+        print("-" * 60)
+        
+        # Test 1: Admin Girişi
+        admin_success = self.login_user("admin")
+        if not admin_success:
+            self.log_test("Haftalık Tüketim - Admin Girişi", False, "Admin login failed")
+            return
+        
+        headers = self.get_headers("admin")
+        gurbet_durmus_customer_id = "a00f9853-e336-44c3-84db-814827fe0ff6"
+        
+        # Test 2: Haftalık Fatura Kontrolü - GURBET DURMUŞ için 109 fatura
+        try:
+            response = requests.get(
+                f"{BASE_URL}/invoices/all/list",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                invoices = response.json()
+                gurbet_invoices = [inv for inv in invoices if inv.get("customer_id") == gurbet_durmus_customer_id]
+                
+                if len(gurbet_invoices) >= 109:
+                    self.log_test("Haftalık Fatura Kontrolü", True, f"GURBET DURMUŞ için {len(gurbet_invoices)} fatura bulundu (>= 109 beklenen)")
+                else:
+                    self.log_test("Haftalık Fatura Kontrolü", False, f"GURBET DURMUŞ için sadece {len(gurbet_invoices)} fatura bulundu (109 beklenen)")
+            else:
+                self.log_test("Haftalık Fatura Kontrolü", False, f"Status: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Haftalık Fatura Kontrolü", False, f"Exception: {str(e)}")
+        
+        # Test 3: Haftalık Tüketim Kayıtları - 108 tüketim kaydı
+        try:
+            response = requests.get(
+                f"{BASE_URL}/customer-consumption/invoice-based/customer/{gurbet_durmus_customer_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                consumption_records = response.json()
+                
+                if len(consumption_records) >= 108:
+                    self.log_test("Haftalık Tüketim Kayıtları", True, f"{len(consumption_records)} tüketim kaydı bulundu (>= 108 beklenen)")
+                else:
+                    self.log_test("Haftalık Tüketim Kayıtları", False, f"Sadece {len(consumption_records)} tüketim kaydı bulundu (108 beklenen)")
+            else:
+                self.log_test("Haftalık Tüketim Kayıtları", False, f"Status: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Haftalık Tüketim Kayıtları", False, f"Exception: {str(e)}")
+        
+        # Test 4: Haftalık Periyodik Tüketim - 2024 (52 hafta)
+        try:
+            response = requests.get(
+                f"{BASE_URL}/consumption-periods/customer/{gurbet_durmus_customer_id}?period_type=weekly&year=2024",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                weekly_data = response.json()
+                
+                if len(weekly_data) >= 52:
+                    self.log_test("Haftalık Periyodik Tüketim - 2024", True, f"{len(weekly_data)} haftalık veri bulundu (>= 52 beklenen)")
+                else:
+                    self.log_test("Haftalık Periyodik Tüketim - 2024", False, f"Sadece {len(weekly_data)} haftalık veri bulundu (52 beklenen)")
+            else:
+                self.log_test("Haftalık Periyodik Tüketim - 2024", False, f"Status: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Haftalık Periyodik Tüketim - 2024", False, f"Exception: {str(e)}")
+        
+        # Test 5: Aylık Periyodik Tüketim - 2024 (12 ay)
+        try:
+            response = requests.get(
+                f"{BASE_URL}/consumption-periods/customer/{gurbet_durmus_customer_id}?period_type=monthly&year=2024",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                monthly_data = response.json()
+                
+                if len(monthly_data) >= 12:
+                    self.log_test("Aylık Periyodik Tüketim - 2024", True, f"{len(monthly_data)} aylık veri bulundu (>= 12 beklenen)")
+                else:
+                    self.log_test("Aylık Periyodik Tüketim - 2024", False, f"Sadece {len(monthly_data)} aylık veri bulundu (12 beklenen)")
+            else:
+                self.log_test("Aylık Periyodik Tüketim - 2024", False, f"Status: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Aylık Periyodik Tüketim - 2024", False, f"Exception: {str(e)}")
+        
+        # Test 6: 2023 vs 2024 vs 2025 Karşılaştırma (Ocak ayları)
+        try:
+            comparison_params = {
+                "customer_id": gurbet_durmus_customer_id,
+                "product_code": "SUT001",
+                "period_type": "monthly",
+                "period_number": 1,  # Ocak
+                "current_year": 2024
+            }
+            
+            response = requests.get(
+                f"{BASE_URL}/consumption-periods/compare/year-over-year",
+                params=comparison_params,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                comparison_data = response.json()
+                
+                # Check if we have data for different years
+                if "current_year_data" in comparison_data and "previous_year_data" in comparison_data:
+                    self.log_test("2023 vs 2024 vs 2025 Karşılaştırma", True, f"Yıllık karşılaştırma verisi alındı: {comparison_data.get('percentage_change', 'N/A')}% değişim")
+                else:
+                    self.log_test("2023 vs 2024 vs 2025 Karşılaştırma", False, "Karşılaştırma verisi eksik")
+            else:
+                self.log_test("2023 vs 2024 vs 2025 Karşılaştırma", False, f"Status: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("2023 vs 2024 vs 2025 Karşılaştırma", False, f"Exception: {str(e)}")
+        
+        # Test 7: Trend Analizi - 2024 (12 aylık trend)
+        try:
+            trend_params = {
+                "customer_id": gurbet_durmus_customer_id,
+                "product_code": "SUT001",
+                "year": 2024,
+                "period_type": "monthly"
+            }
+            
+            response = requests.get(
+                f"{BASE_URL}/consumption-periods/trends/yearly",
+                params=trend_params,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                trend_data = response.json()
+                
+                # Check if we have monthly trend data
+                periods = trend_data.get("periods", [])
+                if len(periods) >= 12:
+                    self.log_test("Trend Analizi - 2024", True, f"{len(periods)} aylık trend verisi alındı, Toplam tüketim: {trend_data.get('total_consumption', 'N/A')}")
+                else:
+                    self.log_test("Trend Analizi - 2024", False, f"Sadece {len(periods)} aylık trend verisi bulundu (12 beklenen)")
+            else:
+                self.log_test("Trend Analizi - 2024", False, f"Status: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Trend Analizi - 2024", False, f"Exception: {str(e)}")
+        
+        # Test 8: Son Fatura Kontrol - 2025 Ocak
+        try:
+            response = requests.get(
+                f"{BASE_URL}/invoices/all/list",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                invoices = response.json()
+                gurbet_invoices = [inv for inv in invoices if inv.get("customer_id") == gurbet_durmus_customer_id]
+                
+                # Find the latest invoice
+                latest_invoice = None
+                latest_date = None
+                
+                for invoice in gurbet_invoices:
+                    invoice_date = invoice.get("invoice_date", "")
+                    if "2025" in invoice_date and ("01" in invoice_date or "Ocak" in invoice_date):
+                        if latest_invoice is None or invoice_date > latest_date:
+                            latest_invoice = invoice
+                            latest_date = invoice_date
+                
+                if latest_invoice:
+                    self.log_test("Son Fatura Kontrol", True, f"2025 Ocak faturası bulundu: {latest_invoice.get('invoice_number', 'N/A')} - {latest_date}")
+                else:
+                    self.log_test("Son Fatura Kontrol", False, "2025 Ocak ayında fatura bulunamadı")
+            else:
+                self.log_test("Son Fatura Kontrol", False, f"Status: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Son Fatura Kontrol", False, f"Exception: {str(e)}")
+
     def run_all_tests(self):
         """Run all API tests - GURBET DURMUŞ Consumption Statistics"""
         print("🧪 Starting Backend API Tests - GURBET DURMUŞ Tüketim İstatistikleri")
