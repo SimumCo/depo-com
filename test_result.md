@@ -749,7 +749,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "GURBET DURMUŞ Consumption Statistics Testing"
+    - "Haftalık Tüketim Sistemi Testing"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
