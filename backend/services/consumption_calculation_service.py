@@ -224,7 +224,7 @@ class ConsumptionCalculationService:
                     expected_consumption=expected_consumption,
                     deviation_rate=round(deviation_rate, 2),
                     can_calculate=True,
-                    notes=f"Günlük ort: {daily_rate:.2f} | Beklenen: {expected_consumption:.2f} | Sapma: {deviation_rate:.1f}%"
+                    notes=f"Günlük ort: {daily_rate:.2f} | Beklenen (önceki yıl): {expected_consumption:.2f} | Sapma: {deviation_rate:.1f}%"
                 )
             else:
                 # ÜRÜN BULUNAMADI - İlk fatura kaydı
