@@ -330,9 +330,36 @@ const InvoiceBasedConsumption = () => {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="text-blue-600">
+                            <div className="text-blue-600 font-medium">
                               {record.daily_average?.toFixed(2) || '0.00'} /gün
                             </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-purple-600 font-medium">
+                              {record.average_expected_consumption?.toFixed(2) || '0.00'}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              (önceki yıl)
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {record.average_deviation_rate !== null && record.average_deviation_rate !== undefined ? (
+                              <div className={`flex items-center gap-1 ${
+                                record.average_deviation_rate > 0 
+                                  ? 'text-red-600' 
+                                  : record.average_deviation_rate < 0 
+                                    ? 'text-green-600' 
+                                    : 'text-gray-600'
+                              }`}>
+                                {record.average_deviation_rate > 0 ? '↑' : record.average_deviation_rate < 0 ? '↓' : '→'}
+                                <span className="font-semibold">
+                                  {record.average_deviation_rate > 0 ? '+' : ''}
+                                  {record.average_deviation_rate.toFixed(1)}%
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">-</span>
+                            )}
                           </TableCell>
                           <TableCell>
                             {record.year_over_year_change !== null && record.year_over_year_change !== undefined ? (
