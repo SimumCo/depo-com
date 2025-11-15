@@ -757,45 +757,57 @@ test_plan:
 agent_communication:
   - agent: "testing"
     message: |
-      🎯 GURBET DURMUŞ TÜKETİM İSTATİSTİKLERİ TEST TAMAMLANDI - %100 BAŞARILI!
+      🎯 HAFTALİK TÜKETİM SİSTEMİ TEST TAMAMLANDI - %83.3 BAŞARILI!
       
-      **Review Request Kriterleri Karşılandı:**
+      **Review Request Test Sonuçları:**
       
       ✅ **TEST 1: Admin Girişi** - admin/admin123 başarılı
-      ✅ **TEST 2: Müşteri Tüketim Kayıtları** - 71 tüketim kaydı bulundu (>= 23 beklenen)
-      ✅ **TEST 3: Periyodik Tüketim 2023** - 11 aylık veri (2023) başarılı
-      ✅ **TEST 4: Periyodik Tüketim 2024** - 11 aylık veri (2024) başarılı
-      ✅ **TEST 5: Yıllık Karşılaştırma** - 2023 Haziran vs 2024 Haziran karşılaştırması çalışıyor
-      ✅ **TEST 6: Yıllık Trend Analizi 2023** - 11 aylık trend analizi başarılı
-      ✅ **TEST 7: Yıllık Trend Analizi 2024** - 11 aylık trend analizi başarılı
-      ✅ **TEST 8: Müşteri Ürün Trendleri** - GURBET DURMUŞ'un 2024 yılı ürün trendi çalışıyor
+      ❌ **TEST 2: Haftalık Fatura Kontrolü** - GURBET DURMUŞ için 0 fatura bulundu (109 beklenen)
+      ✅ **TEST 3: Haftalık Tüketim Kayıtları** - 108 tüketim kaydı bulundu (>= 108 beklenen)
+      ✅ **TEST 4: Haftalık Periyodik Tüketim - 2024** - 52 haftalık veri bulundu (>= 52 beklenen)
+      ✅ **TEST 5: Aylık Periyodik Tüketim - 2024** - 12 aylık veri bulundu (>= 12 beklenen)
+      ✅ **TEST 6: 2023 vs 2024 vs 2025 Karşılaştırma** - Yıllık karşılaştırma çalışıyor (-26.47% değişim)
+      ✅ **TEST 7: Trend Analizi - 2024** - 12 aylık trend verisi alındı (Toplam: 484.0)
+      ✅ **TEST 8: Son Fatura Kontrol** - 2025 Ocak faturası consumption kayıtlarında mevcut
+      
+      **KRİTİK BULGULAR:**
+      
+      🔍 **Invoice List API Sorunu:**
+      - GET /api/invoices/all/list API'si 80 fatura döndürüyor
+      - Ancak bu faturalarda customer_id=None (bağlantı sorunu)
+      - Consumption kayıtlarında doğru customer_id mevcut
+      - 2025 faturalar consumption'da var ama invoice list'te yok
+      
+      ✅ **Çalışan Sistemler:**
+      - Tüketim hesaplama sistemi: %100 çalışıyor
+      - Periyodik tüketim kayıtları: %100 çalışıyor
+      - Yıllık karşılaştırma: %100 çalışıyor
+      - Trend analizi: %100 çalışıyor
       
       **Test Verileri:**
       - Müşteri ID: a00f9853-e336-44c3-84db-814827fe0ff6 (GURBET DURMUŞ)
       - Ürün Kodu: SUT001 (Tam Yağlı Süt 1L)
-      - 24 fatura (2023-2024)
-      - 71 tüketim kaydı
-      - 22 aylık periyodik kayıt (11 ay 2023 + 11 ay 2024)
+      - 108 tüketim kaydı (beklenen: 108) ✅
+      - 52 haftalık periyodik kayıt (2024) ✅
+      - 12 aylık periyodik kayıt (2024) ✅
+      - 4 adet 2025 fatura ID'si consumption kayıtlarında
+      - 7 adet Ocak 2025 consumption kaydı
       
-      **API Endpoint Testleri:**
+      **API Endpoint Test Sonuçları:**
       ✅ GET /api/customer-consumption/invoice-based/customer/{customer_id}
-      ✅ GET /api/consumption-periods/customer/{customer_id}?period_type=monthly&year=2023
+      ✅ GET /api/consumption-periods/customer/{customer_id}?period_type=weekly&year=2024
       ✅ GET /api/consumption-periods/customer/{customer_id}?period_type=monthly&year=2024
       ✅ GET /api/consumption-periods/compare/year-over-year
       ✅ GET /api/consumption-periods/trends/yearly
-      ✅ GET /api/consumption-periods/customer/{customer_id}/products
+      ❌ GET /api/invoices/all/list (customer_id bağlantı sorunu)
       
-      **Beklenen Sonuçlar Karşılandı:**
-      ✅ 24 fatura (2023-2024) - Başarılı
-      ✅ 71 tüketim kaydı (>= 23 beklenen) - Başarılı
-      ✅ Her ay için tüketim verileri - Başarılı
-      ✅ Yıllık karşılaştırma çalışıyor - Başarılı
-      ✅ Trend analizi çalışıyor - Başarılı
+      **Test Başarı Oranı:** %83.3 (60/72 toplam test başarılı)
+      - Haftalık Tüketim Sistemi Core: %87.5 (7/8 test başarılı)
+      - Tüketim hesaplama ve analiz: %100 çalışıyor
+      - Invoice-Customer bağlantısı: Düzeltme gerekli
       
-      **Test Başarı Oranı:** %100 (8/8 GURBET DURMUŞ test başarılı)
-      **Genel Test Başarı Oranı:** %85.9 (55/64 toplam test başarılı)
-      
-      🎯 **GURBET DURMUŞ TÜKETİM İSTATİSTİKLERİ TAMAMEN ÇALIŞIR DURUMDA!**
+      🎯 **HAFTALİK TÜKETİM SİSTEMİ CORE FUNCTIONALITY TAMAMEN ÇALIŞIR DURUMDA!**
+      **Invoice List API customer_id bağlantısı düzeltilmeli.**
   - agent: "main"
     message: |
       🎯 FATURA BAZLI TÜKETİM HESAPLAMA SİSTEMİ EKLENDİ
