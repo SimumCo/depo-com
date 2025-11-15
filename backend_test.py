@@ -3481,11 +3481,12 @@ class APITester:
             if response.status_code == 200:
                 comparison_data = response.json()
                 
-                # Check if we have data for different years
-                if "current_year_data" in comparison_data and "previous_year_data" in comparison_data:
-                    self.log_test("2023 vs 2024 vs 2025 Karşılaştırma", True, f"Yıllık karşılaştırma verisi alındı: {comparison_data.get('percentage_change', 'N/A')}% değişim")
+                # Check if we have the required fields for comparison
+                required_fields = ["current_year", "previous_year", "percentage_change", "trend_direction"]
+                if all(field in comparison_data for field in required_fields):
+                    self.log_test("2023 vs 2024 vs 2025 Karşılaştırma", True, f"Yıllık karşılaştırma verisi alındı: {comparison_data.get('percentage_change', 'N/A')}% değişim ({comparison_data.get('trend_direction', 'N/A')})")
                 else:
-                    self.log_test("2023 vs 2024 vs 2025 Karşılaştırma", False, "Karşılaştırma verisi eksik")
+                    self.log_test("2023 vs 2024 vs 2025 Karşılaştırma", False, f"Karşılaştırma verisi eksik, mevcut alanlar: {list(comparison_data.keys())}")
             else:
                 self.log_test("2023 vs 2024 vs 2025 Karşılaştırma", False, f"Status: {response.status_code}")
                 
