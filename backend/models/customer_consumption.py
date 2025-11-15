@@ -28,8 +28,10 @@ class CustomerConsumption(BaseModel):
     
     # Hesaplanan değerler
     days_between: int = 0  # Faturalar arası gün farkı
-    consumption_quantity: float = 0.0  # target_quantity - source_quantity
-    daily_consumption_rate: float = 0.0  # consumption_quantity / days_between
+    consumption_quantity: float = 0.0  # source_quantity (tüketilen miktar)
+    daily_consumption_rate: float = 0.0  # consumption_quantity / days_between (günlük ortalama)
+    expected_consumption: float = 0.0  # Beklenen tüketim (önceki ortalamalara göre)
+    deviation_rate: float = 0.0  # Sapma oranı: (gerçek - beklenen) / beklenen * 100
     
     # Metadata
     can_calculate: bool = True  # False ise ilk fatura
