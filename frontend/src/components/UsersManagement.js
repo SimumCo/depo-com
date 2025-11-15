@@ -152,7 +152,8 @@ const UsersManagement = () => {
         email: '',
         phone: '',
         role: 'customer',
-        is_active: true
+        is_active: true,
+        customer_number: ''
       });
       loadUsers();
     } catch (error) {
