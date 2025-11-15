@@ -220,8 +220,10 @@ class ConsumptionCalculationService:
                     days_between=days_between,
                     consumption_quantity=consumption_quantity,
                     daily_consumption_rate=daily_rate,
+                    expected_consumption=expected_consumption,
+                    deviation_rate=round(deviation_rate, 2),
                     can_calculate=True,
-                    notes=f"Son alım: {source_quantity:.2f} birim, {days_between} günde tüketildi"
+                    notes=f"Günlük ort: {daily_rate:.2f} | Beklenen: {expected_consumption:.2f} | Sapma: {deviation_rate:.1f}%"
                 )
             else:
                 # ÜRÜN BULUNAMADI - İlk fatura kaydı
