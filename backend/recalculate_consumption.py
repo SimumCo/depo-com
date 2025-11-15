@@ -114,7 +114,7 @@ async def recalculate_consumption():
                 "daily_consumption_rate": round(daily_rate, 2),
                 "expected_consumption": round(expected_consumption, 2),
                 "deviation_rate": round(deviation_rate, 2),
-                "notes": f"Günlük ort: {daily_rate:.2f} | Beklenen: {expected_consumption:.2f} | Sapma: {deviation_rate:.1f}%"
+                "notes": f"Günlük ort: {daily_rate:.2f} | Beklenen (önceki yıl): {expected_consumption:.2f} | Sapma: {deviation_rate:.1f}%"
             }}
         )
         
