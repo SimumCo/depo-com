@@ -405,13 +405,25 @@ const UsersManagement = () => {
                     </Select>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit_address">Adres</Label>
-                  <Input
-                    id="edit_address"
-                    value={editFormData.address}
-                    onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit_address">Adres</Label>
+                    <Input
+                      id="edit_address"
+                      value={editFormData.address}
+                      onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit_customer_number">Vergi No / TC Kimlik No</Label>
+                    <Input
+                      id="edit_customer_number"
+                      value={editFormData.customer_number || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, customer_number: e.target.value })}
+                      placeholder="10-11 haneli vergi numarası veya TC kimlik numarası"
+                      maxLength={11}
+                    />
+                  </div>
                 </div>
                 <div className="flex justify-between pt-4 border-t">
                   <Button 
