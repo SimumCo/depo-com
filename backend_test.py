@@ -4048,13 +4048,273 @@ class APITester:
         except Exception as e:
             self.log_test("Son Fatura Kontrol", False, f"Exception: {str(e)}")
 
+    # ========== PERİYODİK ANALİZ GÜNCELLEMESİ TESTS ==========
+    
+    def test_periodic_analysis_update_system(self):
+        """Periyodik Analiz Güncellemesi Testleri - Review Request"""
+        print("🌟 PERİYODİK ANALİZ GÜNCELLEMESİ TEST BAŞLADI")
+        
+        # Test customer ID from review request
+        test_customer_id = "a00f9853-e336-44c3-84db-814827fe0ff6"
+        
+        # Test 1: Admin Girişi
+        self.test_periodic_admin_login()
+        
+        # Test 2: 2024 Aylık Periyodik Veri (Yeni Alanlar)
+        self.test_periodic_2024_monthly_data_new_fields(test_customer_id)
+        
+        # Test 3: 2024 Ocak Ayı Detayları
+        self.test_periodic_january_2024_details(test_customer_id)
+        
+        # Test 4: 2024 Haziran Ayı Detayları
+        self.test_periodic_june_2024_details(test_customer_id)
+        
+        # Test 5: 2025 Ocak Ayı
+        self.test_periodic_january_2025_details(test_customer_id)
+        
+        # Test 6: Haftalık Periyodik Veri
+        self.test_periodic_weekly_data_new_fields(test_customer_id)
+        
+        print("🎉 PERİYODİK ANALİZ GÜNCELLEMESİ TEST TAMAMLANDI")
+    
+    def test_periodic_admin_login(self):
+        """Test 1: Admin Girişi"""
+        try:
+            success = self.login_user("admin")
+            if success:
+                self.log_test("Periodic Test 1: Admin Girişi", True, "admin/admin123 başarılı")
+            else:
+                self.log_test("Periodic Test 1: Admin Girişi", False, "admin/admin123 başarısız")
+        except Exception as e:
+            self.log_test("Periodic Test 1: Admin Girişi", False, f"Exception: {str(e)}")
+    
+    def test_periodic_2024_monthly_data_new_fields(self, customer_id):
+        """Test 2: 2024 Aylık Periyodik Veri (Yeni Alanlar)"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Periodic Test 2: 2024 Aylık Veri", False, "No admin token")
+            return
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/consumption-periods/customer/{customer_id}?period_type=monthly&year=2024",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                records = response.json()
+                if isinstance(records, list) and len(records) > 0:
+                    # Check for new fields in first record
+                    first_record = records[0]
+                    
+                    # Check for new fields
+                    has_avg_expected = "average_expected_consumption" in first_record
+                    has_avg_deviation = "average_deviation_rate" in first_record
+                    
+                    if has_avg_expected and has_avg_deviation:
+                        avg_expected = first_record.get("average_expected_consumption", 0)
+                        avg_deviation = first_record.get("average_deviation_rate", 0)
+                        
+                        self.log_test("Periodic Test 2: 2024 Aylık Veri", True, 
+                            f"Yeni alanlar mevcut - {len(records)} kayıt, Beklenen: {avg_expected}, Sapma: {avg_deviation}%")
+                    else:
+                        missing_fields = []
+                        if not has_avg_expected:
+                            missing_fields.append("average_expected_consumption")
+                        if not has_avg_deviation:
+                            missing_fields.append("average_deviation_rate")
+                        
+                        self.log_test("Periodic Test 2: 2024 Aylık Veri", False, 
+                            f"Eksik alanlar: {missing_fields}")
+                else:
+                    self.log_test("Periodic Test 2: 2024 Aylık Veri", False, "Veri bulunamadı")
+            else:
+                self.log_test("Periodic Test 2: 2024 Aylık Veri", False, f"API hatası: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Periodic Test 2: 2024 Aylık Veri", False, f"Exception: {str(e)}")
+    
+    def test_periodic_january_2024_details(self, customer_id):
+        """Test 3: 2024 Ocak Ayı Detayları"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Periodic Test 3: Ocak 2024", False, "No admin token")
+            return
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/consumption-periods/customer/{customer_id}?period_type=monthly&year=2024",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                records = response.json()
+                
+                # Find January record (period_number = 1)
+                january_record = None
+                for record in records:
+                    if record.get("period_number") == 1:
+                        january_record = record
+                        break
+                
+                if january_record:
+                    daily_avg = january_record.get("daily_average", 0)
+                    avg_expected = january_record.get("average_expected_consumption", 0)
+                    avg_deviation = january_record.get("average_deviation_rate", 0)
+                    
+                    self.log_test("Periodic Test 3: Ocak 2024", True, 
+                        f"Günlük ort: {daily_avg}, Beklenen: {avg_expected}, Sapma: {avg_deviation}%")
+                else:
+                    self.log_test("Periodic Test 3: Ocak 2024", False, "Ocak ayı kaydı bulunamadı")
+            else:
+                self.log_test("Periodic Test 3: Ocak 2024", False, f"API hatası: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Periodic Test 3: Ocak 2024", False, f"Exception: {str(e)}")
+    
+    def test_periodic_june_2024_details(self, customer_id):
+        """Test 4: 2024 Haziran Ayı Detayları"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Periodic Test 4: Haziran 2024", False, "No admin token")
+            return
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/consumption-periods/customer/{customer_id}?period_type=monthly&year=2024",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                records = response.json()
+                
+                # Find June record (period_number = 6)
+                june_record = None
+                for record in records:
+                    if record.get("period_number") == 6:
+                        june_record = record
+                        break
+                
+                if june_record:
+                    daily_avg = june_record.get("daily_average", 0)
+                    avg_expected = june_record.get("average_expected_consumption", 0)
+                    avg_deviation = june_record.get("average_deviation_rate", 0)
+                    
+                    self.log_test("Periodic Test 4: Haziran 2024", True, 
+                        f"Günlük ort: {daily_avg}, Beklenen: {avg_expected}, Sapma: {avg_deviation}% (Yaz ayı)")
+                else:
+                    self.log_test("Periodic Test 4: Haziran 2024", False, "Haziran ayı kaydı bulunamadı")
+            else:
+                self.log_test("Periodic Test 4: Haziran 2024", False, f"API hatası: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Periodic Test 4: Haziran 2024", False, f"Exception: {str(e)}")
+    
+    def test_periodic_january_2025_details(self, customer_id):
+        """Test 5: 2025 Ocak Ayı"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Periodic Test 5: Ocak 2025", False, "No admin token")
+            return
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/consumption-periods/customer/{customer_id}?period_type=monthly&year=2025",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                records = response.json()
+                
+                # Find January record (period_number = 1)
+                january_record = None
+                for record in records:
+                    if record.get("period_number") == 1:
+                        january_record = record
+                        break
+                
+                if january_record:
+                    daily_avg = january_record.get("daily_average", 0)
+                    avg_expected = january_record.get("average_expected_consumption", 0)
+                    avg_deviation = january_record.get("average_deviation_rate", 0)
+                    
+                    # Expected consumption should be calculated from 2024 January
+                    if avg_expected > 0:
+                        self.log_test("Periodic Test 5: Ocak 2025", True, 
+                            f"Beklenen tüketim 2024 Ocak'tan hesaplandı - Günlük: {daily_avg}, Beklenen: {avg_expected}, Sapma: {avg_deviation}%")
+                    else:
+                        self.log_test("Periodic Test 5: Ocak 2025", False, "Beklenen tüketim hesaplanmamış")
+                else:
+                    self.log_test("Periodic Test 5: Ocak 2025", False, "Ocak 2025 kaydı bulunamadı")
+            else:
+                self.log_test("Periodic Test 5: Ocak 2025", False, f"API hatası: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Periodic Test 5: Ocak 2025", False, f"Exception: {str(e)}")
+    
+    def test_periodic_weekly_data_new_fields(self, customer_id):
+        """Test 6: Haftalık Periyodik Veri"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Periodic Test 6: Haftalık Veri", False, "No admin token")
+            return
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/consumption-periods/customer/{customer_id}?period_type=weekly&year=2024",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                records = response.json()
+                if isinstance(records, list) and len(records) > 0:
+                    # Check for new fields in first record
+                    first_record = records[0]
+                    
+                    # Check for new fields
+                    has_avg_expected = "average_expected_consumption" in first_record
+                    has_avg_deviation = "average_deviation_rate" in first_record
+                    
+                    if has_avg_expected and has_avg_deviation:
+                        avg_expected = first_record.get("average_expected_consumption", 0)
+                        avg_deviation = first_record.get("average_deviation_rate", 0)
+                        
+                        self.log_test("Periodic Test 6: Haftalık Veri", True, 
+                            f"Haftalık veriler için yeni alanlar mevcut - {len(records)} kayıt, Beklenen: {avg_expected}, Sapma: {avg_deviation}%")
+                    else:
+                        missing_fields = []
+                        if not has_avg_expected:
+                            missing_fields.append("average_expected_consumption")
+                        if not has_avg_deviation:
+                            missing_fields.append("average_deviation_rate")
+                        
+                        self.log_test("Periodic Test 6: Haftalık Veri", False, 
+                            f"Eksik alanlar: {missing_fields}")
+                else:
+                    self.log_test("Periodic Test 6: Haftalık Veri", False, "Haftalık veri bulunamadı")
+            else:
+                self.log_test("Periodic Test 6: Haftalık Veri", False, f"API hatası: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Periodic Test 6: Haftalık Veri", False, f"Exception: {str(e)}")
+
     def run_all_tests(self):
         """Run all API tests - Seasonal Consumption System Priority"""
-        print("🧪 Starting Backend API Tests - Seasonal Consumption System")
+        print("🧪 Starting Backend API Tests - Periodic Analysis Update System")
         print("=" * 80)
         
-        # Seasonal Consumption Tests (Review Request Priority)
-        print("\n🎯 MEVSİMSEL TÜKETİM HESAPLAMA TESTS - REVIEW REQUEST")
+        # NEW: Periyodik Analiz Güncellemesi Tests (Review Request Priority)
+        print("\n🎯 PERİYODİK ANALİZ GÜNCELLEMESİ TESTS - REVIEW REQUEST")
+        print("-" * 60)
+        self.test_periodic_analysis_update_system()
+        
+        # Seasonal Consumption Tests (Additional)
+        print("\n🎯 MEVSİMSEL TÜKETİM HESAPLAMA TESTS - ADDITIONAL")
         print("-" * 60)
         self.test_seasonal_consumption_system()
         
