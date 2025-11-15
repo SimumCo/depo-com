@@ -3362,6 +3362,206 @@ class APITester:
         print("\n🎯 GURBET DURMUŞ TÜKETİM İSTATİSTİKLERİ TEST TAMAMLANDI")
         print("=" * 60)
 
+    def test_2023_consumption_system(self):
+        """Test 2023 Consumption System with new fields"""
+        print("\n🎯 2023 TÜKETİM SİSTEMİ TEST SENARYOLARI")
+        print("-" * 60)
+        
+        # Test customer ID from review request
+        customer_id = "a00f9853-e336-44c3-84db-814827fe0ff6"
+        
+        # TEST 1: Admin Login
+        if not self.login_user("admin"):
+            self.log_test("2023 System - Admin Login", False, "Admin login failed")
+            return
+        
+        headers = self.get_headers("admin")
+        
+        # TEST 2: 2023 Consumption Records
+        try:
+            response = requests.get(
+                f"{BASE_URL}/customer-consumption/invoice-based/customer/{customer_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                consumption_records = response.json()
+                
+                # Filter 2023 records
+                records_2023 = [r for r in consumption_records if "2023" in str(r.get("target_invoice_date", ""))]
+                
+                if len(records_2023) > 0:
+                    self.log_test("2023 Consumption Records", True, f"Found {len(records_2023)} records for 2023")
+                    
+                    # Check new fields in a 2023 record
+                    sample_record = records_2023[0]
+                    new_fields = ["daily_consumption_rate", "expected_consumption", "deviation_rate"]
+                    missing_fields = []
+                    
+                    for field in new_fields:
+                        if field not in sample_record and field not in str(sample_record.get("notes", "")):
+                            missing_fields.append(field)
+                    
+                    if missing_fields:
+                        self.log_test("2023 New Fields Check", False, f"Missing fields: {missing_fields}")
+                    else:
+                        self.log_test("2023 New Fields Check", True, "All new fields present")
+                        
+                        # Log sample values
+                        daily_rate = sample_record.get("daily_consumption_rate", "N/A")
+                        notes = sample_record.get("notes", "")
+                        self.log_test("2023 Field Values", True, f"Daily rate: {daily_rate}, Notes: {notes[:100]}...")
+                        
+                else:
+                    self.log_test("2023 Consumption Records", False, "No 2023 consumption records found")
+            else:
+                self.log_test("2023 Consumption Records", False, f"API error: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("2023 Consumption Records", False, f"Exception: {str(e)}")
+        
+        # TEST 3: 2023 Monthly Periodic Consumption
+        try:
+            response = requests.get(
+                f"{BASE_URL}/consumption-periods/customer/{customer_id}?period_type=monthly&year=2023",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                periods_2023 = response.json()
+                if len(periods_2023) >= 12:
+                    self.log_test("2023 Monthly Periods", True, f"Found {len(periods_2023)} monthly periods for 2023")
+                else:
+                    self.log_test("2023 Monthly Periods", False, f"Expected 12 months, found {len(periods_2023)}")
+            else:
+                self.log_test("2023 Monthly Periods", False, f"API error: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("2023 Monthly Periods", False, f"Exception: {str(e)}")
+        
+        # TEST 4: 2024 Monthly Periodic Consumption
+        try:
+            response = requests.get(
+                f"{BASE_URL}/consumption-periods/customer/{customer_id}?period_type=monthly&year=2024",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                periods_2024 = response.json()
+                if len(periods_2024) >= 12:
+                    self.log_test("2024 Monthly Periods", True, f"Found {len(periods_2024)} monthly periods for 2024")
+                else:
+                    self.log_test("2024 Monthly Periods", False, f"Expected 12 months, found {len(periods_2024)}")
+            else:
+                self.log_test("2024 Monthly Periods", False, f"API error: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("2024 Monthly Periods", False, f"Exception: {str(e)}")
+        
+        # TEST 5: 2025 Monthly Periodic Consumption (January)
+        try:
+            response = requests.get(
+                f"{BASE_URL}/consumption-periods/customer/{customer_id}?period_type=monthly&year=2025",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                periods_2025 = response.json()
+                if len(periods_2025) >= 1:
+                    self.log_test("2025 Monthly Periods", True, f"Found {len(periods_2025)} monthly periods for 2025 (January expected)")
+                    
+                    # Check if January data exists
+                    january_data = [p for p in periods_2025 if p.get("period_number") == 1]
+                    if january_data:
+                        self.log_test("2025 January Data", True, f"January 2025 data found: {january_data[0].get('total_consumption', 'N/A')}")
+                    else:
+                        self.log_test("2025 January Data", False, "No January 2025 data found")
+                else:
+                    self.log_test("2025 Monthly Periods", False, f"Expected at least 1 month (January), found {len(periods_2025)}")
+            else:
+                self.log_test("2025 Monthly Periods", False, f"API error: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("2025 Monthly Periods", False, f"Exception: {str(e)}")
+        
+        # TEST 6: Deviation Rate Calculation Check
+        try:
+            response = requests.get(
+                f"{BASE_URL}/customer-consumption/invoice-based/customer/{customer_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                consumption_records = response.json()
+                
+                # Find a record with deviation rate
+                deviation_records = []
+                for record in consumption_records:
+                    notes = record.get("notes", "")
+                    if "sapma" in notes.lower() or "deviation" in notes.lower() or record.get("deviation_rate"):
+                        deviation_records.append(record)
+                
+                if deviation_records:
+                    sample_record = deviation_records[0]
+                    daily_rate = sample_record.get("daily_consumption_rate", 0)
+                    expected = sample_record.get("expected_consumption", 0)
+                    
+                    if daily_rate and expected:
+                        calculated_deviation = ((daily_rate - expected) / expected * 100) if expected > 0 else 0
+                        self.log_test("Deviation Rate Calculation", True, 
+                            f"Daily: {daily_rate}, Expected: {expected}, Calculated deviation: {calculated_deviation:.2f}%")
+                    else:
+                        self.log_test("Deviation Rate Calculation", False, "Missing daily_rate or expected_consumption values")
+                else:
+                    self.log_test("Deviation Rate Calculation", False, "No records with deviation rate found")
+            else:
+                self.log_test("Deviation Rate Calculation", False, f"API error: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Deviation Rate Calculation", False, f"Exception: {str(e)}")
+        
+        # TEST 7: 2023 vs 2024 vs 2025 January Comparison
+        try:
+            # Get January data for all three years
+            years_data = {}
+            
+            for year in [2023, 2024, 2025]:
+                response = requests.get(
+                    f"{BASE_URL}/consumption-periods/customer/{customer_id}?period_type=monthly&year={year}",
+                    headers=headers,
+                    timeout=30
+                )
+                
+                if response.status_code == 200:
+                    periods = response.json()
+                    january_data = [p for p in periods if p.get("period_number") == 1]
+                    if january_data:
+                        years_data[year] = january_data[0].get("total_consumption", 0)
+                    else:
+                        years_data[year] = 0
+                else:
+                    years_data[year] = None
+            
+            # Check if we have data for all years
+            valid_years = [year for year, data in years_data.items() if data is not None]
+            
+            if len(valid_years) >= 2:
+                comparison_text = ", ".join([f"{year}: {years_data[year]}" for year in valid_years])
+                self.log_test("2023 vs 2024 vs 2025 January Comparison", True, f"January comparison - {comparison_text}")
+            else:
+                self.log_test("2023 vs 2024 vs 2025 January Comparison", False, f"Insufficient data for comparison: {years_data}")
+                
+        except Exception as e:
+            self.log_test("2023 vs 2024 vs 2025 January Comparison", False, f"Exception: {str(e)}")
+        
+        print("\n🎯 2023 TÜKETİM SİSTEMİ TEST TAMAMLANDI")
+        print("=" * 60)
+
     def test_haftalik_tuketim_sistemi(self):
         """Test Haftalık Tüketim Sistemi - Review Request Scenarios"""
         print("\n🎯 HAFTALİK TÜKETİM SİSTEMİ TEST SENARYOLARI")
