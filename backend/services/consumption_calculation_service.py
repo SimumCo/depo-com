@@ -316,40 +316,79 @@ class ConsumptionCalculationService:
         self, 
         customer_id: str, 
         product_code: str, 
-        days: int
+        days: int,
+        current_date: datetime = None
     ) -> float:
         """
-        Beklenen tüketimi hesapla (son 3 kayıt ortalaması)
+        Beklenen tüketimi hesapla (bir önceki yılın aynı döneminden)
+        
+        Mevsimsel tüketim farklılıklarını dikkate alır.
+        Örnek: 2024 Ocak için beklenen tüketim = 2023 Ocak'ın günlük ortalaması * gün sayısı
         
         Args:
             customer_id: Müşteri ID
             product_code: Ürün kodu
             days: Kaç günlük tüketim bekleniyor
+            current_date: Şu anki fatura tarihi (mevsim tespiti için)
             
         Returns:
             Beklenen tüketim miktarı
         """
         try:
-            # Son 3 tüketim kaydını al
-            records = await self.db.customer_consumption.find(
+            if not current_date:
+                return 0.0
+            
+            # Bir önceki yılın aynı ayını bul
+            previous_year = current_date.year - 1
+            current_month = current_date.month
+            
+            # Bir önceki yılın aynı ayındaki tüm tüketim kayıtlarını al
+            all_records = await self.db.customer_consumption.find(
                 {
                     "customer_id": customer_id,
                     "product_code": product_code,
                     "can_calculate": True
                 }
-            ).sort("created_at", -1).limit(3).to_list(length=3)
+            ).to_list(length=500)
             
-            if not records or len(records) < 1:
+            # Bir önceki yılın aynı ayına ait kayıtları filtrele
+            previous_year_same_month = []
+            for record in all_records:
+                try:
+                    target_date_str = record.get("target_invoice_date")
+                    if target_date_str:
+                        target_date = self._parse_invoice_date(target_date_str)
+                        if target_date.year == previous_year and target_date.month == current_month:
+                            previous_year_same_month.append(record)
+                except:
+                    continue
+            
+            if previous_year_same_month:
+                # Bir önceki yılın aynı ayının günlük ortalama tüketimini hesapla
+                total_daily_rate = sum(r.get("daily_consumption_rate", 0.0) for r in previous_year_same_month)
+                avg_daily_rate = total_daily_rate / len(previous_year_same_month)
+                
+                # Beklenen tüketim = önceki yılın günlük ortalaması * bu dönemin gün sayısı
+                expected = avg_daily_rate * days
+                
+                return round(expected, 2)
+            else:
+                # Önceki yıl verisi yoksa, genel ortalama al (son 5 kayıt)
+                recent_records = await self.db.customer_consumption.find(
+                    {
+                        "customer_id": customer_id,
+                        "product_code": product_code,
+                        "can_calculate": True
+                    }
+                ).sort("created_at", -1).limit(5).to_list(length=5)
+                
+                if recent_records:
+                    total_daily_rate = sum(r.get("daily_consumption_rate", 0.0) for r in recent_records)
+                    avg_daily_rate = total_daily_rate / len(recent_records)
+                    expected = avg_daily_rate * days
+                    return round(expected, 2)
+                
                 return 0.0
-            
-            # Günlük ortalama tüketim oranlarını topla
-            total_daily_rate = sum(r.get("daily_consumption_rate", 0.0) for r in records)
-            avg_daily_rate = total_daily_rate / len(records)
-            
-            # Beklenen tüketim = ortalama günlük tüketim * gün sayısı
-            expected = avg_daily_rate * days
-            
-            return round(expected, 2)
             
         except Exception as e:
             logger.error(f"Error calculating expected consumption: {e}")
