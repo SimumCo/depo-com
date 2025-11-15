@@ -3557,11 +3557,16 @@ class APITester:
             self.log_test("Son Fatura Kontrol", False, f"Exception: {str(e)}")
 
     def run_all_tests(self):
-        """Run all API tests - GURBET DURMUŞ Consumption Statistics"""
-        print("🧪 Starting Backend API Tests - GURBET DURMUŞ Tüketim İstatistikleri")
+        """Run all API tests - Haftalık Tüketim Sistemi Priority"""
+        print("🧪 Starting Backend API Tests - Haftalık Tüketim Sistemi")
         print("=" * 80)
         
-        # GURBET DURMUŞ Consumption Statistics Tests (Review Request Priority)
+        # Haftalık Tüketim Sistemi Tests (Review Request Priority)
+        print("\n🎯 HAFTALİK TÜKETİM SİSTEMİ TESTS - REVIEW REQUEST")
+        print("-" * 60)
+        self.test_haftalik_tuketim_sistemi()
+        
+        # GURBET DURMUŞ Consumption Statistics Tests (Additional)
         print("\n🎯 GURBET DURMUŞ TÜKETİM İSTATİSTİKLERİ TESTS")
         print("-" * 50)
         self.test_gurbet_durmus_consumption_statistics()
