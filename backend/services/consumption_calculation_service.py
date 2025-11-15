@@ -192,6 +192,19 @@ class ConsumptionCalculationService:
                 # Günlük tüketim oranı
                 daily_rate = consumption_quantity / days_between if days_between > 0 else 0.0
                 
+                # Beklenen tüketim hesapla (son 3 kayıt ortalaması)
+                expected_consumption = await self._calculate_expected_consumption(
+                    customer_id=customer_id,
+                    product_code=product_code,
+                    days=days_between
+                )
+                
+                # Sapma oranı hesapla
+                if expected_consumption > 0:
+                    deviation_rate = ((consumption_quantity - expected_consumption) / expected_consumption) * 100
+                else:
+                    deviation_rate = 0.0
+                
                 # Tüketim kaydı oluştur
                 consumption = CustomerConsumption(
                     customer_id=customer_id,
