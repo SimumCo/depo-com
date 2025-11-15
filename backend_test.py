@@ -3365,9 +3365,14 @@ class APITester:
         print("=" * 60)
 
     def run_all_tests(self):
-        """Run all API tests - Admin User Management System"""
-        print("🧪 Starting Backend API Tests - Admin Kullanıcı Yönetimi Sistemi")
+        """Run all API tests - GURBET DURMUŞ Consumption Statistics"""
+        print("🧪 Starting Backend API Tests - GURBET DURMUŞ Tüketim İstatistikleri")
         print("=" * 80)
+        
+        # GURBET DURMUŞ Consumption Statistics Tests (Review Request Priority)
+        print("\n🎯 GURBET DURMUŞ TÜKETİM İSTATİSTİKLERİ TESTS")
+        print("-" * 50)
+        self.test_gurbet_durmus_consumption_statistics()
         
         print("\n👤 ADMIN USER MANAGEMENT TESTS")
         print("-" * 40)
