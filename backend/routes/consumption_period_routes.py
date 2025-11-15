@@ -82,7 +82,63 @@ async def get_customer_periodic_consumption(
     
     records = await cursor.to_list(length=None)
     
-    return records
+    # Her periyot için beklenen tüketim ve sapma bilgisini ekle
+    enriched_records = []
+    for record in records:
+        # Bu periyoda ait tüketim kayıtlarını bul
+        period_year = record.get("period_year")
+        period_num = record.get("period_number")
+        product_code = record.get("product_code")
+        
+        # Tüketim kayıtlarını filtrele
+        consumption_query = {
+            "customer_id": customer_id,
+            "product_code": product_code,
+            "can_calculate": True
+        }
+        
+        all_consumptions = await db.customer_consumption.find(consumption_query).to_list(length=500)
+        
+        # Bu periyoda ait kayıtları filtrele
+        period_consumptions = []
+        for cons in all_consumptions:
+            try:
+                from datetime import datetime
+                target_date_str = cons.get("target_invoice_date")
+                if target_date_str:
+                    # Parse date
+                    parts = target_date_str.replace("-", " ").replace("/", " ").split()
+                    if len(parts) == 3:
+                        day, month, year_str = parts
+                        cons_date = datetime(int(year_str), int(month), int(day))
+                        
+                        if period_type == "monthly":
+                            if cons_date.year == period_year and cons_date.month == period_num:
+                                period_consumptions.append(cons)
+                        elif period_type == "weekly":
+                            week_number = cons_date.isocalendar()[1]
+                            if cons_date.year == period_year and week_number == period_num:
+                                period_consumptions.append(cons)
+            except:
+                continue
+        
+        # Ortalama beklenen tüketim ve sapma hesapla
+        if period_consumptions:
+            total_expected = sum(c.get("expected_consumption", 0) for c in period_consumptions)
+            total_deviation = sum(c.get("deviation_rate", 0) for c in period_consumptions)
+            
+            avg_expected = total_expected / len(period_consumptions)
+            avg_deviation = total_deviation / len(period_consumptions)
+            
+            record["average_expected_consumption"] = round(avg_expected, 2)
+            record["average_deviation_rate"] = round(avg_deviation, 2)
+        else:
+            record["average_expected_consumption"] = 0.0
+            record["average_deviation_rate"] = 0.0
+        
+        enriched_records.append(record)
+    
+    return enriched_records
 
 
 @router.get("/compare/year-over-year")
