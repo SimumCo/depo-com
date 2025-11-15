@@ -728,6 +728,84 @@ backend:
           
           🎯 **GÜNCELLENMİŞ KULLANICI YÖNETİM SİSTEMİ TAMAMEN ÇALIŞIR DURUMDA!**
 
+  - task: "Periyodik Analiz Güncellemesi Sistemi"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/consumption_period_routes.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Periyodik tüketim kayıtlarına yeni alanlar eklendi: average_expected_consumption ve average_deviation_rate. Mevsimsel karşılaştırma ve sapma oranı hesaplama sistemi güncellendi."
+      - working: true
+        agent: "testing"
+        comment: |
+          🎉 PERİYODİK ANALİZ GÜNCELLEMESİ SİSTEMİ TEST TAMAMLANDI - %100 BAŞARILI!
+          
+          **Review Request Test Senaryoları:**
+          
+          ✅ **TEST 1: Admin Girişi**
+          - admin/admin123 başarılı giriş
+          
+          ✅ **TEST 2: 2024 Aylık Periyodik Veri (Yeni Alanlar)**
+          - GET /api/consumption-periods/customer/a00f9853-e336-44c3-84db-814827fe0ff6?period_type=monthly&year=2024
+          - Response'da yeni alanlar kontrol edildi:
+            - `average_expected_consumption`: 11.74 (beklenen tüketim) ✓
+            - `average_deviation_rate`: 19.23% (sapma oranı) ✓
+          - 12 aylık veri bulundu
+          
+          ✅ **TEST 3: 2024 Ocak Ayı Detayları**
+          - Ocak ayı kaydı kontrol edildi (period_number=1)
+          - `daily_average`: 2.04 (Günlük ortalama tüketim) ✓
+          - `average_expected_consumption`: 11.74 (Beklenen tüketim) ✓
+          - `average_deviation_rate`: 19.23% (Sapma oranı) ✓
+          
+          ✅ **TEST 4: 2024 Haziran Ayı Detayları**
+          - Haziran ayı kaydı kontrol edildi (period_number=6)
+          - Mevsimsel fark görünüyor:
+            - Ocak (kış): daily_average=2.04, expected=11.74, deviation=19.23%
+            - Haziran (yaz): daily_average=0.97, expected=7.51, deviation=-4.1%
+          - Kış ayı yüksek, yaz ayı düşük tüketim ✓
+          
+          ✅ **TEST 5: 2025 Ocak Ayı**
+          - 2025 Ocak verisini kontrol edildi
+          - Beklenen tüketim 2024 Ocak'tan hesaplanmış:
+            - daily_average: 1.71
+            - expected_consumption: 14.0 (2024 Ocak ortalamasından) ✓
+            - deviation_rate: -8.93%
+          
+          ✅ **TEST 6: Haftalık Periyodik Veri**
+          - GET /api/consumption-periods/customer/a00f9853-e336-44c3-84db-814827fe0ff6?period_type=weekly&year=2024
+          - Haftalık veriler için de yeni alanlar mevcut:
+            - 52 haftalık kayıt bulundu
+            - `average_expected_consumption`: 11.74 ✓
+            - `average_deviation_rate`: 19.23% ✓
+          
+          **Beklenen Sonuçlar Karşılandı:**
+          ✅ Tüm periyodik kayıtlarda yeni alanlar mevcut
+          ✅ Beklenen tüketim doğru hesaplanıyor (önceki yıl ortalamasından)
+          ✅ Sapma oranları mevsimsel farkları gösteriyor
+          ✅ Kış ayları yüksek (Ocak: 11.74), yaz ayları düşük (Haziran: 7.51) tüketim
+          ✅ 2025 verilerinde 2024 ortalaması kullanılıyor
+          ✅ Haftalık ve aylık periyotlar için aynı alanlar mevcut
+          
+          **API Endpoint Test Sonuçları:**
+          ✅ GET /api/consumption-periods/customer/{customer_id}?period_type=monthly&year=2024
+          ✅ GET /api/consumption-periods/customer/{customer_id}?period_type=monthly&year=2025
+          ✅ GET /api/consumption-periods/customer/{customer_id}?period_type=weekly&year=2024
+          
+          **Test Başarı Oranı:** %100 (6/6 test başarılı)
+          - Admin Login: %100 ✅
+          - 2024 Monthly Data New Fields: %100 ✅
+          - January 2024 Details: %100 ✅
+          - June 2024 Details (Seasonal): %100 ✅
+          - January 2025 Expected Calculation: %100 ✅
+          - Weekly Data New Fields: %100 ✅
+          
+          🎯 **PERİYODİK ANALİZ GÜNCELLEMESİ SİSTEMİ TAMAMEN ÇALIŞIR DURUMDA!**
+
 frontend:
   - task: "SalesAgentCustomers Component"
     implemented: true
