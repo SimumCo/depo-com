@@ -49,30 +49,61 @@ async def recalculate_consumption():
         days_between = record.get("days_between", 0)
         daily_rate = consumption_qty / days_between if days_between > 0 else 0
         
-        # Beklenen tüketim hesapla (bu kayıttan önceki son 3 kayıt)
-        previous_records = all_consumption[:i]  # Bu kayıttan öncekiler
+        # Şu anki kaydın tarihini al
+        try:
+            current_date = datetime.strptime(record.get("target_invoice_date"), "%d %m %Y")
+        except:
+            current_date = None
         
-        # Sadece hesaplanabilir kayıtları al
-        valid_previous = [r for r in previous_records if r.get("can_calculate", False)]
-        
-        # Son 3 geçerli kaydı al
-        last_3 = valid_previous[-3:] if len(valid_previous) >= 3 else valid_previous
-        
-        if last_3:
-            # Ortalama günlük tüketim hesapla
-            total_daily = sum(r.get("daily_consumption_rate", 0) for r in last_3)
-            avg_daily_rate = total_daily / len(last_3)
+        # Beklenen tüketim hesapla (bir önceki yılın aynı ayı)
+        if current_date:
+            previous_year = current_date.year - 1
+            current_month = current_date.month
             
-            # Beklenen tüketim
-            expected_consumption = avg_daily_rate * days_between
+            # Bir önceki yılın aynı ayındaki kayıtları bul
+            previous_year_records = []
+            for prev_rec in all_consumption[:i]:  # Bu kayıttan öncekiler
+                if not prev_rec.get("can_calculate", False):
+                    continue
+                try:
+                    prev_date = datetime.strptime(prev_rec.get("target_invoice_date"), "%d %m %Y")
+                    if prev_date.year == previous_year and prev_date.month == current_month:
+                        previous_year_records.append(prev_rec)
+                except:
+                    continue
             
-            # Sapma oranı
-            if expected_consumption > 0:
-                deviation_rate = ((consumption_qty - expected_consumption) / expected_consumption) * 100
+            if previous_year_records:
+                # Bir önceki yılın aynı ayının günlük ortalaması
+                total_daily = sum(r.get("daily_consumption_rate", 0) for r in previous_year_records)
+                avg_daily_rate = total_daily / len(previous_year_records)
+                
+                # Beklenen tüketim
+                expected_consumption = avg_daily_rate * days_between
+                
+                # Sapma oranı
+                if expected_consumption > 0:
+                    deviation_rate = ((consumption_qty - expected_consumption) / expected_consumption) * 100
+                else:
+                    deviation_rate = 0.0
             else:
-                deviation_rate = 0.0
+                # Önceki yıl verisi yoksa genel ortalama
+                previous_records = all_consumption[:i]
+                valid_previous = [r for r in previous_records if r.get("can_calculate", False)]
+                last_5 = valid_previous[-5:] if len(valid_previous) >= 5 else valid_previous
+                
+                if last_5:
+                    total_daily = sum(r.get("daily_consumption_rate", 0) for r in last_5)
+                    avg_daily_rate = total_daily / len(last_5)
+                    expected_consumption = avg_daily_rate * days_between
+                    
+                    if expected_consumption > 0:
+                        deviation_rate = ((consumption_qty - expected_consumption) / expected_consumption) * 100
+                    else:
+                        deviation_rate = 0.0
+                else:
+                    expected_consumption = 0.0
+                    deviation_rate = 0.0
         else:
-            # İlk birkaç kayıt için beklenen tüketim 0
             expected_consumption = 0.0
             deviation_rate = 0.0
         
