@@ -30,9 +30,13 @@ async def create_weekly_consumption():
     print("HAFTALIK FATURA SİSTEMİ OLUŞTURMA")
     print("=" * 60)
     
-    # 1. Müşteri kontrolü
-    customer_name = "GURBET DURMUŞ"
-    customer = await db.users.find_one({"full_name": customer_name})
+    # 1. Müşteri kontrolü (full_name'de GURBET DURMUŞ içeren)
+    customer = await db.users.find_one({"full_name": {"$regex": "GURBET DURMUŞ", "$options": "i"}})
+    
+    if customer:
+        customer_name = customer["full_name"]
+    else:
+        customer_name = "GURBET DURMUŞ"
     
     if not customer:
         print(f"\n❌ '{customer_name}' müşterisi bulunamadı!")
