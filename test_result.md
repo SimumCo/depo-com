@@ -703,26 +703,45 @@ test_plan:
 agent_communication:
   - agent: "testing"
     message: |
-      🎉 GÜNCELLENMİŞ KULLANICI YÖNETİM SİSTEMİ TEST TAMAMLANDI - %100 BAŞARILI!
+      🎯 GURBET DURMUŞ TÜKETİM İSTATİSTİKLERİ TEST TAMAMLANDI - %100 BAŞARILI!
       
       **Review Request Kriterleri Karşılandı:**
       
       ✅ **TEST 1: Admin Girişi** - admin/admin123 başarılı
-      ✅ **TEST 2: Temizlenmiş Kullanıcı Listesi** - Sadece 3 kullanıcı: admin, muhasebe, plasiyer1
-      ✅ **TEST 3: Her Kullanıcıyı Kontrol Et** - Tüm roller ve aktiflik durumları doğru
-      ✅ **TEST 4: Kullanıcı Düzenleme** - plasiyer1 full_name="Test Plasiyer 1" güncellendi
-      ✅ **TEST 5: Şifre Değiştirme** - plasiyer1 şifresi "yeni123456" olarak değiştirildi
-      ✅ **TEST 6: Yeni Kullanıcı Oluşturma** - test_customer başarıyla oluşturuldu
-      ✅ **TEST 7: Kalıcı Silme** - test_customer kalıcı olarak silindi, 3 kullanıcı kaldı
+      ✅ **TEST 2: Müşteri Tüketim Kayıtları** - 71 tüketim kaydı bulundu (>= 23 beklenen)
+      ✅ **TEST 3: Periyodik Tüketim 2023** - 11 aylık veri (2023) başarılı
+      ✅ **TEST 4: Periyodik Tüketim 2024** - 11 aylık veri (2024) başarılı
+      ✅ **TEST 5: Yıllık Karşılaştırma** - 2023 Haziran vs 2024 Haziran karşılaştırması çalışıyor
+      ✅ **TEST 6: Yıllık Trend Analizi 2023** - 11 aylık trend analizi başarılı
+      ✅ **TEST 7: Yıllık Trend Analizi 2024** - 11 aylık trend analizi başarılı
+      ✅ **TEST 8: Müşteri Ürün Trendleri** - GURBET DURMUŞ'un 2024 yılı ürün trendi çalışıyor
       
-      **Beklenen Sonuç:**
-      ✅ Temizleme başarılı: Sadece 3 kullanıcı kaldı
-      ✅ Tüm CRUD işlemleri çalışıyor
-      ✅ Kalıcı silme çalışıyor
+      **Test Verileri:**
+      - Müşteri ID: a00f9853-e336-44c3-84db-814827fe0ff6 (GURBET DURMUŞ)
+      - Ürün Kodu: SUT001 (Tam Yağlı Süt 1L)
+      - 24 fatura (2023-2024)
+      - 71 tüketim kaydı
+      - 22 aylık periyodik kayıt (11 ay 2023 + 11 ay 2024)
       
-      **Test Başarı Oranı:** %100 (9/9 test başarılı)
+      **API Endpoint Testleri:**
+      ✅ GET /api/customer-consumption/invoice-based/customer/{customer_id}
+      ✅ GET /api/consumption-periods/customer/{customer_id}?period_type=monthly&year=2023
+      ✅ GET /api/consumption-periods/customer/{customer_id}?period_type=monthly&year=2024
+      ✅ GET /api/consumption-periods/compare/year-over-year
+      ✅ GET /api/consumption-periods/trends/yearly
+      ✅ GET /api/consumption-periods/customer/{customer_id}/products
       
-      🎯 **GÜNCELLENMİŞ KULLANICI YÖNETİM SİSTEMİ TAMAMEN ÇALIŞIR DURUMDA!**
+      **Beklenen Sonuçlar Karşılandı:**
+      ✅ 24 fatura (2023-2024) - Başarılı
+      ✅ 71 tüketim kaydı (>= 23 beklenen) - Başarılı
+      ✅ Her ay için tüketim verileri - Başarılı
+      ✅ Yıllık karşılaştırma çalışıyor - Başarılı
+      ✅ Trend analizi çalışıyor - Başarılı
+      
+      **Test Başarı Oranı:** %100 (8/8 GURBET DURMUŞ test başarılı)
+      **Genel Test Başarı Oranı:** %85.9 (55/64 toplam test başarılı)
+      
+      🎯 **GURBET DURMUŞ TÜKETİM İSTATİSTİKLERİ TAMAMEN ÇALIŞIR DURUMDA!**
   - agent: "main"
     message: |
       🎯 FATURA BAZLI TÜKETİM HESAPLAMA SİSTEMİ EKLENDİ
