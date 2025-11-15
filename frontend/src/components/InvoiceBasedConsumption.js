@@ -302,6 +302,8 @@ const InvoiceBasedConsumption = () => {
                         <TableHead>Periyot</TableHead>
                         <TableHead>Toplam Tüketim</TableHead>
                         <TableHead>Günlük Ort.</TableHead>
+                        <TableHead>Beklenen Tüketim</TableHead>
+                        <TableHead>Sapma Oranı</TableHead>
                         <TableHead>Yıllık Değişim</TableHead>
                         <TableHead>Trend</TableHead>
                       </TableRow>
