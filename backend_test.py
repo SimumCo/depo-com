@@ -3118,6 +3118,252 @@ class APITester:
         
         print("\n✅ Kalıcı Kullanıcı Silme Test Senaryoları Tamamlandı")
 
+    def test_gurbet_durmus_consumption_statistics(self):
+        """Test GURBET DURMUŞ Müşterisi için Tüketim İstatistikleri - Review Request"""
+        print("\n🎯 GURBET DURMUŞ TÜKETİM İSTATİSTİKLERİ TEST BAŞLADI")
+        print("=" * 60)
+        
+        # Test data
+        customer_id = "a00f9853-e336-44c3-84db-814827fe0ff6"  # GURBET DURMUŞ
+        product_code = "SUT001"
+        
+        # 1. Admin Girişi
+        print("\n1️⃣ Admin Girişi Test Ediliyor...")
+        if not self.login_user("admin"):
+            self.log_test("GURBET DURMUŞ - Admin Girişi", False, "Admin girişi başarısız")
+            return
+        
+        headers = self.get_headers("admin")
+        
+        # 2. Müşteri Tüketim Kayıtlarını Getir
+        print("\n2️⃣ Müşteri Tüketim Kayıtları Test Ediliyor...")
+        try:
+            response = requests.get(
+                f"{BASE_URL}/customer-consumption/invoice-based/customer/{customer_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                consumption_records = response.json()
+                if isinstance(consumption_records, list):
+                    record_count = len(consumption_records)
+                    if record_count == 23:
+                        self.log_test("GURBET DURMUŞ - Tüketim Kayıtları", True, f"23 tüketim kaydı bulundu ✓")
+                    else:
+                        self.log_test("GURBET DURMUŞ - Tüketim Kayıtları", False, f"Beklenen: 23, Bulunan: {record_count}")
+                else:
+                    self.log_test("GURBET DURMUŞ - Tüketim Kayıtları", False, "Response liste değil")
+            else:
+                self.log_test("GURBET DURMUŞ - Tüketim Kayıtları", False, f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("GURBET DURMUŞ - Tüketim Kayıtları", False, f"Exception: {str(e)}")
+        
+        # 3. Periyodik Tüketim - 2023 Yılı
+        print("\n3️⃣ Periyodik Tüketim 2023 Test Ediliyor...")
+        try:
+            response = requests.get(
+                f"{BASE_URL}/consumption-periods/customer/{customer_id}?period_type=monthly&year=2023",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                periods_2023 = response.json()
+                if isinstance(periods_2023, list):
+                    if len(periods_2023) == 12:
+                        # Check if all months have required fields
+                        valid_months = 0
+                        for period in periods_2023:
+                            if ("total_consumption" in period and 
+                                "daily_average" in period and
+                                period.get("period_number") in range(1, 13)):
+                                valid_months += 1
+                        
+                        if valid_months == 12:
+                            self.log_test("GURBET DURMUŞ - 2023 Periyodik Tüketim", True, f"12 aylık veri (Ocak-Aralık 2023) ✓")
+                        else:
+                            self.log_test("GURBET DURMUŞ - 2023 Periyodik Tüketim", False, f"Geçerli ay sayısı: {valid_months}/12")
+                    else:
+                        self.log_test("GURBET DURMUŞ - 2023 Periyodik Tüketim", False, f"Beklenen: 12 ay, Bulunan: {len(periods_2023)}")
+                else:
+                    self.log_test("GURBET DURMUŞ - 2023 Periyodik Tüketim", False, "Response liste değil")
+            else:
+                self.log_test("GURBET DURMUŞ - 2023 Periyodik Tüketim", False, f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("GURBET DURMUŞ - 2023 Periyodik Tüketim", False, f"Exception: {str(e)}")
+        
+        # 4. Periyodik Tüketim - 2024 Yılı
+        print("\n4️⃣ Periyodik Tüketim 2024 Test Ediliyor...")
+        try:
+            response = requests.get(
+                f"{BASE_URL}/consumption-periods/customer/{customer_id}?period_type=monthly&year=2024",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                periods_2024 = response.json()
+                if isinstance(periods_2024, list):
+                    if len(periods_2024) == 12:
+                        self.log_test("GURBET DURMUŞ - 2024 Periyodik Tüketim", True, f"12 aylık veri (Ocak-Aralık 2024) ✓")
+                    else:
+                        self.log_test("GURBET DURMUŞ - 2024 Periyodik Tüketim", False, f"Beklenen: 12 ay, Bulunan: {len(periods_2024)}")
+                else:
+                    self.log_test("GURBET DURMUŞ - 2024 Periyodik Tüketim", False, "Response liste değil")
+            else:
+                self.log_test("GURBET DURMUŞ - 2024 Periyodik Tüketim", False, f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("GURBET DURMUŞ - 2024 Periyodik Tüketim", False, f"Exception: {str(e)}")
+        
+        # 5. Yıllık Karşılaştırma
+        print("\n5️⃣ Yıllık Karşılaştırma Test Ediliyor...")
+        try:
+            params = {
+                "customer_id": customer_id,
+                "product_code": product_code,
+                "period_type": "monthly",
+                "period_number": 6,  # Haziran
+                "current_year": 2024
+            }
+            
+            response = requests.get(
+                f"{BASE_URL}/consumption-periods/compare/year-over-year",
+                params=params,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                comparison = response.json()
+                if isinstance(comparison, dict):
+                    required_fields = ["previous_year_data", "current_year_data", "percentage_change"]
+                    missing_fields = [field for field in required_fields if field not in comparison]
+                    
+                    if not missing_fields:
+                        prev_data = comparison.get("previous_year_data", {})
+                        curr_data = comparison.get("current_year_data", {})
+                        percentage_change = comparison.get("percentage_change")
+                        
+                        self.log_test("GURBET DURMUŞ - Yıllık Karşılaştırma", True, 
+                            f"2023 Haziran vs 2024 Haziran karşılaştırması ✓ (Değişim: {percentage_change}%)")
+                    else:
+                        self.log_test("GURBET DURMUŞ - Yıllık Karşılaştırma", False, f"Eksik alanlar: {missing_fields}")
+                else:
+                    self.log_test("GURBET DURMUŞ - Yıllık Karşılaştırma", False, "Response dict değil")
+            else:
+                self.log_test("GURBET DURMUŞ - Yıllık Karşılaştırma", False, f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("GURBET DURMUŞ - Yıllık Karşılaştırma", False, f"Exception: {str(e)}")
+        
+        # 6. Yıllık Trend Analizi - 2023
+        print("\n6️⃣ Yıllık Trend Analizi 2023 Test Ediliyor...")
+        try:
+            params = {
+                "customer_id": customer_id,
+                "product_code": product_code,
+                "year": 2023,
+                "period_type": "monthly"
+            }
+            
+            response = requests.get(
+                f"{BASE_URL}/consumption-periods/trends/yearly",
+                params=params,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                trend_2023 = response.json()
+                if isinstance(trend_2023, dict):
+                    required_fields = ["periods", "peak_period", "overall_trend"]
+                    missing_fields = [field for field in required_fields if field not in trend_2023]
+                    
+                    if not missing_fields:
+                        periods = trend_2023.get("periods", [])
+                        if len(periods) == 12:
+                            self.log_test("GURBET DURMUŞ - 2023 Trend Analizi", True, 
+                                f"12 aylık trend, Peak: {trend_2023.get('peak_period')}, Trend: {trend_2023.get('overall_trend')} ✓")
+                        else:
+                            self.log_test("GURBET DURMUŞ - 2023 Trend Analizi", False, f"Beklenen: 12 periyot, Bulunan: {len(periods)}")
+                    else:
+                        self.log_test("GURBET DURMUŞ - 2023 Trend Analizi", False, f"Eksik alanlar: {missing_fields}")
+                else:
+                    self.log_test("GURBET DURMUŞ - 2023 Trend Analizi", False, "Response dict değil")
+            else:
+                self.log_test("GURBET DURMUŞ - 2023 Trend Analizi", False, f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("GURBET DURMUŞ - 2023 Trend Analizi", False, f"Exception: {str(e)}")
+        
+        # 7. Yıllık Trend Analizi - 2024
+        print("\n7️⃣ Yıllık Trend Analizi 2024 Test Ediliyor...")
+        try:
+            params = {
+                "customer_id": customer_id,
+                "product_code": product_code,
+                "year": 2024,
+                "period_type": "monthly"
+            }
+            
+            response = requests.get(
+                f"{BASE_URL}/consumption-periods/trends/yearly",
+                params=params,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                trend_2024 = response.json()
+                if isinstance(trend_2024, dict):
+                    required_fields = ["periods", "peak_period", "overall_trend"]
+                    missing_fields = [field for field in required_fields if field not in trend_2024]
+                    
+                    if not missing_fields:
+                        periods = trend_2024.get("periods", [])
+                        if len(periods) == 12:
+                            self.log_test("GURBET DURMUŞ - 2024 Trend Analizi", True, 
+                                f"12 aylık trend, Peak: {trend_2024.get('peak_period')}, Trend: {trend_2024.get('overall_trend')} ✓")
+                        else:
+                            self.log_test("GURBET DURMUŞ - 2024 Trend Analizi", False, f"Beklenen: 12 periyot, Bulunan: {len(periods)}")
+                    else:
+                        self.log_test("GURBET DURMUŞ - 2024 Trend Analizi", False, f"Eksik alanlar: {missing_fields}")
+                else:
+                    self.log_test("GURBET DURMUŞ - 2024 Trend Analizi", False, "Response dict değil")
+            else:
+                self.log_test("GURBET DURMUŞ - 2024 Trend Analizi", False, f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("GURBET DURMUŞ - 2024 Trend Analizi", False, f"Exception: {str(e)}")
+        
+        # 8. Müşteri Ürün Trendleri
+        print("\n8️⃣ Müşteri Ürün Trendleri Test Ediliyor...")
+        try:
+            params = {
+                "year": 2024,
+                "period_type": "monthly"
+            }
+            
+            response = requests.get(
+                f"{BASE_URL}/consumption-periods/customer/{customer_id}/products",
+                params=params,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                product_trends = response.json()
+                if isinstance(product_trends, list):
+                    self.log_test("GURBET DURMUŞ - Ürün Trendleri", True, 
+                        f"GURBET DURMUŞ'un 2024 yılı {len(product_trends)} ürün trendi ✓")
+                else:
+                    self.log_test("GURBET DURMUŞ - Ürün Trendleri", False, "Response liste değil")
+            else:
+                self.log_test("GURBET DURMUŞ - Ürün Trendleri", False, f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("GURBET DURMUŞ - Ürün Trendleri", False, f"Exception: {str(e)}")
+        
+        print("\n🎯 GURBET DURMUŞ TÜKETİM İSTATİSTİKLERİ TEST TAMAMLANDI")
+        print("=" * 60)
+
     def run_all_tests(self):
         """Run all API tests - Admin User Management System"""
         print("🧪 Starting Backend API Tests - Admin Kullanıcı Yönetimi Sistemi")
