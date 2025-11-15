@@ -242,6 +242,8 @@ class ConsumptionCalculationService:
                     days_between=0,
                     consumption_quantity=0.0,
                     daily_consumption_rate=0.0,
+                    expected_consumption=0.0,
+                    deviation_rate=0.0,
                     can_calculate=False,
                     notes="İlk fatura - Tüketim hesaplanamaz"
                 )
