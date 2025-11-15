@@ -246,6 +246,16 @@ const UsersManagement = () => {
                   />
                 </div>
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="new_customer_number">Vergi No / TC Kimlik No</Label>
+                <Input
+                  id="new_customer_number"
+                  value={newUserData.customer_number || ''}
+                  onChange={(e) => setNewUserData({ ...newUserData, customer_number: e.target.value })}
+                  placeholder="10-11 haneli vergi numarası veya TC kimlik numarası"
+                  maxLength={11}
+                />
+              </div>
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setCreateDialogOpen(false)}>
                   İptal
