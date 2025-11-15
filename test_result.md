@@ -793,7 +793,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "2023 Tüketim Sistemi Testing"
+    - "Mevsimsel Tüketim Hesaplama Testing"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
