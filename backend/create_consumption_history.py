@@ -237,7 +237,7 @@ async def create_consumption_history():
                     "customer_id": customer_id,
                     "product_code": product_code,
                     "period_type": "monthly",
-                    "year": year,
+                    "period_year": year,  # Fixed: use period_year instead of year
                     "period_number": month,
                     "total_consumption": total_consumption,
                     "daily_average": round(daily_avg, 2),
@@ -246,12 +246,12 @@ async def create_consumption_history():
                 }
                 
                 # Upsert (update or insert)
-                await db.periodic_consumption.update_one(
+                await db.consumption_periods.update_one(  # Fixed: use consumption_periods collection
                     {
                         "customer_id": customer_id,
                         "product_code": product_code,
                         "period_type": "monthly",
-                        "year": year,
+                        "period_year": year,  # Fixed: use period_year instead of year
                         "period_number": month
                     },
                     {"$set": period_data},
