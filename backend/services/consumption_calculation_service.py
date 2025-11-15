@@ -311,3 +311,47 @@ class ConsumptionCalculationService:
             "invoices_processed": processed,
             "total_consumption_records_created": total_records
         }
+
+    async def _calculate_expected_consumption(
+        self, 
+        customer_id: str, 
+        product_code: str, 
+        days: int
+    ) -> float:
+        """
+        Beklenen tüketimi hesapla (son 3 kayıt ortalaması)
+        
+        Args:
+            customer_id: Müşteri ID
+            product_code: Ürün kodu
+            days: Kaç günlük tüketim bekleniyor
+            
+        Returns:
+            Beklenen tüketim miktarı
+        """
+        try:
+            # Son 3 tüketim kaydını al
+            records = await self.db.customer_consumption.find(
+                {
+                    "customer_id": customer_id,
+                    "product_code": product_code,
+                    "can_calculate": True
+                }
+            ).sort("created_at", -1).limit(3).to_list(length=3)
+            
+            if not records or len(records) < 1:
+                return 0.0
+            
+            # Günlük ortalama tüketim oranlarını topla
+            total_daily_rate = sum(r.get("daily_consumption_rate", 0.0) for r in records)
+            avg_daily_rate = total_daily_rate / len(records)
+            
+            # Beklenen tüketim = ortalama günlük tüketim * gün sayısı
+            expected = avg_daily_rate * days
+            
+            return round(expected, 2)
+            
+        except Exception as e:
+            logger.error(f"Error calculating expected consumption: {e}")
+            return 0.0
+
