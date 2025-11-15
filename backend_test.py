@@ -3558,12 +3558,17 @@ class APITester:
             self.log_test("Son Fatura Kontrol", False, f"Exception: {str(e)}")
 
     def run_all_tests(self):
-        """Run all API tests - Haftalık Tüketim Sistemi Priority"""
-        print("🧪 Starting Backend API Tests - Haftalık Tüketim Sistemi")
+        """Run all API tests - 2023 Consumption System Priority"""
+        print("🧪 Starting Backend API Tests - 2023 Consumption System")
         print("=" * 80)
         
-        # Haftalık Tüketim Sistemi Tests (Review Request Priority)
-        print("\n🎯 HAFTALİK TÜKETİM SİSTEMİ TESTS - REVIEW REQUEST")
+        # 2023 Consumption System Tests (Review Request Priority)
+        print("\n🎯 2023 TÜKETİM SİSTEMİ TESTS - REVIEW REQUEST")
+        print("-" * 60)
+        self.test_2023_consumption_system()
+        
+        # Haftalık Tüketim Sistemi Tests (Additional)
+        print("\n🎯 HAFTALİK TÜKETİM SİSTEMİ TESTS - ADDITIONAL")
         print("-" * 60)
         self.test_haftalik_tuketim_sistemi()
         
