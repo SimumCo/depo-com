@@ -3779,8 +3779,8 @@ class APITester:
 def main():
     """Main test function"""
     tester = APITester()
-    # Run specific user management tests based on review request
-    tester.run_user_management_tests()
+    # Run GURBET DURMUŞ consumption statistics tests based on review request
+    tester.run_all_tests()
     
     # Check if all tests passed
     if not tester.failed_tests:
