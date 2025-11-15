@@ -695,7 +695,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Admin User Management System"
+    - "GURBET DURMUŞ Consumption Statistics Testing"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
