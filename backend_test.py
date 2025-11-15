@@ -3758,12 +3758,17 @@ class APITester:
             self.log_test("Son Fatura Kontrol", False, f"Exception: {str(e)}")
 
     def run_all_tests(self):
-        """Run all API tests - 2023 Consumption System Priority"""
-        print("🧪 Starting Backend API Tests - 2023 Consumption System")
+        """Run all API tests - Seasonal Consumption System Priority"""
+        print("🧪 Starting Backend API Tests - Seasonal Consumption System")
         print("=" * 80)
         
-        # 2023 Consumption System Tests (Review Request Priority)
-        print("\n🎯 2023 TÜKETİM SİSTEMİ TESTS - REVIEW REQUEST")
+        # Seasonal Consumption Tests (Review Request Priority)
+        print("\n🎯 MEVSİMSEL TÜKETİM HESAPLAMA TESTS - REVIEW REQUEST")
+        print("-" * 60)
+        self.test_seasonal_consumption_system()
+        
+        # 2023 Consumption System Tests (Additional)
+        print("\n🎯 2023 TÜKETİM SİSTEMİ TESTS - ADDITIONAL")
         print("-" * 60)
         self.test_2023_consumption_system()
         
