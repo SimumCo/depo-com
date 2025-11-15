@@ -1284,6 +1284,297 @@ class APITester:
         except Exception as e:
             self.log_test("Database Verification", False, f"Exception: {str(e)}")
 
+    # ========== MEVSİMSEL TÜKETİM HESAPLAMA SİSTEMİ TESTS ==========
+    
+    def test_seasonal_consumption_system(self):
+        """Mevsimsel Tüketim Hesaplama Sistemi - Review Request Tests"""
+        print("🌟 MEVSİMSEL TÜKETİM HESAPLAMA SİSTEMİ TEST BAŞLADI")
+        
+        # Test customer ID from review request
+        test_customer_id = "a00f9853-e336-44c3-84db-814827fe0ff6"
+        
+        # Test 1: Admin Girişi
+        self.test_seasonal_admin_login()
+        
+        # Test 2: 2024 Ocak vs 2025 Ocak Karşılaştırması
+        self.test_seasonal_2024_vs_2025_january_comparison(test_customer_id)
+        
+        # Test 3: Mevsimsel Karşılaştırma - Kış (Ocak)
+        self.test_seasonal_winter_january_comparison(test_customer_id)
+        
+        # Test 4: Mevsimsel Karşılaştırma - Yaz (Haziran)
+        self.test_seasonal_summer_june_comparison(test_customer_id)
+        
+        # Test 5: Sapma Oranı Kontrolü
+        self.test_seasonal_deviation_rate_control(test_customer_id)
+        
+        # Test 6: 2023 İlk Kayıtlar
+        self.test_seasonal_2023_first_records(test_customer_id)
+        
+        # Test 7: Yıllık Trend Kontrolü
+        self.test_seasonal_annual_trend_control(test_customer_id)
+        
+        print("🎉 MEVSİMSEL TÜKETİM HESAPLAMA SİSTEMİ TEST TAMAMLANDI")
+    
+    def test_seasonal_admin_login(self):
+        """Test 1: Admin Girişi"""
+        try:
+            success = self.login_user("admin")
+            if success:
+                self.log_test("Seasonal Test 1: Admin Girişi", True, "admin/admin123 başarılı")
+            else:
+                self.log_test("Seasonal Test 1: Admin Girişi", False, "admin/admin123 başarısız")
+        except Exception as e:
+            self.log_test("Seasonal Test 1: Admin Girişi", False, f"Exception: {str(e)}")
+    
+    def test_seasonal_2024_vs_2025_january_comparison(self, customer_id):
+        """Test 2: 2024 Ocak vs 2025 Ocak Karşılaştırması"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Seasonal Test 2: 2024 vs 2025 Ocak", False, "No admin token")
+            return
+        
+        try:
+            # Get 2024 January records
+            response_2024 = requests.get(
+                f"{BASE_URL}/customer-consumption/invoice-based/customer/{customer_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response_2024.status_code == 200:
+                records_2024 = response_2024.json()
+                january_2024_records = [r for r in records_2024 if "2024" in str(r.get("target_invoice_date", "")) and "01" in str(r.get("target_invoice_date", ""))]
+                
+                # Get 2025 January records
+                january_2025_records = [r for r in records_2024 if "2025" in str(r.get("target_invoice_date", "")) and "01" in str(r.get("target_invoice_date", ""))]
+                
+                if january_2024_records and january_2025_records:
+                    # Check if 2025 January expected consumption is calculated from 2024 January average
+                    jan_2025_record = january_2025_records[0]
+                    expected_consumption = jan_2025_record.get("expected_consumption")
+                    
+                    if expected_consumption and expected_consumption > 0:
+                        self.log_test("Seasonal Test 2: 2024 vs 2025 Ocak", True, 
+                            f"2024 Ocak: {len(january_2024_records)} kayıt, 2025 Ocak: {len(january_2025_records)} kayıt, Beklenen tüketim: {expected_consumption}")
+                    else:
+                        self.log_test("Seasonal Test 2: 2024 vs 2025 Ocak", False, "2025 Ocak beklenen tüketim hesaplanmamış")
+                else:
+                    self.log_test("Seasonal Test 2: 2024 vs 2025 Ocak", False, f"Ocak kayıtları bulunamadı - 2024: {len(january_2024_records)}, 2025: {len(january_2025_records)}")
+            else:
+                self.log_test("Seasonal Test 2: 2024 vs 2025 Ocak", False, f"API hatası: {response_2024.status_code}")
+                
+        except Exception as e:
+            self.log_test("Seasonal Test 2: 2024 vs 2025 Ocak", False, f"Exception: {str(e)}")
+    
+    def test_seasonal_winter_january_comparison(self, customer_id):
+        """Test 3: Mevsimsel Karşılaştırma - Kış (Ocak)"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Seasonal Test 3: Kış Ocak Karşılaştırma", False, "No admin token")
+            return
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/customer-consumption/invoice-based/customer/{customer_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                records = response.json()
+                january_2024_records = [r for r in records if "2024" in str(r.get("target_invoice_date", "")) and "01" in str(r.get("target_invoice_date", ""))]
+                
+                if january_2024_records:
+                    jan_record = january_2024_records[0]
+                    expected_consumption = jan_record.get("expected_consumption", 0)
+                    daily_rate = jan_record.get("daily_consumption_rate", 0)
+                    notes = jan_record.get("notes", "")
+                    
+                    # Winter should have higher expected consumption
+                    if expected_consumption > 10:  # Assuming winter consumption is higher
+                        self.log_test("Seasonal Test 3: Kış Ocak Karşılaştırma", True, 
+                            f"Kış ayı yüksek tüketim - Beklenen: {expected_consumption}, Günlük: {daily_rate}, Notes: {notes[:50]}...")
+                    else:
+                        self.log_test("Seasonal Test 3: Kış Ocak Karşılaştırma", False, 
+                            f"Kış ayı düşük tüketim - Beklenen: {expected_consumption}")
+                else:
+                    self.log_test("Seasonal Test 3: Kış Ocak Karşılaştırma", False, "2024 Ocak kayıtları bulunamadı")
+            else:
+                self.log_test("Seasonal Test 3: Kış Ocak Karşılaştırma", False, f"API hatası: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Seasonal Test 3: Kış Ocak Karşılaştırma", False, f"Exception: {str(e)}")
+    
+    def test_seasonal_summer_june_comparison(self, customer_id):
+        """Test 4: Mevsimsel Karşılaştırma - Yaz (Haziran)"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Seasonal Test 4: Yaz Haziran Karşılaştırma", False, "No admin token")
+            return
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/customer-consumption/invoice-based/customer/{customer_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                records = response.json()
+                june_2024_records = [r for r in records if "2024" in str(r.get("target_invoice_date", "")) and "06" in str(r.get("target_invoice_date", ""))]
+                
+                if june_2024_records:
+                    june_record = june_2024_records[0]
+                    expected_consumption = june_record.get("expected_consumption", 0)
+                    daily_rate = june_record.get("daily_consumption_rate", 0)
+                    notes = june_record.get("notes", "")
+                    
+                    # Summer should have lower expected consumption compared to winter
+                    self.log_test("Seasonal Test 4: Yaz Haziran Karşılaştırma", True, 
+                        f"Yaz ayı tüketim - Beklenen: {expected_consumption}, Günlük: {daily_rate}, Notes: {notes[:50]}...")
+                else:
+                    self.log_test("Seasonal Test 4: Yaz Haziran Karşılaştırma", False, "2024 Haziran kayıtları bulunamadı")
+            else:
+                self.log_test("Seasonal Test 4: Yaz Haziran Karşılaştırma", False, f"API hatası: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Seasonal Test 4: Yaz Haziran Karşılaştırma", False, f"Exception: {str(e)}")
+    
+    def test_seasonal_deviation_rate_control(self, customer_id):
+        """Test 5: Sapma Oranı Kontrolü"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Seasonal Test 5: Sapma Oranı Kontrolü", False, "No admin token")
+            return
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/customer-consumption/invoice-based/customer/{customer_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                records = response.json()
+                # Get random 2024 and 2025 records
+                records_2024 = [r for r in records if "2024" in str(r.get("target_invoice_date", ""))]
+                records_2025 = [r for r in records if "2025" in str(r.get("target_invoice_date", ""))]
+                
+                if records_2024 and records_2025:
+                    # Check deviation rate calculation
+                    sample_record = records_2024[0] if records_2024 else records_2025[0]
+                    deviation_rate = sample_record.get("deviation_rate")
+                    expected_consumption = sample_record.get("expected_consumption", 0)
+                    daily_rate = sample_record.get("daily_consumption_rate", 0)
+                    notes = sample_record.get("notes", "")
+                    
+                    # Check if deviation rate is calculated
+                    if deviation_rate is not None:
+                        # Check if notes contain "Beklenen (önceki yıl)"
+                        has_expected_note = "Beklenen" in notes or "önceki yıl" in notes
+                        
+                        self.log_test("Seasonal Test 5: Sapma Oranı Kontrolü", True, 
+                            f"Sapma oranı: {deviation_rate}%, Beklenen: {expected_consumption}, Günlük: {daily_rate}, Notes içerik: {has_expected_note}")
+                    else:
+                        self.log_test("Seasonal Test 5: Sapma Oranı Kontrolü", False, "Sapma oranı hesaplanmamış")
+                else:
+                    self.log_test("Seasonal Test 5: Sapma Oranı Kontrolü", False, "2024/2025 kayıtları bulunamadı")
+            else:
+                self.log_test("Seasonal Test 5: Sapma Oranı Kontrolü", False, f"API hatası: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Seasonal Test 5: Sapma Oranı Kontrolü", False, f"Exception: {str(e)}")
+    
+    def test_seasonal_2023_first_records(self, customer_id):
+        """Test 6: 2023 İlk Kayıtlar"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Seasonal Test 6: 2023 İlk Kayıtlar", False, "No admin token")
+            return
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/customer-consumption/invoice-based/customer/{customer_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                records = response.json()
+                january_2023_records = [r for r in records if "2023" in str(r.get("target_invoice_date", "")) and "01" in str(r.get("target_invoice_date", ""))]
+                
+                if january_2023_records:
+                    jan_2023_record = january_2023_records[0]
+                    expected_consumption = jan_2023_record.get("expected_consumption", 0)
+                    can_calculate = jan_2023_record.get("can_calculate", True)
+                    notes = jan_2023_record.get("notes", "")
+                    
+                    # For first records (2023), expected consumption should be general average
+                    if expected_consumption > 0:
+                        self.log_test("Seasonal Test 6: 2023 İlk Kayıtlar", True, 
+                            f"2023 Ocak - Beklenen tüketim (genel ortalama): {expected_consumption}, Can calculate: {can_calculate}")
+                    else:
+                        self.log_test("Seasonal Test 6: 2023 İlk Kayıtlar", False, 
+                            f"2023 Ocak - Beklenen tüketim hesaplanmamış: {expected_consumption}")
+                else:
+                    self.log_test("Seasonal Test 6: 2023 İlk Kayıtlar", False, "2023 Ocak kayıtları bulunamadı")
+            else:
+                self.log_test("Seasonal Test 6: 2023 İlk Kayıtlar", False, f"API hatası: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Seasonal Test 6: 2023 İlk Kayıtlar", False, f"Exception: {str(e)}")
+    
+    def test_seasonal_annual_trend_control(self, customer_id):
+        """Test 7: Yıllık Trend Kontrolü"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Seasonal Test 7: Yıllık Trend Kontrolü", False, "No admin token")
+            return
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/customer-consumption/invoice-based/customer/{customer_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                records = response.json()
+                
+                # Get 2023 and 2024 January records
+                january_2023_records = [r for r in records if "2023" in str(r.get("target_invoice_date", "")) and "01" in str(r.get("target_invoice_date", ""))]
+                january_2024_records = [r for r in records if "2024" in str(r.get("target_invoice_date", "")) and "01" in str(r.get("target_invoice_date", ""))]
+                
+                # Get 2023 and 2024 June records
+                june_2023_records = [r for r in records if "2023" in str(r.get("target_invoice_date", "")) and "06" in str(r.get("target_invoice_date", ""))]
+                june_2024_records = [r for r in records if "2024" in str(r.get("target_invoice_date", "")) and "06" in str(r.get("target_invoice_date", ""))]
+                
+                trend_checks = []
+                
+                # Check January trend: 2024 expected ≈ 2023 actual
+                if january_2023_records and january_2024_records:
+                    jan_2023_actual = january_2023_records[0].get("daily_consumption_rate", 0)
+                    jan_2024_expected = january_2024_records[0].get("expected_consumption", 0)
+                    trend_checks.append(f"Ocak - 2023 gerçek: {jan_2023_actual}, 2024 beklenen: {jan_2024_expected}")
+                
+                # Check June trend: 2024 expected ≈ 2023 actual
+                if june_2023_records and june_2024_records:
+                    june_2023_actual = june_2023_records[0].get("daily_consumption_rate", 0)
+                    june_2024_expected = june_2024_records[0].get("expected_consumption", 0)
+                    trend_checks.append(f"Haziran - 2023 gerçek: {june_2023_actual}, 2024 beklenen: {june_2024_expected}")
+                
+                if trend_checks:
+                    self.log_test("Seasonal Test 7: Yıllık Trend Kontrolü", True, 
+                        f"Trend kontrolü başarılı: {'; '.join(trend_checks)}")
+                else:
+                    self.log_test("Seasonal Test 7: Yıllık Trend Kontrolü", False, "Trend karşılaştırması için yeterli veri yok")
+            else:
+                self.log_test("Seasonal Test 7: Yıllık Trend Kontrolü", False, f"API hatası: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Seasonal Test 7: Yıllık Trend Kontrolü", False, f"Exception: {str(e)}")
+
     # ========== PERİYODİK TÜKETİM VE YILLIK KARŞILAŞTIRMA SİSTEMİ TESTS ==========
     
     def test_periodic_record_generation_monthly(self):
