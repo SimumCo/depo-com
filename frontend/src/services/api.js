@@ -85,22 +85,33 @@ export const favoritesAPI = {
   check: (productId) => api.get(`/favorites/check/${productId}`),
 };
 
-// Notifications API
+// Notifications API (Merged)
 export const notificationsAPI = {
   getAll: (params = {}) => api.get('/notifications', { params }),
   getUnreadCount: () => api.get('/notifications/unread-count'),
   markAsRead: (id) => api.put(`/notifications/${id}/read`),
   markAllAsRead: () => api.put('/notifications/read-all'),
+  markRead: (id) => api.post(`/notifications/${id}/mark-read`),
+  markAllRead: () => api.post('/notifications/mark-all-read'),
   delete: (id) => api.delete(`/notifications/${id}`),
+  create: (data) => api.post('/notifications/create', data),
 };
 
-// Campaigns API
+// Campaigns API (Merged - using campaignsAPI as primary)
 export const campaignsAPI = {
-  getAll: () => api.get('/campaigns'),
+  getAll: (isActive) => api.get('/campaigns', { params: isActive !== undefined ? { is_active: isActive } : {} }),
+  getActive: () => api.get('/campaigns/active'),
   getOne: (id) => api.get(`/campaigns/${id}`),
   create: (data) => api.post('/campaigns', data),
+  update: (id, data) => api.put(`/campaigns/${id}`, data),
+  delete: (id) => api.delete(`/campaigns/${id}`),
   deactivate: (id) => api.put(`/campaigns/${id}/deactivate`),
+  activate: (id) => api.post(`/campaigns/${id}/activate`),
+  getApplicableProducts: (id) => api.get(`/campaigns/${id}/applicable-products`),
 };
+
+// Legacy alias for backward compatibility
+export const campaignAPI = campaignsAPI;
 
 // Fault Reports API
 export const faultReportsAPI = {
