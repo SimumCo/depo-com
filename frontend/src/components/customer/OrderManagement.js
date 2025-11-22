@@ -280,7 +280,7 @@ const OrderManagement = () => {
                 <div key={item.product_id} className="flex items-start space-x-3 pb-3 border-b border-gray-100">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">{item.product_name}</p>
-                    <p className="text-xs text-gray-500">₺{item.price.toFixed(2)}</p>
+                    <p className="text-xs text-gray-500">₺{(item.price || 0).toFixed(2)}</p>
                   </div>
                   <div className="flex items-center space-x-2">
                     <button
