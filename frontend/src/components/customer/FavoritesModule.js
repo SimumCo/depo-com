@@ -105,7 +105,7 @@ const FavoritesModule = ({ onAddToCart }) => {
 
                 <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
                   <span className="text-lg font-semibold text-blue-600">
-                    ₺{fav.product_price.toFixed(2)}
+                    ₺{(fav.product_price || 0).toFixed(2)}
                   </span>
                   <button
                     onClick={() => handleAddToCart(fav)}
