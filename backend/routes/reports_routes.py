@@ -5,7 +5,7 @@ from datetime import datetime, timezone, timedelta
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 from middleware.auth import get_current_user, require_role
-from models.user import UserRole
+from models.user import User, UserRole
 from io import BytesIO
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment
