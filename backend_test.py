@@ -5343,7 +5343,7 @@ class APITester:
                 "description": "Test campaign for API testing",
                 "start_date": start_date.isoformat(),
                 "end_date": end_date.isoformat(),
-                "discount_type": "PERCENTAGE",
+                "discount_type": "percentage",
                 "discount_value": 10.0,
                 "is_active": True,
                 "target_customer_group": "ALL",
