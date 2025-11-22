@@ -21,7 +21,7 @@ const HistoricalRecords = () => {
         const response = await ordersAPI.getAll();
         setOrders(response.data);
       } else {
-        const response = await invoiceAPI.getAll();
+        const response = await invoicesAPI.getAll();
         setInvoices(response.data);
       }
     } catch (err) {
