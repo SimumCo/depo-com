@@ -28,7 +28,7 @@ async def export_sales_report(
     format: str = Query("xlsx", regex="^(xlsx|pdf)$"),
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    current_user: dict = Depends(require_role([UserRole.ADMIN, UserRole.ACCOUNTING]))
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.ACCOUNTING]))
 ):
     """Export sales report in Excel or PDF format"""
     
@@ -77,7 +77,7 @@ async def export_sales_report(
 async def export_stock_report(
     format: str = Query("xlsx", regex="^(xlsx|pdf)$"),
     warehouse_id: Optional[str] = None,
-    current_user: dict = Depends(require_role([UserRole.ADMIN, UserRole.WAREHOUSE_MANAGER]))
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.WAREHOUSE_MANAGER]))
 ):
     """Export stock report in Excel or PDF format"""
     
@@ -112,7 +112,7 @@ async def export_sales_agents_report(
     format: str = Query("xlsx", regex="^(xlsx|pdf)$"),
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    current_user: dict = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN]))
 ):
     """Export sales agents performance report"""
     
@@ -165,7 +165,7 @@ async def export_logistics_report(
     format: str = Query("xlsx", regex="^(xlsx|pdf)$"),
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    current_user: dict = Depends(require_role([UserRole.ADMIN, UserRole.WAREHOUSE_MANAGER]))
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.WAREHOUSE_MANAGER]))
 ):
     """Export logistics/delivery report"""
     

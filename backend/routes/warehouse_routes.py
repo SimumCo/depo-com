@@ -17,7 +17,7 @@ db = client.distribution_db
 
 @router.get("", response_model=List[Warehouse])
 async def get_warehouses(
-    current_user: dict = Depends(require_role([UserRole.ADMIN, UserRole.WAREHOUSE_MANAGER]))
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.WAREHOUSE_MANAGER]))
 ):
     """Get all warehouses"""
     warehouses = await db.warehouses.find().to_list(1000)
@@ -26,7 +26,7 @@ async def get_warehouses(
 @router.get("/{warehouse_id}", response_model=Warehouse)
 async def get_warehouse(
     warehouse_id: str,
-    current_user: dict = Depends(require_role([UserRole.ADMIN, UserRole.WAREHOUSE_MANAGER]))
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.WAREHOUSE_MANAGER]))
 ):
     """Get single warehouse by ID"""
     warehouse = await db.warehouses.find_one({"id": warehouse_id})
@@ -37,7 +37,7 @@ async def get_warehouse(
 @router.post("", response_model=Warehouse)
 async def create_warehouse(
     warehouse: Warehouse,
-    current_user: dict = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN]))
 ):
     """Create new warehouse (Admin only)"""
     # Check if warehouse with same name exists
@@ -56,7 +56,7 @@ async def create_warehouse(
 async def update_warehouse(
     warehouse_id: str,
     warehouse_update: dict,
-    current_user: dict = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN]))
 ):
     """Update warehouse (Admin only)"""
     existing = await db.warehouses.find_one({"id": warehouse_id})
@@ -76,7 +76,7 @@ async def update_warehouse(
 @router.delete("/{warehouse_id}")
 async def delete_warehouse(
     warehouse_id: str,
-    current_user: dict = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN]))
 ):
     """Soft delete warehouse (set is_active=False)"""
     result = await db.warehouses.update_one(
@@ -92,7 +92,7 @@ async def delete_warehouse(
 @router.get("/{warehouse_id}/inventory")
 async def get_warehouse_inventory(
     warehouse_id: str,
-    current_user: dict = Depends(require_role([UserRole.ADMIN, UserRole.WAREHOUSE_MANAGER]))
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.WAREHOUSE_MANAGER]))
 ):
     """Get inventory for specific warehouse"""
     # Check warehouse exists
@@ -120,7 +120,7 @@ async def get_warehouse_inventory(
 @router.get("/{warehouse_id}/stats")
 async def get_warehouse_stats(
     warehouse_id: str,
-    current_user: dict = Depends(require_role([UserRole.ADMIN, UserRole.WAREHOUSE_MANAGER]))
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.WAREHOUSE_MANAGER]))
 ):
     """Get warehouse statistics"""
     warehouse = await db.warehouses.find_one({"id": warehouse_id})

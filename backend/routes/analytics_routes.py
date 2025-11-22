@@ -21,7 +21,7 @@ class PeriodType(str, Enum):
 
 @router.get("/dashboard-stats")
 async def get_dashboard_stats(
-    current_user: dict = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN]))
 ):
     """Get consolidated dashboard statistics"""
     
@@ -77,7 +77,7 @@ async def get_sales_analytics(
     period: PeriodType = Query(PeriodType.DAILY),
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    current_user: dict = Depends(require_role([UserRole.ADMIN, UserRole.ACCOUNTING]))
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.ACCOUNTING]))
 ):
     """Get sales analytics with period filtering"""
     
@@ -202,7 +202,7 @@ async def get_sales_analytics(
 
 @router.get("/performance")
 async def get_performance_analytics(
-    current_user: dict = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN]))
 ):
     """Get performance and operations analytics"""
     
@@ -283,7 +283,7 @@ async def get_performance_analytics(
 
 @router.get("/stock")
 async def get_stock_analytics(
-    current_user: dict = Depends(require_role([UserRole.ADMIN, UserRole.WAREHOUSE_MANAGER]))
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.WAREHOUSE_MANAGER]))
 ):
     """Get stock control analytics"""
     
