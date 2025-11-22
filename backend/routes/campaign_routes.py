@@ -3,7 +3,7 @@ from typing import List, Optional
 from datetime import datetime, timezone
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
-from models.campaign import Campaign, CustomerGroupType, DiscountType
+from models.campaign import Campaign, CustomerGroupType, DiscountType, CampaignType
 from middleware.auth import get_current_user, require_role
 from models.user import User, UserRole
 
