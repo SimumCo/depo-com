@@ -4735,18 +4735,869 @@ class APITester:
         # Print summary
         self.print_test_summary()
 
+    # ========== ADMIN DASHBOARD API TESTS ==========
+    
+    def test_admin_dashboard_apis(self):
+        """Test Admin Dashboard APIs as per review request"""
+        print("🎯 ADMIN DASHBOARD API TESTS BAŞLADI")
+        
+        # Test 1: Analytics Dashboard Stats API
+        self.test_analytics_dashboard_stats()
+        
+        # Test 2: Sales Analytics API (all periods)
+        self.test_sales_analytics_daily()
+        self.test_sales_analytics_weekly()
+        self.test_sales_analytics_monthly()
+        
+        # Test 3: Performance Analytics API
+        self.test_performance_analytics()
+        
+        # Test 4: Stock Analytics API
+        self.test_stock_analytics()
+        
+        # Test 5: Warehouse Management APIs
+        self.test_warehouse_management_apis()
+        
+        # Test 6: Campaign Management APIs
+        self.test_campaign_management_apis()
+        
+        # Test 7: Notifications APIs
+        self.test_notifications_apis()
+        
+        print("🎉 ADMIN DASHBOARD API TESTS TAMAMLANDI")
+    
+    def test_analytics_dashboard_stats(self):
+        """Test GET /api/analytics/dashboard-stats"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Analytics Dashboard Stats", False, "No admin token")
+            return
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/analytics/dashboard-stats",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                stats = response.json()
+                
+                # Expected fields from review request
+                expected_fields = [
+                    "total_products", "total_inventory_units", "pending_orders", 
+                    "out_of_stock_count", "total_customers", "active_sales_agents", 
+                    "total_orders", "active_warehouses", "active_campaigns"
+                ]
+                
+                missing_fields = [field for field in expected_fields if field not in stats]
+                if missing_fields:
+                    self.log_test("Analytics Dashboard Stats", False, f"Missing fields: {missing_fields}")
+                    return
+                
+                # Validate data types and reasonable values
+                for field in expected_fields:
+                    value = stats.get(field)
+                    if not isinstance(value, (int, float)) or value < 0:
+                        self.log_test("Analytics Dashboard Stats", False, f"Invalid value for {field}: {value}")
+                        return
+                
+                self.log_test("Analytics Dashboard Stats", True, 
+                    f"Products: {stats['total_products']}, Customers: {stats['total_customers']}, "
+                    f"Orders: {stats['total_orders']}, Warehouses: {stats['active_warehouses']}, "
+                    f"Campaigns: {stats['active_campaigns']}")
+                
+            else:
+                self.log_test("Analytics Dashboard Stats", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Analytics Dashboard Stats", False, f"Exception: {str(e)}")
+    
+    def test_sales_analytics_daily(self):
+        """Test GET /api/analytics/sales?period=daily"""
+        self._test_sales_analytics("daily")
+    
+    def test_sales_analytics_weekly(self):
+        """Test GET /api/analytics/sales?period=weekly"""
+        self._test_sales_analytics("weekly")
+    
+    def test_sales_analytics_monthly(self):
+        """Test GET /api/analytics/sales?period=monthly"""
+        self._test_sales_analytics("monthly")
+    
+    def _test_sales_analytics(self, period):
+        """Helper method to test sales analytics for different periods"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test(f"Sales Analytics {period.title()}", False, "No admin token")
+            return
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/analytics/sales?period={period}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                analytics = response.json()
+                
+                # Expected fields from review request
+                expected_fields = [
+                    "total_sales", "total_orders", "average_order_value", 
+                    "sales_trend", "top_products", "declining_products"
+                ]
+                
+                missing_fields = [field for field in expected_fields if field not in analytics]
+                if missing_fields:
+                    self.log_test(f"Sales Analytics {period.title()}", False, f"Missing fields: {missing_fields}")
+                    return
+                
+                # Validate data structure
+                if not isinstance(analytics.get("sales_trend"), list):
+                    self.log_test(f"Sales Analytics {period.title()}", False, "sales_trend should be a list")
+                    return
+                
+                if not isinstance(analytics.get("top_products"), list):
+                    self.log_test(f"Sales Analytics {period.title()}", False, "top_products should be a list")
+                    return
+                
+                if not isinstance(analytics.get("declining_products"), list):
+                    self.log_test(f"Sales Analytics {period.title()}", False, "declining_products should be a list")
+                    return
+                
+                # Validate numeric fields
+                numeric_fields = ["total_sales", "total_orders", "average_order_value"]
+                for field in numeric_fields:
+                    value = analytics.get(field)
+                    if not isinstance(value, (int, float)) or value < 0:
+                        self.log_test(f"Sales Analytics {period.title()}", False, f"Invalid {field}: {value}")
+                        return
+                
+                self.log_test(f"Sales Analytics {period.title()}", True, 
+                    f"Sales: {analytics['total_sales']}, Orders: {analytics['total_orders']}, "
+                    f"AOV: {analytics['average_order_value']}, Top Products: {len(analytics['top_products'])}")
+                
+            else:
+                self.log_test(f"Sales Analytics {period.title()}", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test(f"Sales Analytics {period.title()}", False, f"Exception: {str(e)}")
+    
+    def test_performance_analytics(self):
+        """Test GET /api/analytics/performance"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Performance Analytics", False, "No admin token")
+            return
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/analytics/performance",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                performance = response.json()
+                
+                # Expected fields from review request
+                expected_fields = [
+                    "top_sales_agents", "active_agents_count", 
+                    "total_deliveries_last_30_days", "stock_turnover_rate"
+                ]
+                
+                missing_fields = [field for field in expected_fields if field not in performance]
+                if missing_fields:
+                    self.log_test("Performance Analytics", False, f"Missing fields: {missing_fields}")
+                    return
+                
+                # Validate data structure
+                if not isinstance(performance.get("top_sales_agents"), list):
+                    self.log_test("Performance Analytics", False, "top_sales_agents should be a list")
+                    return
+                
+                # Validate numeric fields
+                numeric_fields = ["active_agents_count", "total_deliveries_last_30_days", "stock_turnover_rate"]
+                for field in numeric_fields:
+                    value = performance.get(field)
+                    if not isinstance(value, (int, float)) or value < 0:
+                        self.log_test("Performance Analytics", False, f"Invalid {field}: {value}")
+                        return
+                
+                self.log_test("Performance Analytics", True, 
+                    f"Active Agents: {performance['active_agents_count']}, "
+                    f"Deliveries: {performance['total_deliveries_last_30_days']}, "
+                    f"Turnover Rate: {performance['stock_turnover_rate']}, "
+                    f"Top Agents: {len(performance['top_sales_agents'])}")
+                
+            else:
+                self.log_test("Performance Analytics", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Performance Analytics", False, f"Exception: {str(e)}")
+    
+    def test_stock_analytics(self):
+        """Test GET /api/analytics/stock"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Stock Analytics", False, "No admin token")
+            return
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/analytics/stock",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                stock = response.json()
+                
+                # Expected fields from review request
+                expected_fields = [
+                    "warehouse_summaries", "critical_stock_alerts", "low_stock_products"
+                ]
+                
+                missing_fields = [field for field in expected_fields if field not in stock]
+                if missing_fields:
+                    self.log_test("Stock Analytics", False, f"Missing fields: {missing_fields}")
+                    return
+                
+                # Validate data structure
+                for field in expected_fields:
+                    if not isinstance(stock.get(field), list):
+                        self.log_test("Stock Analytics", False, f"{field} should be a list")
+                        return
+                
+                self.log_test("Stock Analytics", True, 
+                    f"Warehouses: {len(stock['warehouse_summaries'])}, "
+                    f"Critical Alerts: {len(stock['critical_stock_alerts'])}, "
+                    f"Low Stock: {len(stock['low_stock_products'])}")
+                
+            else:
+                self.log_test("Stock Analytics", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Stock Analytics", False, f"Exception: {str(e)}")
+    
+    def test_warehouse_management_apis(self):
+        """Test Warehouse Management APIs"""
+        print("🏭 WAREHOUSE MANAGEMENT API TESTS")
+        
+        # Test 1: Get all warehouses (should have 7 warehouses)
+        self.test_get_warehouses()
+        
+        # Test 2: Get single warehouse
+        self.test_get_single_warehouse()
+        
+        # Test 3: Create new warehouse (test)
+        self.test_create_warehouse()
+        
+        # Test 4: Update warehouse (test)
+        self.test_update_warehouse()
+        
+        # Test 5: Get warehouse stats
+        self.test_get_warehouse_stats()
+    
+    def test_get_warehouses(self):
+        """Test GET /api/warehouses (should have 7 warehouses)"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Get Warehouses", False, "No admin token")
+            return
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/warehouses",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                warehouses = response.json()
+                
+                if not isinstance(warehouses, list):
+                    self.log_test("Get Warehouses", False, "Response should be a list")
+                    return
+                
+                # Review request expects 7 warehouses
+                expected_count = 7
+                if len(warehouses) >= expected_count:
+                    self.log_test("Get Warehouses", True, f"Found {len(warehouses)} warehouses (>= {expected_count} expected)")
+                    
+                    # Store first warehouse ID for other tests
+                    if warehouses:
+                        self.test_warehouse_id = warehouses[0].get('id')
+                else:
+                    self.log_test("Get Warehouses", False, f"Expected >= {expected_count} warehouses, got {len(warehouses)}")
+                
+            else:
+                self.log_test("Get Warehouses", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Get Warehouses", False, f"Exception: {str(e)}")
+    
+    def test_get_single_warehouse(self):
+        """Test GET /api/warehouses/{warehouse_id}"""
+        if not hasattr(self, 'test_warehouse_id'):
+            self.log_test("Get Single Warehouse", False, "No warehouse ID available")
+            return
+        
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Get Single Warehouse", False, "No admin token")
+            return
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/warehouses/{self.test_warehouse_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                warehouse = response.json()
+                
+                # Validate warehouse structure
+                required_fields = ["id", "name", "location"]
+                missing_fields = [field for field in required_fields if field not in warehouse]
+                
+                if missing_fields:
+                    self.log_test("Get Single Warehouse", False, f"Missing fields: {missing_fields}")
+                else:
+                    self.log_test("Get Single Warehouse", True, f"Warehouse: {warehouse.get('name')} at {warehouse.get('location')}")
+                
+            else:
+                self.log_test("Get Single Warehouse", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Get Single Warehouse", False, f"Exception: {str(e)}")
+    
+    def test_create_warehouse(self):
+        """Test POST /api/warehouses (create new warehouse - test)"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Create Warehouse", False, "No admin token")
+            return
+        
+        try:
+            import time
+            timestamp = int(time.time()) % 10000
+            
+            warehouse_data = {
+                "id": f"test-warehouse-{timestamp}",
+                "name": f"Test Warehouse {timestamp}",
+                "location": "Test Location",
+                "capacity": 10000,
+                "is_active": True,
+                "contact_person": "Test Manager",
+                "phone": "0312 555 99 88",
+                "email": f"test{timestamp}@warehouse.com"
+            }
+            
+            response = requests.post(
+                f"{BASE_URL}/warehouses",
+                json=warehouse_data,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                warehouse = response.json()
+                
+                if warehouse.get("name") == warehouse_data["name"]:
+                    self.log_test("Create Warehouse", True, f"Created warehouse: {warehouse.get('name')}")
+                    # Store for update test
+                    self.created_warehouse_id = warehouse.get('id')
+                else:
+                    self.log_test("Create Warehouse", False, "Warehouse data mismatch")
+                
+            else:
+                self.log_test("Create Warehouse", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Create Warehouse", False, f"Exception: {str(e)}")
+    
+    def test_update_warehouse(self):
+        """Test PUT /api/warehouses/{warehouse_id} (update warehouse - test)"""
+        if not hasattr(self, 'created_warehouse_id'):
+            self.log_test("Update Warehouse", False, "No created warehouse ID available")
+            return
+        
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Update Warehouse", False, "No admin token")
+            return
+        
+        try:
+            update_data = {
+                "capacity": 15000,
+                "contact_person": "Updated Manager"
+            }
+            
+            response = requests.put(
+                f"{BASE_URL}/warehouses/{self.created_warehouse_id}",
+                json=update_data,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                warehouse = response.json()
+                
+                if warehouse.get("capacity") == 15000 and warehouse.get("contact_person") == "Updated Manager":
+                    self.log_test("Update Warehouse", True, f"Updated warehouse capacity to {warehouse.get('capacity')}")
+                else:
+                    self.log_test("Update Warehouse", False, "Update data not reflected")
+                
+            else:
+                self.log_test("Update Warehouse", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Update Warehouse", False, f"Exception: {str(e)}")
+    
+    def test_get_warehouse_stats(self):
+        """Test GET /api/warehouses/{warehouse_id}/stats"""
+        if not hasattr(self, 'test_warehouse_id'):
+            self.log_test("Get Warehouse Stats", False, "No warehouse ID available")
+            return
+        
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Get Warehouse Stats", False, "No admin token")
+            return
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/warehouses/{self.test_warehouse_id}/stats",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                stats = response.json()
+                
+                # Expected fields
+                expected_fields = [
+                    "warehouse_id", "warehouse_name", "total_stock", "capacity", 
+                    "capacity_usage_percentage", "low_stock_count", "out_of_stock_count", "total_products"
+                ]
+                
+                missing_fields = [field for field in expected_fields if field not in stats]
+                if missing_fields:
+                    self.log_test("Get Warehouse Stats", False, f"Missing fields: {missing_fields}")
+                else:
+                    self.log_test("Get Warehouse Stats", True, 
+                        f"Stock: {stats['total_stock']}, Capacity: {stats['capacity_usage_percentage']}%, "
+                        f"Products: {stats['total_products']}")
+                
+            else:
+                self.log_test("Get Warehouse Stats", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Get Warehouse Stats", False, f"Exception: {str(e)}")
+    
+    def test_campaign_management_apis(self):
+        """Test Campaign Management APIs"""
+        print("📢 CAMPAIGN MANAGEMENT API TESTS")
+        
+        # Test 1: Get all campaigns (should have 5 campaigns)
+        self.test_get_campaigns()
+        
+        # Test 2: Get active campaigns
+        self.test_get_active_campaigns()
+        
+        # Test 3: Get single campaign
+        self.test_get_single_campaign()
+        
+        # Test 4: Create new campaign (test)
+        self.test_create_campaign()
+        
+        # Test 5: Update campaign (test)
+        self.test_update_campaign()
+        
+        # Test 6: Activate campaign
+        self.test_activate_campaign()
+    
+    def test_get_campaigns(self):
+        """Test GET /api/campaigns (should have 5 campaigns)"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Get Campaigns", False, "No admin token")
+            return
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/campaigns",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                campaigns = response.json()
+                
+                if not isinstance(campaigns, list):
+                    self.log_test("Get Campaigns", False, "Response should be a list")
+                    return
+                
+                # Review request expects 5 campaigns
+                expected_count = 5
+                if len(campaigns) >= expected_count:
+                    self.log_test("Get Campaigns", True, f"Found {len(campaigns)} campaigns (>= {expected_count} expected)")
+                    
+                    # Store first campaign ID for other tests
+                    if campaigns:
+                        self.test_campaign_id = campaigns[0].get('id')
+                else:
+                    self.log_test("Get Campaigns", False, f"Expected >= {expected_count} campaigns, got {len(campaigns)}")
+                
+            else:
+                self.log_test("Get Campaigns", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Get Campaigns", False, f"Exception: {str(e)}")
+    
+    def test_get_active_campaigns(self):
+        """Test GET /api/campaigns/active"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Get Active Campaigns", False, "No admin token")
+            return
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/campaigns/active",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                campaigns = response.json()
+                
+                if isinstance(campaigns, list):
+                    self.log_test("Get Active Campaigns", True, f"Found {len(campaigns)} active campaigns")
+                else:
+                    self.log_test("Get Active Campaigns", False, "Response should be a list")
+                
+            else:
+                self.log_test("Get Active Campaigns", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Get Active Campaigns", False, f"Exception: {str(e)}")
+    
+    def test_get_single_campaign(self):
+        """Test GET /api/campaigns/{campaign_id}"""
+        if not hasattr(self, 'test_campaign_id'):
+            self.log_test("Get Single Campaign", False, "No campaign ID available")
+            return
+        
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Get Single Campaign", False, "No admin token")
+            return
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/campaigns/{self.test_campaign_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                campaign = response.json()
+                
+                # Validate campaign structure
+                required_fields = ["id", "name", "start_date", "end_date"]
+                missing_fields = [field for field in required_fields if field not in campaign]
+                
+                if missing_fields:
+                    self.log_test("Get Single Campaign", False, f"Missing fields: {missing_fields}")
+                else:
+                    self.log_test("Get Single Campaign", True, f"Campaign: {campaign.get('name')}")
+                
+            else:
+                self.log_test("Get Single Campaign", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Get Single Campaign", False, f"Exception: {str(e)}")
+    
+    def test_create_campaign(self):
+        """Test POST /api/campaigns (create new campaign - test)"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Create Campaign", False, "No admin token")
+            return
+        
+        try:
+            import time
+            from datetime import datetime, timedelta
+            
+            timestamp = int(time.time()) % 10000
+            start_date = datetime.now()
+            end_date = start_date + timedelta(days=30)
+            
+            campaign_data = {
+                "id": f"test-campaign-{timestamp}",
+                "name": f"Test Campaign {timestamp}",
+                "description": "Test campaign for API testing",
+                "start_date": start_date.isoformat(),
+                "end_date": end_date.isoformat(),
+                "discount_type": "PERCENTAGE",
+                "discount_value": 10.0,
+                "is_active": True,
+                "target_customer_group": "ALL",
+                "product_ids": [],
+                "minimum_order_amount": 100.0
+            }
+            
+            response = requests.post(
+                f"{BASE_URL}/campaigns",
+                json=campaign_data,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                campaign = response.json()
+                
+                if campaign.get("name") == campaign_data["name"]:
+                    self.log_test("Create Campaign", True, f"Created campaign: {campaign.get('name')}")
+                    # Store for update test
+                    self.created_campaign_id = campaign.get('id')
+                else:
+                    self.log_test("Create Campaign", False, "Campaign data mismatch")
+                
+            else:
+                self.log_test("Create Campaign", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Create Campaign", False, f"Exception: {str(e)}")
+    
+    def test_update_campaign(self):
+        """Test PUT /api/campaigns/{campaign_id} (update campaign - test)"""
+        if not hasattr(self, 'created_campaign_id'):
+            self.log_test("Update Campaign", False, "No created campaign ID available")
+            return
+        
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Update Campaign", False, "No admin token")
+            return
+        
+        try:
+            update_data = {
+                "discount_value": 15.0,
+                "description": "Updated test campaign"
+            }
+            
+            response = requests.put(
+                f"{BASE_URL}/campaigns/{self.created_campaign_id}",
+                json=update_data,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                campaign = response.json()
+                
+                if campaign.get("discount_value") == 15.0:
+                    self.log_test("Update Campaign", True, f"Updated campaign discount to {campaign.get('discount_value')}%")
+                else:
+                    self.log_test("Update Campaign", False, "Update data not reflected")
+                
+            else:
+                self.log_test("Update Campaign", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Update Campaign", False, f"Exception: {str(e)}")
+    
+    def test_activate_campaign(self):
+        """Test POST /api/campaigns/{campaign_id}/activate"""
+        if not hasattr(self, 'created_campaign_id'):
+            self.log_test("Activate Campaign", False, "No created campaign ID available")
+            return
+        
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Activate Campaign", False, "No admin token")
+            return
+        
+        try:
+            response = requests.post(
+                f"{BASE_URL}/campaigns/{self.created_campaign_id}/activate",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                
+                if result.get("message") == "Campaign activated successfully":
+                    self.log_test("Activate Campaign", True, "Campaign activated successfully")
+                else:
+                    self.log_test("Activate Campaign", False, f"Unexpected message: {result.get('message')}")
+                
+            else:
+                self.log_test("Activate Campaign", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Activate Campaign", False, f"Exception: {str(e)}")
+    
+    def test_notifications_apis(self):
+        """Test Notifications APIs"""
+        print("🔔 NOTIFICATIONS API TESTS")
+        
+        # Test 1: Get notifications
+        self.test_get_notifications()
+        
+        # Test 2: Get unread count
+        self.test_get_unread_count()
+        
+        # Test 3: Create notification (test)
+        self.test_create_notification()
+    
+    def test_get_notifications(self):
+        """Test GET /api/notifications"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Get Notifications", False, "No admin token")
+            return
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/notifications",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                notifications = response.json()
+                
+                if isinstance(notifications, list):
+                    self.log_test("Get Notifications", True, f"Found {len(notifications)} notifications")
+                else:
+                    self.log_test("Get Notifications", False, "Response should be a list")
+                
+            else:
+                self.log_test("Get Notifications", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Get Notifications", False, f"Exception: {str(e)}")
+    
+    def test_get_unread_count(self):
+        """Test GET /api/notifications/unread-count"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Get Unread Count", False, "No admin token")
+            return
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/notifications/unread-count",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                
+                if "unread_count" in result and isinstance(result["unread_count"], int):
+                    self.log_test("Get Unread Count", True, f"Unread notifications: {result['unread_count']}")
+                else:
+                    self.log_test("Get Unread Count", False, "Invalid response structure")
+                
+            else:
+                self.log_test("Get Unread Count", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Get Unread Count", False, f"Exception: {str(e)}")
+    
+    def test_create_notification(self):
+        """Test POST /api/notifications/create (create test notification)"""
+        headers = self.get_headers("admin")
+        if not headers:
+            self.log_test("Create Notification", False, "No admin token")
+            return
+        
+        try:
+            import time
+            timestamp = int(time.time()) % 10000
+            
+            notification_data = {
+                "id": f"test-notification-{timestamp}",
+                "title": f"Test Notification {timestamp}",
+                "message": "This is a test notification created by API test",
+                "type": "INFO",
+                "priority": "MEDIUM",
+                "target_user_ids": [],
+                "target_roles": ["admin"],
+                "metadata": {"test": True},
+                "action_url": None
+            }
+            
+            response = requests.post(
+                f"{BASE_URL}/notifications/create",
+                json=notification_data,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                notification = response.json()
+                
+                if notification.get("title") == notification_data["title"]:
+                    self.log_test("Create Notification", True, f"Created notification: {notification.get('title')}")
+                else:
+                    self.log_test("Create Notification", False, "Notification data mismatch")
+                
+            else:
+                self.log_test("Create Notification", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Create Notification", False, f"Exception: {str(e)}")
+
 def main():
-    """Main test function"""
+    """Main test function - Admin Dashboard API Testing"""
     tester = APITester()
-    # Run GURBET DURMUŞ consumption statistics tests based on review request
-    tester.run_all_tests()
+    
+    print("🎯 ADMIN DASHBOARD BACKEND API TEST SUITE")
+    print("=" * 60)
+    print("Test User: admin/admin123")
+    print("Testing Admin Dashboard APIs as per review request")
+    print("=" * 60)
+    
+    # Run Admin Dashboard API tests only
+    tester.test_admin_dashboard_apis()
+    
+    # Print summary
+    print("\n" + "=" * 60)
+    print("📊 TEST SUMMARY")
+    print("=" * 60)
+    
+    total_tests = len(tester.test_results)
+    passed_tests = sum(1 for result in tester.test_results if result["success"])
+    failed_tests = total_tests - passed_tests
+    success_rate = (passed_tests / total_tests * 100) if total_tests > 0 else 0
+    
+    print(f"Total Tests: {total_tests}")
+    print(f"✅ Passed: {passed_tests}")
+    print(f"❌ Failed: {failed_tests}")
+    print(f"📈 Success Rate: {success_rate:.1f}%")
+    
+    if tester.failed_tests:
+        print(f"\n❌ FAILED TESTS ({len(tester.failed_tests)}):")
+        for failed_test in tester.failed_tests:
+            print(f"   • {failed_test}")
+    else:
+        print("\n🎉 ALL TESTS PASSED!")
     
     # Check if all tests passed
     if not tester.failed_tests:
-        print("\n✅ All tests passed!")
+        print("\n✅ All Admin Dashboard API tests passed!")
         sys.exit(0)
     else:
-        print("\n❌ Some tests failed!")
+        print("\n❌ Some Admin Dashboard API tests failed!")
         sys.exit(1)
 
 if __name__ == "__main__":
