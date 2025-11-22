@@ -7,6 +7,7 @@ class Inventory(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     product_id: str
+    warehouse_id: Optional[str] = None  # Link to warehouse
     total_units: int = 0
     expiry_date: Optional[datetime] = None
     last_supply_date: Optional[datetime] = None
