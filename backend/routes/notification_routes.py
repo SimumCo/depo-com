@@ -174,7 +174,7 @@ async def delete_notification(
 @router.post("/create")
 async def create_notification(
     notification: Notification,
-    current_user: dict = Depends(require_role([UserRole.ADMIN, UserRole.SYSTEM]))
+    current_user: dict = Depends(require_role([UserRole.ADMIN]))
 ):
     """Create and broadcast notification (Admin/System only)"""
     notification_dict = notification.model_dump()
