@@ -96,11 +96,11 @@ async def get_notifications(
 
 @router.get("/unread-count")
 async def get_unread_count(
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Get unread notification count"""
-    user_id = current_user.get('id')
-    user_role = current_user.get('role')
+    user_id = current_user.id
+    user_role = current_user.role
     
     count = await db.notifications.count_documents({
         "$or": [
