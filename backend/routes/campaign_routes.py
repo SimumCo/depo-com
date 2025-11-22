@@ -195,3 +195,49 @@ async def get_campaign_applicable_products(
         "campaign_name": campaign.get('name'),
         "products": products
     }
+
+
+@router.get("/{campaign_id}/summary")
+async def get_campaign_summary(
+    campaign_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get campaign summary with detailed info"""
+    from services.campaign_service import CampaignService
+    
+    summary = await CampaignService.get_campaign_summary(campaign_id)
+    if not summary:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+    
+    return summary
+
+@router.post("/apply-to-order")
+async def apply_campaigns_to_order(
+    order_data: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Apply active campaigns to order items
+    
+    Request body:
+    {
+        "items": [
+            {"product_id": "xxx", "quantity": 10, "price": 50}
+        ],
+        "customer_id": "xxx" (optional),
+        "customer_group": "regular" (optional)
+    }
+    """
+    from services.campaign_service import CampaignService
+    
+    items = order_data.get('items', [])
+    customer_id = order_data.get('customer_id', current_user.id)
+    customer_group = order_data.get('customer_group', 'regular')
+    
+    result = await CampaignService.apply_campaigns_to_order(
+        order_items=items,
+        customer_id=customer_id,
+        customer_group=customer_group
+    )
+    
+    return result
