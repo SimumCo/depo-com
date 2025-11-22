@@ -5,7 +5,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import os
 from models.campaign import Campaign, CustomerGroupType, DiscountType
 from middleware.auth import get_current_user, require_role
-from models.user import UserRole
+from models.user import User, UserRole
 
 router = APIRouter(prefix="/campaigns", tags=["Campaign Management"])
 
