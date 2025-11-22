@@ -85,7 +85,7 @@ const OrderManagement = () => {
   };
 
   const calculateTotal = () => {
-    return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+    return cart.reduce((total, item) => total + ((item.price || 0) * (item.quantity || 0)), 0);
   };
 
   const handleSaveCart = async () => {
