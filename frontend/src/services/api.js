@@ -122,4 +122,77 @@ export const invoicesAPI = {
   getRecommendations: () => api.get('/invoices/recommendations'),
 };
 
+// Analytics API
+export const analyticsAPI = {
+  getDashboardStats: () => api.get('/analytics/dashboard-stats'),
+  getSalesAnalytics: (period = 'daily', startDate, endDate) => {
+    const params = { period };
+    if (startDate) params.start_date = startDate;
+    if (endDate) params.end_date = endDate;
+    return api.get('/analytics/sales', { params });
+  },
+  getPerformance: () => api.get('/analytics/performance'),
+  getStockAnalytics: () => api.get('/analytics/stock'),
+};
+
+// Warehouse API
+export const warehouseAPI = {
+  getAll: () => api.get('/warehouses'),
+  getOne: (id) => api.get(`/warehouses/${id}`),
+  create: (data) => api.post('/warehouses', data),
+  update: (id, data) => api.put(`/warehouses/${id}`, data),
+  delete: (id) => api.delete(`/warehouses/${id}`),
+  getInventory: (id) => api.get(`/warehouses/${id}/inventory`),
+  getStats: (id) => api.get(`/warehouses/${id}/stats`),
+};
+
+// Campaign API
+export const campaignAPI = {
+  getAll: (isActive) => api.get('/campaigns', { params: { is_active: isActive } }),
+  getActive: () => api.get('/campaigns/active'),
+  getOne: (id) => api.get(`/campaigns/${id}`),
+  create: (data) => api.post('/campaigns', data),
+  update: (id, data) => api.put(`/campaigns/${id}`, data),
+  delete: (id) => api.delete(`/campaigns/${id}`),
+  activate: (id) => api.post(`/campaigns/${id}/activate`),
+  getApplicableProducts: (id) => api.get(`/campaigns/${id}/applicable-products`),
+};
+
+// Notifications API
+export const notificationsAPI = {
+  getAll: (unreadOnly = false, limit = 50) => api.get('/notifications', { params: { unread_only: unreadOnly, limit } }),
+  getUnreadCount: () => api.get('/notifications/unread-count'),
+  markRead: (id) => api.post(`/notifications/${id}/mark-read`),
+  markAllRead: () => api.post('/notifications/mark-all-read'),
+  delete: (id) => api.delete(`/notifications/${id}`),
+  create: (data) => api.post('/notifications/create', data),
+};
+
+// Reports API
+export const reportsAPI = {
+  exportSales: (format = 'xlsx', startDate, endDate) => {
+    const params = { format };
+    if (startDate) params.start_date = startDate;
+    if (endDate) params.end_date = endDate;
+    return api.get('/reports/sales/export', { params, responseType: 'blob' });
+  },
+  exportStock: (format = 'xlsx', warehouseId) => {
+    const params = { format };
+    if (warehouseId) params.warehouse_id = warehouseId;
+    return api.get('/reports/stock/export', { params, responseType: 'blob' });
+  },
+  exportSalesAgents: (format = 'xlsx', startDate, endDate) => {
+    const params = { format };
+    if (startDate) params.start_date = startDate;
+    if (endDate) params.end_date = endDate;
+    return api.get('/reports/sales-agents/export', { params, responseType: 'blob' });
+  },
+  exportLogistics: (format = 'xlsx', startDate, endDate) => {
+    const params = { format };
+    if (startDate) params.start_date = startDate;
+    if (endDate) params.end_date = endDate;
+    return api.get('/reports/logistics/export', { params, responseType: 'blob' });
+  },
+};
+
 export default api;
