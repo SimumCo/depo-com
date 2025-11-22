@@ -1,17 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import Layout from '../components/Layout';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Badge } from '../components/ui/badge';
-import { ordersAPI, dashboardAPI } from '../services/api';
-import { ShoppingCart, Package, MessageSquare, Calendar, TrendingUp, FileText, BarChart3 } from 'lucide-react';
-import ProductCatalog from '../components/ProductCatalog';
-import CustomerOrders from '../components/CustomerOrders';
-import CustomerFeedback from '../components/CustomerFeedback';
-import CustomerInvoices from '../components/CustomerInvoices';
-import InvoiceBasedConsumption from '../components/InvoiceBasedConsumption';
+import { ShoppingCart, Package, MessageSquare, Calendar, TrendingUp, FileText, BarChart3, Heart, Tag, AlertTriangle } from 'lucide-react';
+import OrderManagement from '../components/customer/OrderManagement';
+import FavoritesModule from '../components/customer/FavoritesModule';
+import ConsumptionAnalytics from '../components/customer/ConsumptionAnalytics';
+import CampaignsModule from '../components/customer/CampaignsModule';
+import FaultReportModule from '../components/customer/FaultReportModule';
+import HistoricalRecords from '../components/customer/HistoricalRecords';
 import { useAuth } from '../context/AuthContext';
-import api from '../services/api';
 
 const CustomerDashboard = () => {
   const { user } = useAuth();
