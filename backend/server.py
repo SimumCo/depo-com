@@ -57,6 +57,11 @@ api_router.include_router(customer_consumption_router)
 api_router.include_router(consumption_period_router)
 api_router.include_router(bulk_import_router)
 api_router.include_router(users_router)
+api_router.include_router(warehouse_router)
+api_router.include_router(campaign_router)
+api_router.include_router(analytics_router)
+api_router.include_router(notification_router)
+api_router.include_router(reports_router)
 
 # Include old routes temporarily
 # TODO: Refactor these into separate modules
