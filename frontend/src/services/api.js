@@ -199,27 +199,7 @@ export const warehouseAPI = {
   getStats: (id) => api.get(`/warehouses/${id}/stats`),
 };
 
-// Campaign API
-export const campaignAPI = {
-  getAll: (isActive) => api.get('/campaigns', { params: { is_active: isActive } }),
-  getActive: () => api.get('/campaigns/active'),
-  getOne: (id) => api.get(`/campaigns/${id}`),
-  create: (data) => api.post('/campaigns', data),
-  update: (id, data) => api.put(`/campaigns/${id}`, data),
-  delete: (id) => api.delete(`/campaigns/${id}`),
-  activate: (id) => api.post(`/campaigns/${id}/activate`),
-  getApplicableProducts: (id) => api.get(`/campaigns/${id}/applicable-products`),
-};
-
-// Notifications API
-export const notificationsAPI = {
-  getAll: (unreadOnly = false, limit = 50) => api.get('/notifications', { params: { unread_only: unreadOnly, limit } }),
-  getUnreadCount: () => api.get('/notifications/unread-count'),
-  markRead: (id) => api.post(`/notifications/${id}/mark-read`),
-  markAllRead: () => api.post('/notifications/mark-all-read'),
-  delete: (id) => api.delete(`/notifications/${id}`),
-  create: (data) => api.post('/notifications/create', data),
-};
+// Campaign and Notification APIs are defined above (lines 88-112)
 
 // Reports API
 export const reportsAPI = {
