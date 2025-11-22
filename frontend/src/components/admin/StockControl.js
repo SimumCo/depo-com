@@ -96,7 +96,7 @@ const StockControl = () => {
             <AlertCircle className="h-5 w-5 text-red-500" />
             <span>Kritik Stok Uyarıları ({stockData?.critical_stock_alerts?.length || 0})</span>
           </CardTitle>
-          <CardDescription>Acil müdahale gerektiren stok durumları (< 5 birim)</CardDescription>
+          <CardDescription>Acil müdahale gerektiren stok durumları (&lt; 5 birim)</CardDescription>
         </CardHeader>
         <CardContent>
           {stockData?.critical_stock_alerts?.length > 0 ? (
