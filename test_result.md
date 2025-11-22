@@ -1146,7 +1146,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Admin Dashboard Frontend Testing"
+    - "Gelişmiş Kampanya Sistemi Frontend Testing - COMPLETED"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
