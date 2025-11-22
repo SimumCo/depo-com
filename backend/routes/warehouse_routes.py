@@ -6,7 +6,7 @@ import os
 from models.warehouse import Warehouse
 from models.inventory import Inventory
 from middleware.auth import get_current_user, require_role
-from models.user import UserRole
+from models.user import User, UserRole
 
 router = APIRouter(prefix="/warehouses", tags=["Warehouse Management"])
 
