@@ -56,7 +56,7 @@ async def get_campaign(
 @router.post("", response_model=Campaign)
 async def create_campaign(
     campaign: Campaign,
-    current_user: dict = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN]))
 ):
     """Create new campaign (Admin only)"""
     # Validate dates
