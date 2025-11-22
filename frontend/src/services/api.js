@@ -64,9 +64,51 @@ export const shipmentsAPI = {
 
 // Orders API
 export const ordersAPI = {
-  getAll: () => api.get('/orders'),
+  getAll: (params = {}) => api.get('/orders', { params }),
+  getLast: () => api.get('/orders/last'),
+  getOne: (id) => api.get(`/orders/${id}`),
   create: (data) => api.post('/orders', data),
+  reorder: (orderId) => api.post(`/orders/reorder/${orderId}`),
   updateStatus: (id, status) => api.put(`/orders/${id}/status`, null, { params: { status } }),
+  // Saved Cart
+  getSavedCart: () => api.get('/orders/saved-cart/current'),
+  saveCart: (data) => api.post('/orders/saved-cart', data),
+  deleteSavedCart: () => api.delete('/orders/saved-cart'),
+};
+
+// Favorites API
+export const favoritesAPI = {
+  getAll: () => api.get('/favorites'),
+  add: (productId) => api.post('/favorites', { product_id: productId }),
+  remove: (productId) => api.delete(`/favorites/${productId}`),
+  toggle: (productId) => api.post(`/favorites/toggle/${productId}`),
+  check: (productId) => api.get(`/favorites/check/${productId}`),
+};
+
+// Notifications API
+export const notificationsAPI = {
+  getAll: (params = {}) => api.get('/notifications', { params }),
+  getUnreadCount: () => api.get('/notifications/unread-count'),
+  markAsRead: (id) => api.put(`/notifications/${id}/read`),
+  markAllAsRead: () => api.put('/notifications/read-all'),
+  delete: (id) => api.delete(`/notifications/${id}`),
+};
+
+// Campaigns API
+export const campaignsAPI = {
+  getAll: () => api.get('/campaigns'),
+  getOne: (id) => api.get(`/campaigns/${id}`),
+  create: (data) => api.post('/campaigns', data),
+  deactivate: (id) => api.put(`/campaigns/${id}/deactivate`),
+};
+
+// Fault Reports API
+export const faultReportsAPI = {
+  getAll: (params = {}) => api.get('/fault-reports', { params }),
+  getOne: (id) => api.get(`/fault-reports/${id}`),
+  create: (data) => api.post('/fault-reports', data),
+  update: (id, data) => api.put(`/fault-reports/${id}`, data),
+  delete: (id) => api.delete(`/fault-reports/${id}`),
 };
 
 // Tasks API
