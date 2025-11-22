@@ -5345,9 +5345,8 @@ class APITester:
                 "discount_type": "percentage",
                 "discount_value": 10.0,
                 "is_active": True,
-                "target_customer_group": "ALL",
-                "product_ids": [],
-                "minimum_order_amount": 100.0
+                "customer_groups": ["all"],
+                "product_ids": []
             }
             
             response = requests.post(
