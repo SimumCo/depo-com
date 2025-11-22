@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Package, FileText, Eye, Calendar, TrendingUp } from 'lucide-react';
-import { ordersAPI, invoiceAPI } from '../../services/api';
+import { ordersAPI, invoicesAPI } from '../../services/api';
 
 const HistoricalRecords = () => {
   const [activeTab, setActiveTab] = useState('orders'); // orders, invoices
