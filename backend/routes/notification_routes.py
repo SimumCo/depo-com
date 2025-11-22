@@ -116,10 +116,10 @@ async def get_unread_count(
 @router.post("/{notification_id}/mark-read")
 async def mark_notification_read(
     notification_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Mark notification as read"""
-    user_id = current_user.get('id')
+    user_id = current_user.id
     
     result = await db.notifications.update_one(
         {"id": notification_id},
