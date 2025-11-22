@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { TrendingUp, TrendingDown, Calendar, Package, AlertCircle } from 'lucide-react';
-import { consumptionAPI } from '../../services/api';
 
 const ConsumptionAnalytics = () => {
   const [monthlyData, setMonthlyData] = useState([]);
