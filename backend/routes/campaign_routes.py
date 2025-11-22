@@ -142,7 +142,7 @@ async def delete_campaign(
 @router.post("/{campaign_id}/activate")
 async def activate_campaign(
     campaign_id: str,
-    current_user: dict = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN]))
 ):
     """Activate campaign"""
     result = await db.campaigns.update_one(
