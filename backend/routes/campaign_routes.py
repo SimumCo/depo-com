@@ -94,7 +94,7 @@ async def create_campaign(
 async def update_campaign(
     campaign_id: str,
     campaign_update: dict,
-    current_user: dict = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN]))
 ):
     """Update campaign (Admin only)"""
     existing = await db.campaigns.find_one({"id": campaign_id})
