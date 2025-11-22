@@ -5133,7 +5133,7 @@ class APITester:
         try:
             update_data = {
                 "capacity": 15000,
-                "contact_person": "Updated Manager"
+                "manager_name": "Updated Manager"
             }
             
             response = requests.put(
