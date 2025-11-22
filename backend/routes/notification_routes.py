@@ -72,11 +72,11 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
 async def get_notifications(
     unread_only: bool = False,
     limit: int = 50,
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Get notifications for current user"""
-    user_id = current_user.get('id')
-    user_role = current_user.get('role')
+    user_id = current_user.id
+    user_role = current_user.role
     
     # Build query
     query = {
