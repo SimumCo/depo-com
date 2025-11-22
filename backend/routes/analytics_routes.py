@@ -4,7 +4,7 @@ from datetime import datetime, timezone, timedelta
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 from middleware.auth import get_current_user, require_role
-from models.user import UserRole
+from models.user import User, UserRole
 from enum import Enum
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
