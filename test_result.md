@@ -1000,7 +1000,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Periyodik Analiz Güncellemesi Testing"
+    - "Admin Dashboard Backend API'leri Testing"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
