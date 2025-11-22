@@ -5146,7 +5146,7 @@ class APITester:
             if response.status_code == 200:
                 warehouse = response.json()
                 
-                if warehouse.get("capacity") == 15000 and warehouse.get("contact_person") == "Updated Manager":
+                if warehouse.get("capacity") == 15000 and warehouse.get("manager_name") == "Updated Manager":
                     self.log_test("Update Warehouse", True, f"Updated warehouse capacity to {warehouse.get('capacity')}")
                 else:
                     self.log_test("Update Warehouse", False, "Update data not reflected")
