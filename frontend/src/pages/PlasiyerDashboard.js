@@ -1,35 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Layout from '../components/Layout';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Badge } from '../components/ui/badge';
 import ProductCatalog from '../components/ProductCatalog';
 import CustomerOrders from '../components/CustomerOrders';
-import { toast } from 'sonner';
-import api from '../services/api';
+import api, { ordersAPI } from '../services/api';
 import { 
   MapPin, Users, ShoppingCart, Package, 
-  Calendar, TrendingUp, Clock 
+  Calendar, TrendingUp, Map, ListChecks
 } from 'lucide-react';
 
-/**
- * Plasiyer (Sales Agent) Dashboard
- * Özellikleri:
- * - Rotalarını görür
- * - Müşterilerine sipariş girebilir
- * - Kendi siparişlerini takip eder
- * - Basit envanter görüntüler
- */
 const PlasiyerDashboard = () => {
   const { user } = useAuth();
+  const [activeModule, setActiveModule] = useState('routes');
   const [routes, setRoutes] = useState([]);
   const [orders, setOrders] = useState([]);
   const [stats, setStats] = useState({
     totalCustomers: 0,
     todayOrders: 0,
-    weeklyOrders: 0,
-    activeRoute: null
+    weeklyOrders: 0
   });
   const [loading, setLoading] = useState(true);
 
@@ -39,239 +27,191 @@ const PlasiyerDashboard = () => {
 
   const loadDashboardData = async () => {
     try {
-      // Plasiyer rotalarını yükle
-      const routesResponse = await api.get('/sales-routes/my-routes');
-      setRoutes(routesResponse.data || []);
-
-      // Plasiyer siparişlerini yükle
-      const ordersResponse = await api.get('/orders/my-orders');
-      setOrders(ordersResponse.data || []);
-
-      // İstatistikleri hesapla
-      const today = new Date().toISOString().split('T')[0];
-      const todayOrders = ordersResponse.data.filter(order => 
-        order.created_at?.startsWith(today)
-      ).length;
-
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      const weeklyOrders = ordersResponse.data.filter(order => 
-        new Date(order.created_at) >= weekAgo
-      ).length;
-
-      // Bugünkü rotayı bul
-      const dayOfWeek = new Date().toLocaleDateString('tr-TR', { weekday: 'long' });
-      const activeRoute = routesResponse.data.find(route => 
-        route.day_of_week?.toLowerCase() === dayOfWeek.toLowerCase()
-      );
-
+      setLoading(true);
+      const [routesRes, ordersRes] = await Promise.all([
+        api.get(`/sales-routes/agent/${user.id}`),
+        ordersAPI.getAll()
+      ]);
+      
+      setRoutes(routesRes.data || []);
+      setOrders(ordersRes.data || []);
+      
       setStats({
-        totalCustomers: routesResponse.data.length,
-        todayOrders,
-        weeklyOrders,
-        activeRoute
+        totalCustomers: routesRes.data?.length || 0,
+        todayOrders: ordersRes.data?.filter(o => {
+          const today = new Date().toDateString();
+          return new Date(o.created_at).toDateString() === today;
+        }).length || 0,
+        weeklyOrders: ordersRes.data?.length || 0
       });
     } catch (error) {
-      toast.error('Veriler yüklenirken hata oluştu');
-      console.error('Dashboard load error:', error);
+      console.error('Dashboard verileri yüklenemedi:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const loadOrders = async () => {
-    try {
-      const response = await api.get('/orders/my-orders');
-      setOrders(response.data || []);
-    } catch (error) {
-      toast.error('Siparişler yüklenemedi');
+  const modules = [
+    { id: 'routes', name: 'Rotalarım', icon: MapPin, color: 'blue' },
+    { id: 'customers', name: 'Müşterilerim', icon: Users, color: 'green' },
+    { id: 'orders', name: 'Siparişler', icon: ShoppingCart, color: 'purple' },
+    { id: 'products', name: 'Ürün Kataloğu', icon: Package, color: 'orange' }
+  ];
+
+  const colorClasses = {
+    blue: { border: 'border-blue-500', bg: 'bg-blue-50', text: 'text-blue-600', textDark: 'text-blue-900' },
+    green: { border: 'border-green-500', bg: 'bg-green-50', text: 'text-green-600', textDark: 'text-green-900' },
+    purple: { border: 'border-purple-500', bg: 'bg-purple-50', text: 'text-purple-600', textDark: 'text-purple-900' },
+    orange: { border: 'border-orange-500', bg: 'bg-orange-50', text: 'text-orange-600', textDark: 'text-orange-900' }
+  };
+
+  const dayTranslations = {
+    monday: 'Pazartesi', tuesday: 'Salı', wednesday: 'Çarşamba',
+    thursday: 'Perşembe', friday: 'Cuma', saturday: 'Cumartesi', sunday: 'Pazar'
+  };
+
+  const renderModule = () => {
+    switch (activeModule) {
+      case 'routes':
+        return (
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold mb-4">Teslimat Rotalarım</h3>
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              </div>
+            ) : routes.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">Henüz rota atanmamış</p>
+            ) : (
+              <div className="space-y-4">
+                {routes.map((route) => (
+                  <div key={route.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h4 className="font-medium text-gray-900">{route.customer_name}</h4>
+                        <p className="text-sm text-gray-600 mt-1">
+                          <MapPin className="w-4 h-4 inline mr-1" />
+                          {route.location || 'Konum bilgisi yok'}
+                        </p>
+                        <p className="text-sm text-gray-500 mt-2">
+                          <Calendar className="w-4 h-4 inline mr-1" />
+                          Teslimat Günü: <span className="font-medium">{dayTranslations[route.delivery_day]}</span>
+                        </p>
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        route.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {route.is_active ? 'Aktif' : 'Pasif'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      case 'customers':
+        return (
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold mb-4">Müşteri Listesi</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {routes.map((route) => (
+                <div key={route.id} className="border border-gray-200 rounded-lg p-4">
+                  <h4 className="font-medium text-gray-900">{route.customer_name}</h4>
+                  <p className="text-sm text-gray-600 mt-1">{route.location}</p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Teslimat: {dayTranslations[route.delivery_day]}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      case 'orders':
+        return <CustomerOrders orders={orders} onUpdate={loadDashboardData} />;
+      case 'products':
+        return <ProductCatalog onOrderCreated={loadDashboardData} />;
+      default:
+        return null;
     }
   };
 
-  if (loading) {
-    return (
-      <Layout>
-        <div className="flex justify-center items-center min-h-screen">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
-      </Layout>
-    );
-  }
-
   return (
-    <Layout>
-      <div className="p-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Plasiyer Paneli</h1>
-            <p className="text-gray-600 mt-1">Hoş geldiniz, {user?.full_name}</p>
-          </div>
-          <Badge variant="default" className="text-lg px-4 py-2">
-            <MapPin className="mr-2 h-5 w-5" />
-            Plasiyer
-          </Badge>
+    <Layout title="Plasiyer Dashboard">
+      <div className="space-y-6">
+        {/* Welcome Card */}
+        <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg shadow-lg p-6 text-white">
+          <h1 className="text-2xl font-bold mb-2">Hoş Geldiniz, {user?.full_name || 'Plasiyer'}!</h1>
+          <p className="text-blue-100">Rota ve sipariş yönetimi için plasiyer panelini kullanın</p>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Rotamdaki Müşteriler</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalCustomers}</div>
-              <p className="text-xs text-muted-foreground">Toplam müşteri sayısı</p>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Toplam Müşteri</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalCustomers}</p>
+              </div>
+              <Users className="w-8 h-8 text-blue-500" />
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Bugünkü Sipariş</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.todayOrders}</p>
+              </div>
+              <Calendar className="w-8 h-8 text-green-500" />
+            </div>
+          </div>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Bugünkü Siparişler</CardTitle>
-              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.todayOrders}</div>
-              <p className="text-xs text-muted-foreground">Bugün alınan sipariş</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Haftalık Siparişler</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.weeklyOrders}</div>
-              <p className="text-xs text-muted-foreground">Son 7 gün</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Bugünkü Rota</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              {stats.activeRoute ? (
-                <>
-                  <div className="text-2xl font-bold">Aktif</div>
-                  <p className="text-xs text-muted-foreground">
-                    {stats.activeRoute.customer_count || 0} müşteri ziyareti
-                  </p>
-                </>
-              ) : (
-                <>
-                  <div className="text-2xl font-bold text-gray-400">-</div>
-                  <p className="text-xs text-muted-foreground">Bugün rota yok</p>
-                </>
-              )}
-            </CardContent>
-          </Card>
+          <div className="bg-white rounded-lg shadow p-4 border-l-4 border-purple-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Haftalık Sipariş</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.weeklyOrders}</p>
+              </div>
+              <TrendingUp className="w-8 h-8 text-purple-500" />
+            </div>
+          </div>
         </div>
 
-        {/* Bugünkü Rota Bilgisi */}
-        {stats.activeRoute && (
-          <Card className="border-blue-200 bg-blue-50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-blue-600" />
-                Bugünkü Rotam
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <p className="text-sm">
-                  <span className="font-semibold">Gün:</span> {stats.activeRoute.day_of_week}
-                </p>
-                <p className="text-sm">
-                  <span className="font-semibold">Müşteri Sayısı:</span> {stats.activeRoute.customer_count || 0}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Bugün ziyaret edilecek müşterilere sipariş girebilirsiniz.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {/* Module Navigation */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {modules.map((module) => {
+            const Icon = module.icon;
+            const isActive = activeModule === module.id;
+            const colors = colorClasses[module.color];
+            
+            return (
+              <button
+                key={module.id}
+                onClick={() => setActiveModule(module.id)}
+                className={`p-4 rounded-lg border-2 transition-all ${
+                  isActive
+                    ? `${colors.border} ${colors.bg} shadow-md`
+                    : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow'
+                }`}
+              >
+                <Icon className={`w-8 h-8 mx-auto mb-2 ${
+                  isActive ? colors.text : 'text-gray-600'
+                }`} />
+                <div className={`text-sm font-medium text-center ${
+                  isActive ? colors.textDark : 'text-gray-900'
+                }`}>
+                  {module.name}
+                </div>
+              </button>
+            );
+          })}
+        </div>
 
-        {/* Tabs */}
-        <Tabs defaultValue="catalog" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="catalog" data-testid="tab-catalog">
-              <Package className="mr-2 h-4 w-4" />
-              Ürün Kataloğu
-            </TabsTrigger>
-            <TabsTrigger value="orders" data-testid="tab-orders">
-              <ShoppingCart className="mr-2 h-4 w-4" />
-              Siparişlerim
-            </TabsTrigger>
-            <TabsTrigger value="routes" data-testid="tab-routes">
-              <MapPin className="mr-2 h-4 w-4" />
-              Rotalarım
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="catalog">
-            <ProductCatalog onOrderCreated={loadOrders} />
-          </TabsContent>
-
-          <TabsContent value="orders">
-            <CustomerOrders orders={orders} onUpdate={loadOrders} />
-          </TabsContent>
-
-          <TabsContent value="routes">
-            <Card>
-              <CardHeader>
-                <CardTitle>Haftalık Rotalarım</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Hangi gün hangi müşterilere gidiyorsunuz
-                </p>
-              </CardHeader>
-              <CardContent>
-                {routes.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <MapPin className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-                    <p>Henüz rota atanmamış</p>
-                    <p className="text-sm">Yöneticinizle iletişime geçin</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'].map(day => {
-                      const dayRoutes = routes.filter(r => 
-                        r.day_of_week?.toLowerCase() === day.toLowerCase()
-                      );
-                      
-                      return (
-                        <div key={day} className="border rounded-lg p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <h3 className="font-semibold text-lg">{day}</h3>
-                            <Badge variant={dayRoutes.length > 0 ? 'default' : 'secondary'}>
-                              {dayRoutes.length} müşteri
-                            </Badge>
-                          </div>
-                          {dayRoutes.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                              {dayRoutes.map((route, idx) => (
-                                <div key={idx} className="flex items-center gap-2 text-sm bg-gray-50 p-2 rounded">
-                                  <Users className="h-4 w-4 text-gray-600" />
-                                  <span>{route.customer_name || route.customer_id}</span>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-sm text-gray-500 italic">Rota yok</p>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        {/* Active Module Content */}
+        <div className="animate-fadeIn">
+          {renderModule()}
+        </div>
       </div>
     </Layout>
   );
