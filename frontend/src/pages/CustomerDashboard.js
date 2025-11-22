@@ -56,21 +56,33 @@ const CustomerDashboard = () => {
             const Icon = module.icon;
             const isActive = activeModule === module.id;
             
+            // Static color classes for Tailwind
+            const colorClasses = {
+              blue: { border: 'border-blue-500', bg: 'bg-blue-50', text: 'text-blue-600', textDark: 'text-blue-900' },
+              purple: { border: 'border-purple-500', bg: 'bg-purple-50', text: 'text-purple-600', textDark: 'text-purple-900' },
+              green: { border: 'border-green-500', bg: 'bg-green-50', text: 'text-green-600', textDark: 'text-green-900' },
+              orange: { border: 'border-orange-500', bg: 'bg-orange-50', text: 'text-orange-600', textDark: 'text-orange-900' },
+              red: { border: 'border-red-500', bg: 'bg-red-50', text: 'text-red-600', textDark: 'text-red-900' },
+              pink: { border: 'border-pink-500', bg: 'bg-pink-50', text: 'text-pink-600', textDark: 'text-pink-900' }
+            };
+            
+            const colors = colorClasses[module.color];
+            
             return (
               <button
                 key={module.id}
                 onClick={() => setActiveModule(module.id)}
                 className={`p-4 rounded-lg border-2 transition-all ${
                   isActive
-                    ? `border-${module.color}-500 bg-${module.color}-50 shadow-md`
+                    ? `${colors.border} ${colors.bg} shadow-md`
                     : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow'
                 }`}
               >
                 <Icon className={`w-8 h-8 mx-auto mb-2 ${
-                  isActive ? `text-${module.color}-600` : 'text-gray-600'
+                  isActive ? colors.text : 'text-gray-600'
                 }`} />
                 <div className={`text-sm font-medium text-center ${
-                  isActive ? `text-${module.color}-900` : 'text-gray-900'
+                  isActive ? colors.textDark : 'text-gray-900'
                 }`}>
                   {module.name}
                 </div>
