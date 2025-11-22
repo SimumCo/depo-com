@@ -43,34 +43,39 @@ const Layout = ({ children, title }) => {
               </div>
             </div>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center space-x-2" data-testid="user-menu">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="bg-blue-100 text-blue-600">
-                      {user?.full_name?.charAt(0) || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="hidden md:block text-left">
-                    <p className="text-sm font-medium">{user?.full_name}</p>
-                    <p className="text-xs text-gray-500">{getRoleDisplay(user?.role)}</p>
-                  </div>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>
-                  <div>
-                    <p className="font-medium">{user?.full_name}</p>
-                    <p className="text-xs text-gray-500">{user?.email}</p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logout} data-testid="logout-button">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Çıkış Yap</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex items-center space-x-4">
+              {/* Notification Center - Only for customers */}
+              {user?.role === 'customer' && <NotificationCenter />}
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center space-x-2" data-testid="user-menu">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-blue-100 text-blue-600">
+                        {user?.full_name?.charAt(0) || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="hidden md:block text-left">
+                      <p className="text-sm font-medium">{user?.full_name}</p>
+                      <p className="text-xs text-gray-500">{getRoleDisplay(user?.role)}</p>
+                    </div>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>
+                    <div>
+                      <p className="font-medium">{user?.full_name}</p>
+                      <p className="text-xs text-gray-500">{user?.email}</p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={logout} data-testid="logout-button">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Çıkış Yap</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
       </header>
