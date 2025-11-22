@@ -83,7 +83,7 @@ async def create_campaign(
             )
     
     campaign_dict = campaign.model_dump()
-    campaign_dict['created_by'] = current_user.get('id')
+    campaign_dict['created_by'] = current_user.id
     campaign_dict['created_at'] = datetime.now(timezone.utc)
     campaign_dict['updated_at'] = datetime.now(timezone.utc)
     
