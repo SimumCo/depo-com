@@ -137,7 +137,7 @@ const StockControl = () => {
             <AlertTriangle className="h-5 w-5 text-yellow-500" />
             <span>Düşük Stok Ürünleri ({stockData?.low_stock_products?.length || 0})</span>
           </CardTitle>
-          <CardDescription>Yakında tükenebilecek ürünler (< 20 birim)</CardDescription>
+          <CardDescription>Yakında tükenebilecek ürünler (&lt; 20 birim)</CardDescription>
         </CardHeader>
         <CardContent>
           {stockData?.low_stock_products?.length > 0 ? (
