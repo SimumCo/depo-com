@@ -242,9 +242,9 @@ const OrderManagement = () => {
                       </div>
                     </div>
                     <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-                      <span className="text-lg font-semibold text-blue-600">₺{fav.product_price.toFixed(2)}</span>
+                      <span className="text-lg font-semibold text-blue-600">₺{(fav.product_price || 0).toFixed(2)}</span>
                       <button
-                        onClick={() => addToCart({ id: fav.product_id, name: fav.product_name, sku: fav.product_sku, price: fav.product_price })}
+                        onClick={() => addToCart({ id: fav.product_id, name: fav.product_name, sku: fav.product_sku, price: fav.product_price || 0 })}
                         className="flex items-center space-x-1 bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors text-sm"
                       >
                         <Plus className="w-4 h-4" />
