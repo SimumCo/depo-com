@@ -138,11 +138,11 @@ async def mark_notification_read(
 
 @router.post("/mark-all-read")
 async def mark_all_read(
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Mark all notifications as read for current user"""
-    user_id = current_user.get('id')
-    user_role = current_user.get('role')
+    user_id = current_user.id
+    user_role = current_user.role
     
     result = await db.notifications.update_many(
         {
