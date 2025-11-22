@@ -7,7 +7,7 @@ import json
 import asyncio
 from models.notification import Notification, NotificationType, NotificationPriority
 from middleware.auth import get_current_user, require_role
-from models.user import UserRole
+from models.user import User, UserRole
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
 
