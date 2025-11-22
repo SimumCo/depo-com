@@ -6,19 +6,27 @@ import { Label } from '../ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Badge } from '../ui/badge';
-import { Plus, Edit, Trash2, Calendar, Tag, Users } from 'lucide-react';
-import { campaignAPI } from '../../services/api';
+import { Plus, Edit, Trash2, Calendar, Tag, Users, Gift, TrendingDown } from 'lucide-react';
+import { campaignAPI, productsAPI } from '../../services/api';
 
 const CampaignManagement = () => {
   const [campaigns, setCampaigns] = useState([]);
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    campaign_type: 'simple_discount',
     discount_type: 'percentage',
     discount_value: 0,
+    min_quantity: 0,
+    gift_product_id: '',
+    gift_quantity: 0,
+    bulk_min_quantity: 0,
+    bulk_discount_per_unit: 0,
+    applies_to_product_id: '',
     start_date: '',
     end_date: '',
     customer_groups: ['all'],
@@ -27,6 +35,7 @@ const CampaignManagement = () => {
 
   useEffect(() => {
     loadCampaigns();
+    loadProducts();
   }, []);
 
   const loadCampaigns = async () => {
@@ -38,6 +47,15 @@ const CampaignManagement = () => {
       console.error('Failed to load campaigns:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadProducts = async () => {
+    try {
+      const response = await productsAPI.getAll();
+      setProducts(response.data);
+    } catch (error) {
+      console.error('Failed to load products:', error);
     }
   };
 
@@ -54,6 +72,7 @@ const CampaignManagement = () => {
       loadCampaigns();
     } catch (error) {
       console.error('Failed to save campaign:', error);
+      alert('Kampanya kaydedilemedi: ' + (error.response?.data?.detail || error.message));
     }
   };
 
@@ -62,8 +81,15 @@ const CampaignManagement = () => {
     setFormData({
       name: campaign.name,
       description: campaign.description || '',
+      campaign_type: campaign.campaign_type || 'simple_discount',
       discount_type: campaign.discount_type,
       discount_value: campaign.discount_value,
+      min_quantity: campaign.min_quantity || 0,
+      gift_product_id: campaign.gift_product_id || '',
+      gift_quantity: campaign.gift_quantity || 0,
+      bulk_min_quantity: campaign.bulk_min_quantity || 0,
+      bulk_discount_per_unit: campaign.bulk_discount_per_unit || 0,
+      applies_to_product_id: campaign.applies_to_product_id || '',
       start_date: new Date(campaign.start_date).toISOString().slice(0, 16),
       end_date: new Date(campaign.end_date).toISOString().slice(0, 16),
       customer_groups: campaign.customer_groups,
@@ -99,8 +125,15 @@ const CampaignManagement = () => {
     setFormData({
       name: '',
       description: '',
+      campaign_type: 'simple_discount',
       discount_type: 'percentage',
       discount_value: 0,
+      min_quantity: 0,
+      gift_product_id: '',
+      gift_quantity: 0,
+      bulk_min_quantity: 0,
+      bulk_discount_per_unit: 0,
+      applies_to_product_id: '',
       start_date: '',
       end_date: '',
       customer_groups: ['all'],
@@ -116,6 +149,24 @@ const CampaignManagement = () => {
     return campaign.is_active && start <= now && end >= now;
   };
 
+  const getCampaignTypeLabel = (type) => {
+    if (type === 'simple_discount') return 'Basit İndirim';
+    if (type === 'buy_x_get_y') return 'X Al Y Kazan';
+    if (type === 'bulk_discount') return 'Toplu Alım İndirimi';
+    return type;
+  };
+
+  const getCampaignIcon = (type) => {
+    if (type === 'buy_x_get_y') return <Gift className="h-4 w-4" />;
+    if (type === 'bulk_discount') return <TrendingDown className="h-4 w-4" />;
+    return <Tag className="h-4 w-4" />;
+  };
+
+  const getProductName = (productId) => {
+    const product = products.find(p => p.id === productId);
+    return product ? product.name : 'Bilinmeyen Ürün';
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -127,15 +178,15 @@ const CampaignManagement = () => {
               Yeni Kampanya
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingCampaign ? 'Kampanya Düzenle' : 'Yeni Kampanya Oluştur'}</DialogTitle>
               <DialogDescription>
-                Kampanya bilgilerini girin ve kaydedin.
+                Kampanya tipini seçin ve bilgilerini girin.
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit}>
-              <div className="grid grid-cols-2 gap-4 py-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
                 <div className="col-span-2">
                   <Label htmlFor="name">Kampanya Adı *</Label>
                   <Input
@@ -153,28 +204,141 @@ const CampaignManagement = () => {
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
                   />
                 </div>
-                <div>
-                  <Label htmlFor="discount_type">İndirim Tipi *</Label>
-                  <Select value={formData.discount_type} onValueChange={(v) => setFormData({...formData, discount_type: v})}>
+                
+                <div className="col-span-2">
+                  <Label htmlFor="campaign_type">Kampanya Tipi *</Label>
+                  <Select value={formData.campaign_type} onValueChange={(v) => setFormData({...formData, campaign_type: v})}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="percentage">Yüzde (%)</SelectItem>
-                      <SelectItem value="fixed_amount">Sabit Tutar (TL)</SelectItem>
+                      <SelectItem value="simple_discount">Basit İndirim (% veya TL)</SelectItem>
+                      <SelectItem value="buy_x_get_y">X Al Y Kazan (Hediye)</SelectItem>
+                      <SelectItem value="bulk_discount">Toplu Alım İndirimi (Birim Fiyat)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label htmlFor="discount_value">İndirim Değeri *</Label>
-                  <Input
-                    id="discount_value"
-                    type="number"
-                    value={formData.discount_value}
-                    onChange={(e) => setFormData({...formData, discount_value: parseFloat(e.target.value)})}
-                    required
-                  />
-                </div>
+
+                {/* SIMPLE_DISCOUNT Fields */}
+                {formData.campaign_type === 'simple_discount' && (
+                  <>
+                    <div>
+                      <Label htmlFor="discount_type">İndirim Tipi *</Label>
+                      <Select value={formData.discount_type} onValueChange={(v) => setFormData({...formData, discount_type: v})}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="percentage">Yüzde (%)</SelectItem>
+                          <SelectItem value="fixed_amount">Sabit Tutar (TL)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="discount_value">İndirim Değeri *</Label>
+                      <Input
+                        id="discount_value"
+                        type="number"
+                        value={formData.discount_value}
+                        onChange={(e) => setFormData({...formData, discount_value: parseFloat(e.target.value)})}
+                        required
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* BUY_X_GET_Y Fields */}
+                {formData.campaign_type === 'buy_x_get_y' && (
+                  <>
+                    <div>
+                      <Label htmlFor="applies_to_product_id">Ana Ürün (Alınan) *</Label>
+                      <Select value={formData.applies_to_product_id} onValueChange={(v) => setFormData({...formData, applies_to_product_id: v})}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Ürün seçin" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {products.map(p => (
+                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="min_quantity">Minimum Adet *</Label>
+                      <Input
+                        id="min_quantity"
+                        type="number"
+                        value={formData.min_quantity}
+                        onChange={(e) => setFormData({...formData, min_quantity: parseInt(e.target.value)})}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="gift_product_id">Hediye Ürün *</Label>
+                      <Select value={formData.gift_product_id} onValueChange={(v) => setFormData({...formData, gift_product_id: v})}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Hediye ürün seçin" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {products.map(p => (
+                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="gift_quantity">Hediye Miktar *</Label>
+                      <Input
+                        id="gift_quantity"
+                        type="number"
+                        value={formData.gift_quantity}
+                        onChange={(e) => setFormData({...formData, gift_quantity: parseInt(e.target.value)})}
+                        required
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* BULK_DISCOUNT Fields */}
+                {formData.campaign_type === 'bulk_discount' && (
+                  <>
+                    <div>
+                      <Label htmlFor="applies_to_product_id_bulk">Ürün *</Label>
+                      <Select value={formData.applies_to_product_id} onValueChange={(v) => setFormData({...formData, applies_to_product_id: v})}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Ürün seçin" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {products.map(p => (
+                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="bulk_min_quantity">Minimum Miktar *</Label>
+                      <Input
+                        id="bulk_min_quantity"
+                        type="number"
+                        value={formData.bulk_min_quantity}
+                        onChange={(e) => setFormData({...formData, bulk_min_quantity: parseInt(e.target.value)})}
+                        required
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label htmlFor="bulk_discount_per_unit">Her Birime İndirim (TL) *</Label>
+                      <Input
+                        id="bulk_discount_per_unit"
+                        type="number"
+                        step="0.01"
+                        value={formData.bulk_discount_per_unit}
+                        onChange={(e) => setFormData({...formData, bulk_discount_per_unit: parseFloat(e.target.value)})}
+                        required
+                      />
+                    </div>
+                  </>
+                )}
+
                 <div>
                   <Label htmlFor="start_date">Başlangıç Tarihi *</Label>
                   <Input
@@ -222,64 +386,96 @@ const CampaignManagement = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {campaigns.map((campaign) => (
-          <Card key={campaign.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <CardTitle className="text-lg">{campaign.name}</CardTitle>
-                {isActive(campaign) ? (
-                  <Badge variant="success" className="bg-green-500">Aktif</Badge>
-                ) : campaign.is_active ? (
-                  <Badge variant="warning" className="bg-yellow-500">Planlı</Badge>
-                ) : (
-                  <Badge variant="secondary">Pasif</Badge>
-                )}
-              </div>
-              <CardDescription>{campaign.description}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <Tag className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">
-                    {campaign.discount_type === 'percentage' 
-                      ? `${campaign.discount_value}% İndirim` 
-                      : `${campaign.discount_value} TL İndirim`}
-                  </span>
+        {campaigns.map((campaign) => {
+          const campaignType = campaign.campaign_type || 'simple_discount';
+          
+          return (
+            <Card key={campaign.id} className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center space-x-2">
+                    {getCampaignIcon(campaignType)}
+                    <CardTitle className="text-lg">{campaign.name}</CardTitle>
+                  </div>
+                  {isActive(campaign) ? (
+                    <Badge variant="success" className="bg-green-500">Aktif</Badge>
+                  ) : campaign.is_active ? (
+                    <Badge variant="warning" className="bg-yellow-500">Planlı</Badge>
+                  ) : (
+                    <Badge variant="secondary">Pasif</Badge>
+                  )}
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">
-                    {new Date(campaign.start_date).toLocaleDateString('tr-TR')} - {new Date(campaign.end_date).toLocaleDateString('tr-TR')}
-                  </span>
+                <CardDescription>{campaign.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="outline">{getCampaignTypeLabel(campaignType)}</Badge>
+                  </div>
+                  
+                  {/* Campaign Type Specific Display */}
+                  {campaignType === 'simple_discount' && (
+                    <div className="text-sm">
+                      <span className="font-medium">
+                        {campaign.discount_type === 'percentage' 
+                          ? `${campaign.discount_value}% İndirim` 
+                          : `${campaign.discount_value} TL İndirim`}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {campaignType === 'buy_x_get_y' && (
+                    <div className="text-sm space-y-1">
+                      <p><strong>{campaign.min_quantity} Adet</strong> {getProductName(campaign.applies_to_product_id)} al</p>
+                      <p className="text-green-600 font-medium">
+                        → <Gift className="h-3 w-3 inline" /> {campaign.gift_quantity} Adet {getProductName(campaign.gift_product_id)} HEDİYE
+                      </p>
+                    </div>
+                  )}
+                  
+                  {campaignType === 'bulk_discount' && (
+                    <div className="text-sm space-y-1">
+                      <p><strong>{campaign.bulk_min_quantity}+</strong> {getProductName(campaign.applies_to_product_id)}</p>
+                      <p className="text-blue-600 font-medium">
+                        → Her birine {campaign.bulk_discount_per_unit} TL indirim
+                      </p>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                    <Calendar className="h-4 w-4" />
+                    <span>
+                      {new Date(campaign.start_date).toLocaleDateString('tr-TR')} - {new Date(campaign.end_date).toLocaleDateString('tr-TR')}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                    <Users className="h-4 w-4" />
+                    <span className="capitalize">
+                      {campaign.customer_groups.map(g => 
+                        g === 'all' ? 'Tüm Müşteriler' : 
+                        g === 'vip' ? 'VIP' : 
+                        g === 'regular' ? 'Normal' : 'Yeni'
+                      ).join(', ')}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2 pt-2 border-t">
+                    <Button size="sm" variant="outline" onClick={() => handleEdit(campaign)}>
+                      <Edit className="h-4 w-4 mr-1" />
+                      Düzenle
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant={campaign.is_active ? "destructive" : "default"}
+                      onClick={() => handleToggleActive(campaign.id, campaign.is_active)}
+                    >
+                      {campaign.is_active ? 'Devre Dışı' : 'Aktif Et'}
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm capitalize">
-                    {campaign.customer_groups.map(g => 
-                      g === 'all' ? 'Tüm Müşteriler' : 
-                      g === 'vip' ? 'VIP' : 
-                      g === 'regular' ? 'Normal' : 'Yeni'
-                    ).join(', ')}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2 pt-2 border-t">
-                  <Button size="sm" variant="outline" onClick={() => handleEdit(campaign)}>
-                    <Edit className="h-4 w-4 mr-1" />
-                    Düzenle
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant={campaign.is_active ? "destructive" : "default"}
-                    onClick={() => handleToggleActive(campaign.id, campaign.is_active)}
-                  >
-                    {campaign.is_active ? 'Devre Dışı' : 'Aktif Et'}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
