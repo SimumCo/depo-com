@@ -5089,11 +5089,10 @@ class APITester:
                 "id": f"test-warehouse-{timestamp}",
                 "name": f"Test Warehouse {timestamp}",
                 "location": "Test Location",
+                "address": "Test Address",
                 "capacity": 10000,
                 "is_active": True,
-                "contact_person": "Test Manager",
-                "phone": "0312 555 99 88",
-                "email": f"test{timestamp}@warehouse.com"
+                "manager_name": "Test Manager"
             }
             
             response = requests.post(
