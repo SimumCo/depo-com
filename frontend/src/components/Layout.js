@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
+import NotificationCenter from './customer/NotificationCenter';
 
 const Layout = ({ children, title }) => {
   const { user, logout } = useAuth();
