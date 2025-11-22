@@ -5567,6 +5567,11 @@ def main():
     print("Testing Admin Dashboard APIs as per review request")
     print("=" * 60)
     
+    # First login admin user
+    print("\n📋 AUTHENTICATION TEST")
+    print("-" * 30)
+    tester.login_user("admin")
+    
     # Run Admin Dashboard API tests only
     tester.test_admin_dashboard_apis()
     
