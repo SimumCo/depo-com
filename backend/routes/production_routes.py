@@ -731,7 +731,7 @@ async def create_tracking_record(
         line_id=order.get("line_id", ""),
         line_name=order.get("line_name", ""),
         operator_id=current_user.id,
-        operator_name=current_user.get("full_name", ""),
+        operator_name=current_user.full_name,
         produced_quantity=produced_quantity,
         waste_quantity=waste_quantity,
         unit=order.get("unit", ""),
