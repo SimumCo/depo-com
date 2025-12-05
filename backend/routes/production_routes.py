@@ -834,6 +834,9 @@ async def get_production_dashboard_stats(
             "pass_rate": round((passed_qc / total_qc * 100), 2) if total_qc > 0 else 0
         },
         "boms": {
+            "total": total_boms
+        }
+    }
 
 
 # ========== OPERATOR PANEL ENDPOINTS ==========
