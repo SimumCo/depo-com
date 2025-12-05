@@ -81,7 +81,7 @@ async def create_production_plan(
         end_date=plan_data.end_date,
         items=plan_data.items,
         notes=plan_data.notes,
-        created_by=current_user["id"],
+        created_by=current_user.id,
         status=ProductionPlanStatus.DRAFT
     )
     
@@ -269,7 +269,7 @@ async def create_production_order(
         scheduled_end=order_data.scheduled_end,
         notes=order_data.notes,
         status=ProductionOrderStatus.PENDING,
-        created_by=current_user["id"]
+        created_by=current_user.id
     )
     
     await db.production_orders.insert_one(order.model_dump())
@@ -388,7 +388,7 @@ async def create_bom(
         output_quantity=bom_data.output_quantity,
         output_unit=bom_data.output_unit,
         notes=bom_data.notes,
-        created_by=current_user["id"]
+        created_by=current_user.id
     )
     
     await db.bill_of_materials.insert_one(bom.model_dump())
