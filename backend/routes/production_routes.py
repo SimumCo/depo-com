@@ -39,7 +39,7 @@ async def get_production_plans(
     if plan_type:
         query["plan_type"] = plan_type
     
-    plans = await db.production_plans.find(query).sort("created_at", -1).to_list(length=100)
+    plans = await db.production_plans.find(query, {"_id": 0}).sort("created_at", -1).to_list(length=100)
     return {"plans": plans, "total": len(plans)}
 
 
