@@ -790,7 +790,7 @@ async def get_production_dashboard_stats(
     })
     completed_orders = await db.production_orders.count_documents({
         "status": ProductionOrderStatus.COMPLETED.value
-    }, {"_id": 0})
+    })
     
     # Üretim hatları
     total_lines = await db.production_lines.count_documents({})
