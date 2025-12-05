@@ -81,7 +81,7 @@ async def create_production_plan(
         end_date=plan_data.end_date,
         items=plan_data.items,
         notes=plan_data.notes,
-        created_by=current_user.id,
+        created_by=current_user.get("id"),
         status=ProductionPlanStatus.DRAFT
     )
     
@@ -152,7 +152,7 @@ async def approve_production_plan(
         {
             "$set": {
                 "status": ProductionPlanStatus.APPROVED.value,
-                "approved_by": current_user.id,
+                "approved_by": current_user.get("id"),
                 "updated_at": datetime.now()
             }
         }
@@ -174,7 +174,7 @@ async def generate_orders_from_plan(
     planning_service = ProductionPlanningService(db)
     orders = await planning_service.generate_production_orders_from_plan(
         plan_id, 
-        current_user.id
+        current_user.get("id")
     )
     
     # Hammadde ihtiyacını hesapla
@@ -223,7 +223,7 @@ async def get_production_orders(
     
     # Operatör ise sadece kendi emirlerini görsün
     if current_user.role == UserRole.PRODUCTION_OPERATOR.value:
-        query["assigned_operator_id"] = current_user.id
+        query["assigned_operator_id"] = current_user.get("id")
     
     orders = await db.production_orders.find(query, {"_id": 0}).sort("created_at", -1).to_list(length=200)
     return {"orders": orders, "total": len(orders)}
@@ -269,7 +269,7 @@ async def create_production_order(
         scheduled_end=order_data.scheduled_end,
         notes=order_data.notes,
         status=ProductionOrderStatus.PENDING,
-        created_by=current_user.id
+        created_by=current_user.get("id")
     )
     
     await db.production_orders.insert_one(order.model_dump())
@@ -388,7 +388,7 @@ async def create_bom(
         output_quantity=bom_data.output_quantity,
         output_unit=bom_data.output_unit,
         notes=bom_data.notes,
-        created_by=current_user.id
+        created_by=current_user.get("id")
     )
     
     await db.bill_of_materials.insert_one(bom.model_dump())
@@ -653,7 +653,7 @@ async def create_quality_control(
         product_id=order.get("product_id", ""),
         product_name=order.get("product_name", ""),
         batch_number=qc_data.batch_number,
-        inspector_id=current_user.id,
+        inspector_id=current_user.get("id"),
         inspector_name=current_user.full_name,
         result=qc_data.result,
         tested_quantity=qc_data.tested_quantity,
@@ -721,7 +721,7 @@ async def create_tracking_record(
     
     # Operatör kontrolü
     if current_user.role == UserRole.PRODUCTION_OPERATOR.value:
-        if order.get("assigned_operator_id") != current_user.id:
+        if order.get("assigned_operator_id") != current_user.get("id"):
             raise HTTPException(status_code=403, detail="Bu emre erişim yetkiniz yok")
     
     tracking = ProductionTracking(
@@ -730,7 +730,7 @@ async def create_tracking_record(
         product_name=order.get("product_name", ""),
         line_id=order.get("line_id", ""),
         line_name=order.get("line_name", ""),
-        operator_id=current_user.id,
+        operator_id=current_user.get("id"),
         operator_name=current_user.full_name,
         produced_quantity=produced_quantity,
         waste_quantity=waste_quantity,
