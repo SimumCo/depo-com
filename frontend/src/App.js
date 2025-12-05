@@ -58,6 +58,18 @@ const DashboardRouter = () => {
       return <AccountingDashboard />;
     case 'sales_agent':
       return <PlasiyerDashboard />;
+    case 'production_manager':
+      return <ProductionManagerDashboard />;
+    case 'production_operator':
+      return <ProductionOperatorDashboard />;
+    case 'quality_control':
+      return <QualityControlDashboard />;
+    case 'warehouse_supervisor':
+      return <WarehouseManagerDashboard />; // Can use warehouse dashboard
+    case 'rnd_engineer':
+      return <ProductionManagerDashboard />; // Can use production dashboard
+    case 'maintenance_technician':
+      return <ProductionManagerDashboard />; // Can use production dashboard
     default:
       return <Navigate to="/login" replace />;
   }
