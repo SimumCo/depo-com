@@ -351,7 +351,7 @@ async def get_boms(
     if product_id:
         query["product_id"] = product_id
     
-    boms = await db.bill_of_materials.find(query).to_list(length=100)
+    boms = await db.bill_of_materials.find(query, {"_id": 0}).to_list(length=100)
     return {"boms": boms, "total": len(boms)}
 
 
