@@ -208,7 +208,9 @@ class ProductionPlanningService:
         
         # Veritabanına kaydet
         if orders:
-            await self.db.production_orders.insert_many(orders)
+            # Make a copy for database insertion
+            orders_for_db = [order.copy() for order in orders]
+            await self.db.production_orders.insert_many(orders_for_db)
         
         return orders
 
