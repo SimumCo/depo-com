@@ -388,7 +388,7 @@ async def create_bom(
         output_quantity=bom_data.output_quantity,
         output_unit=bom_data.output_unit,
         notes=bom_data.notes,
-        created_by=current_user.get("id")
+        created_by=current_user.id
     )
     
     await db.bill_of_materials.insert_one(bom.model_dump())
