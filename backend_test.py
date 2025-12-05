@@ -1799,8 +1799,7 @@ class APITester:
         if order_id_to_update:
             try:
                 response = requests.patch(
-                    f"{BASE_URL}/production/orders/{order_id_to_update}/status",
-                    json={"status": "approved", "notes": "Test onayı"},
+                    f"{BASE_URL}/production/orders/{order_id_to_update}/status?status=approved&notes=Test onayı",
                     headers=headers,
                     timeout=30
                 )
