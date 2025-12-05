@@ -222,8 +222,8 @@ async def get_production_orders(
         query["line_id"] = line_id
     
     # Operatör ise sadece kendi emirlerini görsün
-    if current_user.get("role") == UserRole.PRODUCTION_OPERATOR.value:
-        query["assigned_operator_id"] = current_user.get("id")
+    if current_user.role == UserRole.PRODUCTION_OPERATOR:
+        query["assigned_operator_id"] = current_user.id
     
     orders = await db.production_orders.find(query, {"_id": 0}).sort("created_at", -1).to_list(length=200)
     return {"orders": orders, "total": len(orders)}
