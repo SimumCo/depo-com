@@ -775,13 +775,13 @@ async def get_production_dashboard_stats(
     """Üretim dashboard istatistikleri"""
     
     # Toplam plan sayısı
-    total_plans = await db.production_plans.count_documents({}, {"_id": 0})
+    total_plans = await db.production_plans.count_documents({})
     active_plans = await db.production_plans.count_documents({
         "status": {"$in": [ProductionPlanStatus.APPROVED.value, ProductionPlanStatus.IN_PROGRESS.value]}
     }, {"_id": 0})
     
     # Toplam emir sayısı
-    total_orders = await db.production_orders.count_documents({}, {"_id": 0})
+    total_orders = await db.production_orders.count_documents({})
     pending_orders = await db.production_orders.count_documents({
         "status": ProductionOrderStatus.PENDING.value
     }, {"_id": 0})
@@ -793,13 +793,13 @@ async def get_production_dashboard_stats(
     }, {"_id": 0})
     
     # Üretim hatları
-    total_lines = await db.production_lines.count_documents({}, {"_id": 0})
+    total_lines = await db.production_lines.count_documents({})
     active_lines = await db.production_lines.count_documents({
         "status": "active"
     }, {"_id": 0})
     
     # Kalite kontrol
-    total_qc = await db.quality_control.count_documents({}, {"_id": 0})
+    total_qc = await db.quality_control.count_documents({})
     passed_qc = await db.quality_control.count_documents({
         "result": "pass"
     }, {"_id": 0})
