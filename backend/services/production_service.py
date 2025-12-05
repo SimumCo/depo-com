@@ -213,9 +213,6 @@ class ProductionPlanningService:
         return orders
 
 
-import uuid
-
-
 class ProductionScheduler:
     """Üretim Zamanlayıcı"""
     
