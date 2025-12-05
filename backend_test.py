@@ -6386,51 +6386,46 @@ class APITester:
             self.log_test("Create Notification", False, f"Exception: {str(e)}")
 
 def main():
-    """Main test function - Admin Dashboard API Testing"""
+    """Main test function - Production Management System Testing"""
     tester = APITester()
     
-    print("🎯 ADMIN DASHBOARD BACKEND API TEST SUITE")
-    print("=" * 60)
-    print("Test User: admin/admin123")
-    print("Testing Admin Dashboard APIs as per review request")
-    print("=" * 60)
+    print("🏭 ÜRETİM YÖNETİM SİSTEMİ - BACKEND API TEST SUITE")
+    print("=" * 70)
+    print("Test Users: uretim_muduru/uretim123, operator1/operator123, kalite_kontrol/kalite123")
+    print("Testing Production Management System APIs as per review request")
+    print("=" * 70)
     
-    # First login admin user
-    print("\n📋 AUTHENTICATION TEST")
-    print("-" * 30)
-    tester.login_user("admin")
-    
-    # Run Admin Dashboard API tests only
-    tester.test_admin_dashboard_apis()
+    # Run Production Management System tests
+    tester.test_production_management_system()
     
     # Print summary
-    print("\n" + "=" * 60)
-    print("📊 TEST SUMMARY")
-    print("=" * 60)
+    print("\n" + "=" * 70)
+    print("📊 ÜRETİM YÖNETİM SİSTEMİ TEST SONUÇLARI")
+    print("=" * 70)
     
     total_tests = len(tester.test_results)
     passed_tests = sum(1 for result in tester.test_results if result["success"])
     failed_tests = total_tests - passed_tests
     success_rate = (passed_tests / total_tests * 100) if total_tests > 0 else 0
     
-    print(f"Total Tests: {total_tests}")
-    print(f"✅ Passed: {passed_tests}")
-    print(f"❌ Failed: {failed_tests}")
-    print(f"📈 Success Rate: {success_rate:.1f}%")
+    print(f"Toplam Test: {total_tests}")
+    print(f"✅ Başarılı: {passed_tests}")
+    print(f"❌ Başarısız: {failed_tests}")
+    print(f"📈 Başarı Oranı: {success_rate:.1f}%")
     
     if tester.failed_tests:
-        print(f"\n❌ FAILED TESTS ({len(tester.failed_tests)}):")
+        print(f"\n❌ BAŞARISIZ TESTLER ({len(tester.failed_tests)}):")
         for failed_test in tester.failed_tests:
             print(f"   • {failed_test}")
     else:
-        print("\n🎉 ALL TESTS PASSED!")
+        print("\n🎉 TÜM TESTLER BAŞARILI!")
     
     # Check if all tests passed
     if not tester.failed_tests:
-        print("\n✅ All Admin Dashboard API tests passed!")
+        print("\n✅ Tüm Üretim Yönetim Sistemi API testleri başarılı!")
         sys.exit(0)
     else:
-        print("\n❌ Some Admin Dashboard API tests failed!")
+        print("\n❌ Bazı Üretim Yönetim Sistemi API testleri başarısız!")
         sys.exit(1)
 
 if __name__ == "__main__":
