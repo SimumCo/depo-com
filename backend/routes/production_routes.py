@@ -627,7 +627,7 @@ async def get_quality_controls(
     if result:
         query["result"] = result
     
-    qc_records = await db.quality_control.find(query).sort("inspection_date", -1).to_list(length=100)
+    qc_records = await db.quality_control.find(query, {"_id": 0}).sort("inspection_date", -1).to_list(length=100)
     return {"quality_controls": qc_records, "total": len(qc_records)}
 
 
