@@ -127,7 +127,6 @@ const OperatorNotes = ({ notes: initialNotes, onRefresh }) => {
                     <SelectValue placeholder="Emir seçin" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Seçilmedi</SelectItem>
                     {orders.map((order) => (
                       <SelectItem key={order.id} value={order.id}>
                         {order.order_number} - {order.product_name}
