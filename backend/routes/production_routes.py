@@ -39,7 +39,7 @@ async def get_production_plans(
     if plan_type:
         query["plan_type"] = plan_type
     
-    plans = await db.production_plans.find(query, {"_id": 0}, {"_id": 0}).sort("created_at", -1).to_list(length=100)
+    plans = await db.production_plans.find(query, {"_id": 0}).sort("created_at", -1).to_list(length=100)
     return {"plans": plans, "total": len(plans)}
 
 
@@ -225,7 +225,7 @@ async def get_production_orders(
     if current_user.role == UserRole.PRODUCTION_OPERATOR.value:
         query["assigned_operator_id"] = current_user.id
     
-    orders = await db.production_orders.find(query, {"_id": 0}, {"_id": 0}).sort("created_at", -1).to_list(length=200)
+    orders = await db.production_orders.find(query, {"_id": 0}).sort("created_at", -1).to_list(length=200)
     return {"orders": orders, "total": len(orders)}
 
 
@@ -351,7 +351,7 @@ async def get_boms(
     if product_id:
         query["product_id"] = product_id
     
-    boms = await db.bill_of_materials.find(query, {"_id": 0}, {"_id": 0}).to_list(length=100)
+    boms = await db.bill_of_materials.find(query, {"_id": 0}).to_list(length=100)
     return {"boms": boms, "total": len(boms)}
 
 
@@ -465,7 +465,7 @@ async def get_production_lines(
     if status:
         query["status"] = status
     
-    lines = await db.production_lines.find(query, {"_id": 0}, {"_id": 0}).to_list(length=100)
+    lines = await db.production_lines.find(query, {"_id": 0}).to_list(length=100)
     return {"lines": lines, "total": len(lines)}
 
 
