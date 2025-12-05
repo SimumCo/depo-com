@@ -720,8 +720,8 @@ async def create_tracking_record(
         raise HTTPException(status_code=404, detail="Emir bulunamadı")
     
     # Operatör kontrolü
-    if current_user.get("role") == UserRole.PRODUCTION_OPERATOR.value:
-        if order.get("assigned_operator_id") != current_user["id"]:
+    if current_user.role == UserRole.PRODUCTION_OPERATOR.value:
+        if order.get("assigned_operator_id") != current_user.id:
             raise HTTPException(status_code=403, detail="Bu emre erişim yetkiniz yok")
     
     tracking = ProductionTracking(
