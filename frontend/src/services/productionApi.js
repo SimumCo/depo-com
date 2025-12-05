@@ -224,6 +224,110 @@ export const getUsers = async () => {
   return response.data;
 };
 
+
+
+// ========== OPERATOR PANEL ENDPOINTS ==========
+
+export const getOperatorMyOrders = async () => {
+  const response = await api.get('/api/production/operator/my-orders');
+  return response.data;
+};
+
+export const startProductionOrder = async (orderId) => {
+  const response = await api.post(`/api/production/operator/orders/${orderId}/start`);
+  return response.data;
+};
+
+export const pauseProductionOrder = async (orderId, reason = null) => {
+  const params = reason ? { reason } : {};
+  const response = await api.post(`/api/production/operator/orders/${orderId}/pause`, null, { params });
+  return response.data;
+};
+
+export const completeProductionOrder = async (orderId, notes = null) => {
+  const params = notes ? { notes } : {};
+  const response = await api.post(`/api/production/operator/orders/${orderId}/complete`, null, { params });
+  return response.data;
+};
+
+// ========== MACHINE DOWNTIME ==========
+
+export const getMachineDowntimes = async (lineId = null, downtimeType = null) => {
+  const params = {};
+  if (lineId) params.line_id = lineId;
+  if (downtimeType) params.downtime_type = downtimeType;
+  const response = await api.get('/api/production/downtime', { params });
+  return response.data;
+};
+
+export const createMachineDowntime = async (downtimeData) => {
+  const response = await api.post('/api/production/downtime', downtimeData);
+  return response.data;
+};
+
+export const endMachineDowntime = async (downtimeId) => {
+  const response = await api.patch(`/api/production/downtime/${downtimeId}/end`);
+  return response.data;
+};
+
+// ========== RAW MATERIAL USAGE ==========
+
+export const getRawMaterialUsage = async (orderId = null, batchNumber = null) => {
+  const params = {};
+  if (orderId) params.order_id = orderId;
+  if (batchNumber) params.batch_number = batchNumber;
+  const response = await api.get('/api/production/raw-material-usage', { params });
+  return response.data;
+};
+
+export const createRawMaterialUsage = async (usageData) => {
+  const response = await api.post('/api/production/raw-material-usage', usageData);
+  return response.data;
+};
+
+// ========== BATCH RECORDS ==========
+
+export const getBatchRecords = async (orderId = null, productId = null) => {
+  const params = {};
+  if (orderId) params.order_id = orderId;
+  if (productId) params.product_id = productId;
+  const response = await api.get('/api/production/batches', { params });
+  return response.data;
+};
+
+export const createBatchRecord = async (batchData) => {
+  const response = await api.post('/api/production/batches', batchData);
+  return response.data;
+};
+
+// ========== OPERATOR NOTES ==========
+
+export const getOperatorNotes = async (orderId = null, lineId = null, noteType = null) => {
+  const params = {};
+  if (orderId) params.order_id = orderId;
+  if (lineId) params.line_id = lineId;
+  if (noteType) params.note_type = noteType;
+  const response = await api.get('/api/production/operator-notes', { params });
+  return response.data;
+};
+
+export const createOperatorNote = async (noteData) => {
+  const response = await api.post('/api/production/operator-notes', noteData);
+  return response.data;
+};
+
+export const deleteOperatorNote = async (noteId) => {
+  const response = await api.delete(`/api/production/operator-notes/${noteId}`);
+  return response.data;
+};
+
+// ========== OPERATOR DASHBOARD ==========
+
+export const getOperatorDashboardStats = async () => {
+  const response = await api.get('/api/production/operator/dashboard/stats');
+  return response.data;
+};
+
 export default {
   getProductionLines,
   getProductionLine,
