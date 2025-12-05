@@ -807,7 +807,7 @@ async def get_production_dashboard_stats(
     # BOM sayısı
     total_boms = await db.bill_of_materials.count_documents({
         "is_active": True
-    }, {"_id": 0})
+    })
     
     return {
         "plans": {
