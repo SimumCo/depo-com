@@ -21,7 +21,7 @@ from services.production_service import (
     ProductionScheduler
 )
 
-router = APIRouter(prefix="/api/production", tags=["Production Management"])
+router = APIRouter(prefix="/production", tags=["Production Management"])
 
 # ========== PRODUCTION PLANS ==========
 
