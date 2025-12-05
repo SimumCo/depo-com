@@ -1200,7 +1200,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Gelişmiş Kampanya Sistemi Frontend Testing - COMPLETED"
+    - "Production Management System Backend APIs - COMPLETED"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
