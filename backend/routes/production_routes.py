@@ -834,6 +834,466 @@ async def get_production_dashboard_stats(
             "pass_rate": round((passed_qc / total_qc * 100), 2) if total_qc > 0 else 0
         },
         "boms": {
+
+
+# ========== OPERATOR PANEL ENDPOINTS ==========
+
+@router.get("/operator/my-orders")
+async def get_operator_assigned_orders(
+    current_user: dict = Depends(require_role([UserRole.PRODUCTION_OPERATOR]))
+):
+    """Operatöre atanmış emirleri getir"""
+    
+    orders = await db.production_orders.find({
+        "assigned_operator_id": current_user.id,
+        "status": {"$in": [
+            ProductionOrderStatus.APPROVED.value,
+            ProductionOrderStatus.IN_PROGRESS.value
+        ]}
+    }, {"_id": 0}).sort("priority", -1).to_list(length=50)
+    
+    return {"orders": orders, "total": len(orders)}
+
+
+@router.post("/operator/orders/{order_id}/start")
+async def start_production_order(
+    order_id: str,
+    current_user: dict = Depends(require_role([UserRole.PRODUCTION_OPERATOR]))
+):
+    """Üretim emrini başlat"""
+    
+    order = await db.production_orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Emir bulunamadı")
+    
+    # Operatör kontrolü
+    if order.get("assigned_operator_id") != current_user.id:
+        raise HTTPException(status_code=403, detail="Bu emre erişim yetkiniz yok")
+    
+    # Durumu güncelle
+    await db.production_orders.update_one(
+        {"id": order_id},
+        {
+            "$set": {
+                "status": ProductionOrderStatus.IN_PROGRESS.value,
+                "actual_start": datetime.now(),
+                "updated_at": datetime.now()
+            }
+        }
+    )
+    
+    return {"message": "Üretim başlatıldı"}
+
+
+@router.post("/operator/orders/{order_id}/pause")
+async def pause_production_order(
+    order_id: str,
+    reason: Optional[str] = None,
+    current_user: dict = Depends(require_role([UserRole.PRODUCTION_OPERATOR]))
+):
+    """Üretimi duraklat"""
+    
+    order = await db.production_orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Emir bulunamadı")
+    
+    if order.get("assigned_operator_id") != current_user.id:
+        raise HTTPException(status_code=403, detail="Bu emre erişim yetkiniz yok")
+    
+    # Notu kaydet
+    note = f"Üretim duraklatıldı. {reason if reason else ''}"
+    
+    await db.production_orders.update_one(
+        {"id": order_id},
+        {
+            "$set": {
+                "notes": note,
+                "updated_at": datetime.now()
+            }
+        }
+    )
+    
+    return {"message": "Üretim duraklatıldı"}
+
+
+@router.post("/operator/orders/{order_id}/complete")
+async def complete_production_order(
+    order_id: str,
+    notes: Optional[str] = None,
+    current_user: dict = Depends(require_role([UserRole.PRODUCTION_OPERATOR]))
+):
+    """Üretimi tamamla"""
+    
+    order = await db.production_orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Emir bulunamadı")
+    
+    if order.get("assigned_operator_id") != current_user.id:
+        raise HTTPException(status_code=403, detail="Bu emre erişim yetkiniz yok")
+    
+    update_data = {
+        "status": ProductionOrderStatus.QUALITY_CHECK.value,  # Kalite kontrole gönder
+        "actual_end": datetime.now(),
+        "updated_at": datetime.now()
+    }
+    
+    if notes:
+        update_data["notes"] = notes
+    
+    await db.production_orders.update_one(
+        {"id": order_id},
+        {"$set": update_data}
+    )
+    
+    return {"message": "Üretim tamamlandı, kalite kontrole gönderildi"}
+
+
+# ========== MACHINE DOWNTIME ==========
+
+@router.get("/downtime")
+async def get_machine_downtimes(
+    line_id: Optional[str] = None,
+    downtime_type: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Makine duruş kayıtlarını getir"""
+    
+    query = {}
+    if line_id:
+        query["line_id"] = line_id
+    if downtime_type:
+        query["downtime_type"] = downtime_type
+    
+    downtimes = await db.machine_downtime.find(query, {"_id": 0}).sort("start_time", -1).to_list(length=100)
+    return {"downtimes": downtimes, "total": len(downtimes)}
+
+
+@router.post("/downtime")
+async def create_machine_downtime(
+    downtime_data: MachineDowntimeCreate,
+    current_user: dict = Depends(require_role([
+        UserRole.PRODUCTION_OPERATOR,
+        UserRole.PRODUCTION_MANAGER,
+        UserRole.MAINTENANCE_TECHNICIAN
+    ]))
+):
+    """Makine duruş kaydı oluştur"""
+    
+    # Hat bilgisini al
+    line = await db.production_lines.find_one({"id": downtime_data.line_id}, {"_id": 0})
+    if not line:
+        raise HTTPException(status_code=404, detail="Hat bulunamadı")
+    
+    start_time = downtime_data.start_time or datetime.now()
+    
+    downtime = MachineDowntime(
+        order_id=downtime_data.order_id,
+        line_id=downtime_data.line_id,
+        line_name=line.get("name", ""),
+        downtime_type=downtime_data.downtime_type,
+        start_time=start_time,
+        end_time=downtime_data.end_time,
+        reason=downtime_data.reason,
+        operator_id=current_user.id,
+        operator_name=current_user.full_name
+    )
+    
+    # Süreyi hesapla
+    if downtime.end_time:
+        duration = (downtime.end_time - downtime.start_time).total_seconds() / 60
+        downtime.duration_minutes = duration
+    
+    await db.machine_downtime.insert_one(downtime.model_dump())
+    
+    # Hat durumunu güncelle (eğer hala duruyorsa)
+    if not downtime.end_time:
+        await db.production_lines.update_one(
+            {"id": downtime_data.line_id},
+            {"$set": {"status": "maintenance" if downtime_data.downtime_type == DowntimeType.MAINTENANCE else "idle"}}
+        )
+    
+    return {
+        "message": "Duruş kaydı oluşturuldu",
+        "downtime": downtime.model_dump()
+    }
+
+
+@router.patch("/downtime/{downtime_id}/end")
+async def end_machine_downtime(
+    downtime_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Makine duruşunu sonlandır"""
+    
+    downtime = await db.machine_downtime.find_one({"id": downtime_id}, {"_id": 0})
+    if not downtime:
+        raise HTTPException(status_code=404, detail="Duruş kaydı bulunamadı")
+    
+    end_time = datetime.now()
+    start_time = downtime.get("start_time")
+    duration = (end_time - start_time).total_seconds() / 60
+    
+    await db.machine_downtime.update_one(
+        {"id": downtime_id},
+        {
+            "$set": {
+                "end_time": end_time,
+                "duration_minutes": duration,
+                "updated_at": datetime.now()
+            }
+        }
+    )
+    
+    # Hat durumunu aktif yap
+    await db.production_lines.update_one(
+        {"id": downtime.get("line_id")},
+        {"$set": {"status": "active"}}
+    )
+    
+    return {"message": "Duruş sonlandırıldı", "duration_minutes": duration}
+
+
+# ========== RAW MATERIAL USAGE ==========
+
+@router.get("/raw-material-usage")
+async def get_raw_material_usage(
+    order_id: Optional[str] = None,
+    batch_number: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Hammadde kullanım kayıtlarını getir"""
+    
+    query = {}
+    if order_id:
+        query["order_id"] = order_id
+    if batch_number:
+        query["batch_number"] = batch_number
+    
+    usage_records = await db.raw_material_usage.find(query, {"_id": 0}).sort("usage_time", -1).to_list(length=200)
+    return {"usage_records": usage_records, "total": len(usage_records)}
+
+
+@router.post("/raw-material-usage")
+async def create_raw_material_usage(
+    usage_data: RawMaterialUsageCreate,
+    current_user: dict = Depends(require_role([
+        UserRole.PRODUCTION_OPERATOR,
+        UserRole.PRODUCTION_MANAGER
+    ]))
+):
+    """Hammadde kullanım kaydı oluştur"""
+    
+    # Emri getir
+    order = await db.production_orders.find_one({"id": usage_data.order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Emir bulunamadı")
+    
+    usage = RawMaterialUsage(
+        order_id=usage_data.order_id,
+        order_number=order.get("order_number", ""),
+        batch_number=usage_data.batch_number,
+        raw_material_id=usage_data.raw_material_id,
+        raw_material_name=usage_data.raw_material_name,
+        used_quantity=usage_data.used_quantity,
+        unit=usage_data.unit,
+        lot_number=usage_data.lot_number,
+        operator_id=current_user.id,
+        operator_name=current_user.full_name,
+        notes=usage_data.notes
+    )
+    
+    await db.raw_material_usage.insert_one(usage.model_dump())
+    
+    return {
+        "message": "Hammadde kullanımı kaydedildi",
+        "usage": usage.model_dump()
+    }
+
+
+# ========== BATCH RECORDS ==========
+
+@router.get("/batches")
+async def get_batch_records(
+    order_id: Optional[str] = None,
+    product_id: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Batch kayıtlarını getir"""
+    
+    query = {}
+    if order_id:
+        query["order_id"] = order_id
+    if product_id:
+        query["product_id"] = product_id
+    
+    batches = await db.batch_records.find(query, {"_id": 0}).sort("production_date", -1).to_list(length=100)
+    return {"batches": batches, "total": len(batches)}
+
+
+@router.post("/batches")
+async def create_batch_record(
+    batch_data: BatchRecordCreate,
+    current_user: dict = Depends(require_role([
+        UserRole.PRODUCTION_OPERATOR,
+        UserRole.PRODUCTION_MANAGER
+    ]))
+):
+    """Batch kaydı oluştur"""
+    
+    # Emri getir
+    order = await db.production_orders.find_one({"id": batch_data.order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Emir bulunamadı")
+    
+    # Batch numarası oluştur
+    batch_number = f"BATCH-{datetime.now().strftime('%Y%m%d')}-{order.get('order_number', '')[-6:]}"
+    
+    batch = BatchRecord(
+        batch_number=batch_number,
+        order_id=batch_data.order_id,
+        order_number=order.get("order_number", ""),
+        product_id=order.get("product_id", ""),
+        product_name=order.get("product_name", ""),
+        quantity=batch_data.quantity,
+        unit=order.get("unit", ""),
+        line_id=order.get("line_id", ""),
+        line_name=order.get("line_name", ""),
+        operator_id=current_user.id,
+        operator_name=current_user.full_name,
+        expiry_date=batch_data.expiry_date,
+        notes=batch_data.notes
+    )
+    
+    await db.batch_records.insert_one(batch.model_dump())
+    
+    return {
+        "message": "Batch kaydı oluşturuldu",
+        "batch": batch.model_dump()
+    }
+
+
+# ========== OPERATOR NOTES ==========
+
+@router.get("/operator-notes")
+async def get_operator_notes(
+    order_id: Optional[str] = None,
+    line_id: Optional[str] = None,
+    note_type: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Operatör notlarını getir"""
+    
+    query = {}
+    if order_id:
+        query["order_id"] = order_id
+    if line_id:
+        query["line_id"] = line_id
+    if note_type:
+        query["note_type"] = note_type
+    
+    notes = await db.operator_notes.find(query, {"_id": 0}).sort("created_at", -1).to_list(length=100)
+    return {"notes": notes, "total": len(notes)}
+
+
+@router.post("/operator-notes")
+async def create_operator_note(
+    note_data: OperatorNoteCreate,
+    current_user: dict = Depends(require_role([
+        UserRole.PRODUCTION_OPERATOR,
+        UserRole.PRODUCTION_MANAGER
+    ]))
+):
+    """Operatör notu oluştur"""
+    
+    note = OperatorNote(
+        order_id=note_data.order_id,
+        line_id=note_data.line_id,
+        note_type=note_data.note_type,
+        note_text=note_data.note_text,
+        operator_id=current_user.id,
+        operator_name=current_user.full_name,
+        shift=note_data.shift
+    )
+    
+    await db.operator_notes.insert_one(note.model_dump())
+    
+    return {
+        "message": "Not kaydedildi",
+        "note": note.model_dump()
+    }
+
+
+@router.delete("/operator-notes/{note_id}")
+async def delete_operator_note(
+    note_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Operatör notunu sil"""
+    
+    note = await db.operator_notes.find_one({"id": note_id}, {"_id": 0})
+    if not note:
+        raise HTTPException(status_code=404, detail="Not bulunamadı")
+    
+    # Sadece notu yazan silebilir veya manager
+    if note.get("operator_id") != current_user.id and current_user.role != UserRole.PRODUCTION_MANAGER:
+        raise HTTPException(status_code=403, detail="Bu notu silme yetkiniz yok")
+    
+    await db.operator_notes.delete_one({"id": note_id})
+    
+    return {"message": "Not silindi"}
+
+
+# ========== OPERATOR DASHBOARD STATS ==========
+
+@router.get("/operator/dashboard/stats")
+async def get_operator_dashboard_stats(
+    current_user: dict = Depends(require_role([UserRole.PRODUCTION_OPERATOR]))
+):
+    """Operatör dashboard istatistikleri"""
+    
+    # Atanmış emirler
+    my_orders = await db.production_orders.count_documents({
+        "assigned_operator_id": current_user.id,
+        "status": {"$in": [
+            ProductionOrderStatus.APPROVED.value,
+            ProductionOrderStatus.IN_PROGRESS.value
+        ]}
+    })
+    
+    # Devam eden emirler
+    in_progress = await db.production_orders.count_documents({
+        "assigned_operator_id": current_user.id,
+        "status": ProductionOrderStatus.IN_PROGRESS.value
+    })
+    
+    # Bugün tamamlanan emirler
+    from datetime import timedelta
+    today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    completed_today = await db.production_orders.count_documents({
+        "assigned_operator_id": current_user.id,
+        "status": ProductionOrderStatus.COMPLETED.value,
+        "actual_end": {"$gte": today_start}
+    })
+    
+    # Aktif duruşlar
+    active_downtimes = await db.machine_downtime.count_documents({
+        "operator_id": current_user.id,
+        "end_time": None
+    })
+    
+    # Son notlar
+    recent_notes = await db.operator_notes.find({
+        "operator_id": current_user.id
+    }, {"_id": 0}).sort("created_at", -1).limit(5).to_list(5)
+    
+    return {
+        "my_orders": my_orders,
+        "in_progress": in_progress,
+        "completed_today": completed_today,
+        "active_downtimes": active_downtimes,
+        "recent_notes": recent_notes
+    }
+
             "total": total_boms
         }
     }
