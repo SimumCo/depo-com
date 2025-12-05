@@ -465,7 +465,7 @@ async def get_production_lines(
     if status:
         query["status"] = status
     
-    lines = await db.production_lines.find(query).to_list(length=100)
+    lines = await db.production_lines.find(query, {"_id": 0}).to_list(length=100)
     return {"lines": lines, "total": len(lines)}
 
 
