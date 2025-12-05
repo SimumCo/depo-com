@@ -11,6 +11,9 @@ import CustomerDashboard from './pages/CustomerDashboard';
 import AccountingDashboard from './pages/AccountingDashboard';
 import SalesAgentDashboard from './pages/SalesAgentDashboard';
 import PlasiyerDashboard from './pages/PlasiyerDashboard';
+import ProductionManagerDashboard from './pages/ProductionManagerDashboard';
+import ProductionOperatorDashboard from './pages/ProductionOperatorDashboard';
+import QualityControlDashboard from './pages/QualityControlDashboard';
 import './App.css';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
