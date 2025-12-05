@@ -5388,12 +5388,17 @@ class APITester:
             self.log_test("Periodic Test 6: Haftalık Veri", False, f"Exception: {str(e)}")
 
     def run_all_tests(self):
-        """Run all API tests - Seasonal Consumption System Priority"""
-        print("🧪 Starting Backend API Tests - Periodic Analysis Update System")
+        """Run all API tests - Production Management System Priority"""
+        print("🧪 Starting Backend API Tests - Production Management System")
         print("=" * 80)
         
-        # NEW: Periyodik Analiz Güncellemesi Tests (Review Request Priority)
-        print("\n🎯 PERİYODİK ANALİZ GÜNCELLEMESİ TESTS - REVIEW REQUEST")
+        # NEW: Production Management System Tests (Review Request Priority)
+        print("\n🏭 ÜRETİM YÖNETİM SİSTEMİ TESTS - REVIEW REQUEST")
+        print("-" * 60)
+        self.test_production_management_system()
+        
+        # Periyodik Analiz Güncellemesi Tests (Additional)
+        print("\n🎯 PERİYODİK ANALİZ GÜNCELLEMESİ TESTS - ADDITIONAL")
         print("-" * 60)
         self.test_periodic_analysis_update_system()
         
