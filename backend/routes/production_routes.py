@@ -802,7 +802,7 @@ async def get_production_dashboard_stats(
     total_qc = await db.quality_control.count_documents({})
     passed_qc = await db.quality_control.count_documents({
         "result": "pass"
-    }, {"_id": 0})
+    })
     
     # BOM sayısı
     total_boms = await db.bill_of_materials.count_documents({
