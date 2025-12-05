@@ -6,7 +6,7 @@ import { Badge } from '../../ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../ui/dialog';
 import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
-import { PlayCircle, PauseCircle, CheckCircle, TrendingUp, AlertCircle } from 'lucide-react';
+import { PlayCircle, PauseCircle, CheckCircle, TrendingUp, AlertCircle, Activity } from 'lucide-react';
 import { toast } from 'sonner';
 import * as productionApi from '../../../services/productionApi';
 
