@@ -69,6 +69,7 @@ api_router.include_router(reports_router)
 api_router.include_router(orders_router)
 api_router.include_router(favorites_router)
 api_router.include_router(fault_reports_router)
+api_router.include_router(production_router)
 
 # Include old routes temporarily
 # TODO: Refactor these into separate modules
