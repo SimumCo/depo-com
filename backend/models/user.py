@@ -13,6 +13,13 @@ class UserRole(str, Enum):
     CUSTOMER = "customer"
     ACCOUNTING = "accounting"
     SALES_AGENT = "sales_agent"  # Plasiyer
+    # Production Management Roles
+    PRODUCTION_MANAGER = "production_manager"  # Üretim Müdürü
+    PRODUCTION_OPERATOR = "production_operator"  # Üretim Operatörü
+    QUALITY_CONTROL = "quality_control"  # Kalite Kontrol Uzmanı
+    WAREHOUSE_SUPERVISOR = "warehouse_supervisor"  # Depo Sorumlusu
+    RND_ENGINEER = "rnd_engineer"  # AR-GE Mühendisi
+    MAINTENANCE_TECHNICIAN = "maintenance_technician"  # Bakım Teknisyeni
 
 class ChannelType(str, Enum):
     LOGISTICS = "logistics"  # Hotels, Government
