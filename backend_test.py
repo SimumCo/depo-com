@@ -11,7 +11,7 @@ from datetime import datetime
 import uuid
 
 # Configuration
-BASE_URL = "https://sales-analytics-89.preview.emergentagent.com/api"
+BASE_URL = "https://prodplan-dashboard.preview.emergentagent.com/api"
 
 # Test Users
 TEST_USERS = {
