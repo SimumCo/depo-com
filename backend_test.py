@@ -1841,7 +1841,7 @@ class APITester:
                         
                         response = requests.post(
                             f"{BASE_URL}/production/orders/{order_id_to_update}/assign",
-                            json={"line_id": self.production_line_id, "operator_id": operator_id},
+                            params={"line_id": self.production_line_id, "operator_id": operator_id},
                             headers=headers,
                             timeout=30
                         )
