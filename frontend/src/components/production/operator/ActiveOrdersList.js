@@ -201,7 +201,8 @@ const ActiveOrdersList = ({ onRefresh }) => {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handlePause(order.id)>
+                        onClick={() => handlePause(order.id)}
+                      >
                         <PauseCircle className="mr-2 h-4 w-4" />
                         Duraklat
                       </Button>
