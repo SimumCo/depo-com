@@ -1284,6 +1284,836 @@ class APITester:
         except Exception as e:
             self.log_test("Database Verification", False, f"Exception: {str(e)}")
 
+    # ========== ÜRETİM YÖNETİM SİSTEMİ TESTS ==========
+    
+    def test_production_management_system(self):
+        """ÜRETİM YÖNETİM SİSTEMİ - Kapsamlı Test Senaryoları"""
+        print("\n🏭 ÜRETİM YÖNETİM SİSTEMİ TEST BAŞLADI")
+        
+        # Test kullanıcıları
+        production_users = {
+            "uretim_muduru": {"username": "uretim_muduru", "password": "uretim123"},
+            "operator1": {"username": "operator1", "password": "operator123"},
+            "kalite_kontrol": {"username": "kalite_kontrol", "password": "kalite123"}
+        }
+        
+        # 1. Authentication Tests
+        self.test_production_authentication(production_users)
+        
+        # 2. Production Lines API Tests
+        self.test_production_lines_api()
+        
+        # 3. Bill of Materials (BOM) API Tests
+        self.test_bom_api()
+        
+        # 4. Production Plans API Tests
+        self.test_production_plans_api()
+        
+        # 5. Production Orders API Tests
+        self.test_production_orders_api()
+        
+        # 6. Raw Material Requirements API Tests
+        self.test_raw_material_requirements_api()
+        
+        # 7. Quality Control API Tests
+        self.test_quality_control_api()
+        
+        # 8. Production Tracking API Tests
+        self.test_production_tracking_api()
+        
+        # 9. Dashboard Stats API Tests
+        self.test_production_dashboard_stats()
+        
+        print("\n🎉 ÜRETİM YÖNETİM SİSTEMİ TEST TAMAMLANDI")
+    
+    def test_production_authentication(self, production_users):
+        """Test 1: Authentication Test - Üretim kullanıcıları girişi"""
+        print("\n👤 Üretim kullanıcıları authentication testi...")
+        
+        for user_key, user_creds in production_users.items():
+            try:
+                response = requests.post(
+                    f"{BASE_URL}/auth/login",
+                    json=user_creds,
+                    timeout=30
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    token = data.get("access_token")
+                    if token:
+                        self.tokens[user_key] = token
+                        self.log_test(f"Production Auth - {user_creds['username']}", True, f"Başarılı giriş")
+                    else:
+                        self.log_test(f"Production Auth - {user_creds['username']}", False, "Token alınamadı")
+                else:
+                    self.log_test(f"Production Auth - {user_creds['username']}", False, f"Status: {response.status_code}")
+                    
+            except Exception as e:
+                self.log_test(f"Production Auth - {user_creds['username']}", False, f"Exception: {str(e)}")
+    
+    def test_production_lines_api(self):
+        """Test 2: Production Lines API - Üretim hatları"""
+        print("\n🏭 Production Lines API testi...")
+        
+        headers = self.get_headers("uretim_muduru")
+        if not headers:
+            self.log_test("Production Lines API", False, "No uretim_muduru token")
+            return
+        
+        # Test 2.1: GET /api/production/lines (Tüm üretim hatlarını getir - 4 hat olmalı)
+        try:
+            response = requests.get(
+                f"{BASE_URL}/production/lines",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                lines = data.get("lines", [])
+                if len(lines) >= 4:
+                    self.log_test("Production Lines - Get All", True, f"{len(lines)} üretim hattı bulundu (>= 4 beklenen)")
+                    # Store first line ID for detail test
+                    if lines:
+                        self.production_line_id = lines[0].get("id")
+                else:
+                    self.log_test("Production Lines - Get All", False, f"Sadece {len(lines)} hat bulundu, 4 bekleniyor")
+            else:
+                self.log_test("Production Lines - Get All", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Production Lines - Get All", False, f"Exception: {str(e)}")
+        
+        # Test 2.2: GET /api/production/lines/{line_id} (Belirli hat detayı)
+        if hasattr(self, 'production_line_id'):
+            try:
+                response = requests.get(
+                    f"{BASE_URL}/production/lines/{self.production_line_id}",
+                    headers=headers,
+                    timeout=30
+                )
+                
+                if response.status_code == 200:
+                    line = response.json()
+                    required_fields = ["id", "name", "line_code", "capacity_per_hour", "status"]
+                    missing_fields = [field for field in required_fields if field not in line]
+                    if missing_fields:
+                        self.log_test("Production Lines - Get Detail", False, f"Missing fields: {missing_fields}")
+                    else:
+                        self.log_test("Production Lines - Get Detail", True, f"Hat detayı: {line.get('name')} ({line.get('line_code')})")
+                else:
+                    self.log_test("Production Lines - Get Detail", False, f"Status: {response.status_code}")
+                    
+            except Exception as e:
+                self.log_test("Production Lines - Get Detail", False, f"Exception: {str(e)}")
+        
+        # Test 2.3: POST /api/production/lines (Yeni hat oluştur - sadece üretim müdürü)
+        try:
+            new_line_data = {
+                "name": "Test Üretim Hattı",
+                "line_code": "TEST-01",
+                "description": "Test için oluşturulan hat",
+                "capacity_per_hour": 100.0,
+                "capacity_unit": "kg"
+            }
+            
+            response = requests.post(
+                f"{BASE_URL}/production/lines",
+                json=new_line_data,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                if result.get("message") and result.get("line"):
+                    self.log_test("Production Lines - Create", True, f"Yeni hat oluşturuldu: {result['line'].get('name')}")
+                else:
+                    self.log_test("Production Lines - Create", False, "Response structure invalid")
+            else:
+                self.log_test("Production Lines - Create", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Production Lines - Create", False, f"Exception: {str(e)}")
+    
+    def test_bom_api(self):
+        """Test 3: Bill of Materials (BOM) API - Reçeteler"""
+        print("\n📋 BOM API testi...")
+        
+        headers = self.get_headers("uretim_muduru")
+        if not headers:
+            self.log_test("BOM API", False, "No uretim_muduru token")
+            return
+        
+        # Test 3.1: GET /api/production/bom (Tüm reçeteler - 3 BOM olmalı)
+        try:
+            response = requests.get(
+                f"{BASE_URL}/production/bom",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                boms = data.get("boms", [])
+                if len(boms) >= 3:
+                    self.log_test("BOM - Get All", True, f"{len(boms)} reçete bulundu (>= 3 beklenen)")
+                    # Store first BOM for detail tests
+                    if boms:
+                        self.bom_id = boms[0].get("id")
+                        self.bom_product_id = boms[0].get("product_id")
+                else:
+                    self.log_test("BOM - Get All", False, f"Sadece {len(boms)} BOM bulundu, 3 bekleniyor")
+            else:
+                self.log_test("BOM - Get All", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("BOM - Get All", False, f"Exception: {str(e)}")
+        
+        # Test 3.2: GET /api/production/bom?product_id={product_id} (Ürüne göre BOM)
+        if hasattr(self, 'bom_product_id'):
+            try:
+                response = requests.get(
+                    f"{BASE_URL}/production/bom?product_id={self.bom_product_id}",
+                    headers=headers,
+                    timeout=30
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    boms = data.get("boms", [])
+                    if boms:
+                        self.log_test("BOM - Get By Product", True, f"Ürün için {len(boms)} BOM bulundu")
+                    else:
+                        self.log_test("BOM - Get By Product", False, "Ürün için BOM bulunamadı")
+                else:
+                    self.log_test("BOM - Get By Product", False, f"Status: {response.status_code}")
+                    
+            except Exception as e:
+                self.log_test("BOM - Get By Product", False, f"Exception: {str(e)}")
+        
+        # Test 3.3: GET /api/production/bom/{bom_id} (Belirli BOM detayı)
+        if hasattr(self, 'bom_id'):
+            try:
+                response = requests.get(
+                    f"{BASE_URL}/production/bom/{self.bom_id}",
+                    headers=headers,
+                    timeout=30
+                )
+                
+                if response.status_code == 200:
+                    bom = response.json()
+                    required_fields = ["id", "product_name", "items", "output_quantity"]
+                    missing_fields = [field for field in required_fields if field not in bom]
+                    if missing_fields:
+                        self.log_test("BOM - Get Detail", False, f"Missing fields: {missing_fields}")
+                    else:
+                        items_count = len(bom.get("items", []))
+                        self.log_test("BOM - Get Detail", True, f"BOM detayı: {bom.get('product_name')} ({items_count} hammadde)")
+                else:
+                    self.log_test("BOM - Get Detail", False, f"Status: {response.status_code}")
+                    
+            except Exception as e:
+                self.log_test("BOM - Get Detail", False, f"Exception: {str(e)}")
+        
+        # Test 3.4: POST /api/production/bom (Yeni reçete oluştur)
+        try:
+            new_bom_data = {
+                "product_id": "test_product_123",
+                "product_name": "Test Ürün",
+                "version": "1.0",
+                "items": [
+                    {
+                        "raw_material_id": "raw_material_1",
+                        "raw_material_name": "Test Hammadde 1",
+                        "quantity": 2.0,
+                        "unit": "kg"
+                    },
+                    {
+                        "raw_material_id": "raw_material_2",
+                        "raw_material_name": "Test Hammadde 2",
+                        "quantity": 0.5,
+                        "unit": "litre"
+                    }
+                ],
+                "output_quantity": 1.0,
+                "output_unit": "kg",
+                "notes": "Test BOM"
+            }
+            
+            response = requests.post(
+                f"{BASE_URL}/production/bom",
+                json=new_bom_data,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                if result.get("message") and result.get("bom"):
+                    self.log_test("BOM - Create", True, f"Yeni BOM oluşturuldu: {result['bom'].get('product_name')}")
+                else:
+                    self.log_test("BOM - Create", False, "Response structure invalid")
+            else:
+                self.log_test("BOM - Create", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("BOM - Create", False, f"Exception: {str(e)}")
+    
+    def test_production_plans_api(self):
+        """Test 4: Production Plans API - Üretim planları"""
+        print("\n📅 Production Plans API testi...")
+        
+        headers = self.get_headers("uretim_muduru")
+        if not headers:
+            self.log_test("Production Plans API", False, "No uretim_muduru token")
+            return
+        
+        # Test 4.1: GET /api/production/plans (Tüm üretim planları - 1 plan olmalı)
+        try:
+            response = requests.get(
+                f"{BASE_URL}/production/plans",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                plans = data.get("plans", [])
+                if len(plans) >= 1:
+                    self.log_test("Production Plans - Get All", True, f"{len(plans)} üretim planı bulundu (>= 1 beklenen)")
+                    # Store first plan for detail tests
+                    if plans:
+                        self.production_plan_id = plans[0].get("id")
+                else:
+                    self.log_test("Production Plans - Get All", False, f"Plan bulunamadı, 1 bekleniyor")
+            else:
+                self.log_test("Production Plans - Get All", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Production Plans - Get All", False, f"Exception: {str(e)}")
+        
+        # Test 4.2: GET /api/production/plans/{plan_id} (Plan detayı)
+        if hasattr(self, 'production_plan_id'):
+            try:
+                response = requests.get(
+                    f"{BASE_URL}/production/plans/{self.production_plan_id}",
+                    headers=headers,
+                    timeout=30
+                )
+                
+                if response.status_code == 200:
+                    plan = response.json()
+                    required_fields = ["id", "plan_number", "plan_type", "items", "status"]
+                    missing_fields = [field for field in required_fields if field not in plan]
+                    if missing_fields:
+                        self.log_test("Production Plans - Get Detail", False, f"Missing fields: {missing_fields}")
+                    else:
+                        items_count = len(plan.get("items", []))
+                        self.log_test("Production Plans - Get Detail", True, f"Plan detayı: {plan.get('plan_number')} ({items_count} ürün)")
+                else:
+                    self.log_test("Production Plans - Get Detail", False, f"Status: {response.status_code}")
+                    
+            except Exception as e:
+                self.log_test("Production Plans - Get Detail", False, f"Exception: {str(e)}")
+        
+        # Test 4.3: POST /api/production/plans (Yeni plan oluştur - üretim müdürü)
+        try:
+            from datetime import datetime, timedelta
+            now = datetime.now()
+            
+            new_plan_data = {
+                "plan_type": "weekly",
+                "plan_date": now.isoformat(),
+                "start_date": (now + timedelta(days=1)).isoformat(),
+                "end_date": (now + timedelta(days=7)).isoformat(),
+                "items": [
+                    {
+                        "product_id": "test_product_456",
+                        "product_name": "Test Süt 1L",
+                        "target_quantity": 1000.0,
+                        "unit": "litre",
+                        "priority": "high",
+                        "notes": "Test üretimi"
+                    }
+                ],
+                "notes": "Test üretim planı"
+            }
+            
+            response = requests.post(
+                f"{BASE_URL}/production/plans",
+                json=new_plan_data,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                if result.get("message") and result.get("plan"):
+                    created_plan = result["plan"]
+                    self.test_plan_id = created_plan.get("id")
+                    self.log_test("Production Plans - Create", True, f"Yeni plan oluşturuldu: {created_plan.get('plan_number')}")
+                else:
+                    self.log_test("Production Plans - Create", False, "Response structure invalid")
+            else:
+                self.log_test("Production Plans - Create", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Production Plans - Create", False, f"Exception: {str(e)}")
+        
+        # Test 4.4: POST /api/production/plans/{plan_id}/approve (Planı onayla)
+        plan_id_to_approve = getattr(self, 'test_plan_id', getattr(self, 'production_plan_id', None))
+        if plan_id_to_approve:
+            try:
+                response = requests.post(
+                    f"{BASE_URL}/production/plans/{plan_id_to_approve}/approve",
+                    headers=headers,
+                    timeout=30
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    if result.get("message"):
+                        self.log_test("Production Plans - Approve", True, f"Plan onaylandı: {result.get('message')}")
+                    else:
+                        self.log_test("Production Plans - Approve", False, "No message in response")
+                else:
+                    self.log_test("Production Plans - Approve", False, f"Status: {response.status_code}, Response: {response.text}")
+                    
+            except Exception as e:
+                self.log_test("Production Plans - Approve", False, f"Exception: {str(e)}")
+        
+        # Test 4.5: POST /api/production/plans/{plan_id}/generate-orders (Plandan emir oluştur)
+        if plan_id_to_approve:
+            try:
+                response = requests.post(
+                    f"{BASE_URL}/production/plans/{plan_id_to_approve}/generate-orders",
+                    headers=headers,
+                    timeout=30
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    if result.get("message") and result.get("orders"):
+                        orders_count = len(result.get("orders", []))
+                        self.log_test("Production Plans - Generate Orders", True, f"{orders_count} üretim emri oluşturuldu")
+                    else:
+                        self.log_test("Production Plans - Generate Orders", False, "No orders in response")
+                else:
+                    self.log_test("Production Plans - Generate Orders", False, f"Status: {response.status_code}, Response: {response.text}")
+                    
+            except Exception as e:
+                self.log_test("Production Plans - Generate Orders", False, f"Exception: {str(e)}")
+    
+    def test_production_orders_api(self):
+        """Test 5: Production Orders API - Üretim emirleri"""
+        print("\n📋 Production Orders API testi...")
+        
+        headers = self.get_headers("uretim_muduru")
+        if not headers:
+            self.log_test("Production Orders API", False, "No uretim_muduru token")
+            return
+        
+        # Test 5.1: GET /api/production/orders (Tüm üretim emirleri - 2 emir olmalı)
+        try:
+            response = requests.get(
+                f"{BASE_URL}/production/orders",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                orders = data.get("orders", [])
+                if len(orders) >= 2:
+                    self.log_test("Production Orders - Get All", True, f"{len(orders)} üretim emri bulundu (>= 2 beklenen)")
+                    # Store first order for detail tests
+                    if orders:
+                        self.production_order_id = orders[0].get("id")
+                else:
+                    self.log_test("Production Orders - Get All", False, f"Sadece {len(orders)} emir bulundu, 2 bekleniyor")
+            else:
+                self.log_test("Production Orders - Get All", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Production Orders - Get All", False, f"Exception: {str(e)}")
+        
+        # Test 5.2: GET /api/production/orders?status=pending
+        try:
+            response = requests.get(
+                f"{BASE_URL}/production/orders?status=pending",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                orders = data.get("orders", [])
+                self.log_test("Production Orders - Get Pending", True, f"{len(orders)} bekleyen emir bulundu")
+            else:
+                self.log_test("Production Orders - Get Pending", False, f"Status: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Production Orders - Get Pending", False, f"Exception: {str(e)}")
+        
+        # Test 5.3: POST /api/production/orders (Manuel emir oluştur)
+        try:
+            from datetime import datetime, timedelta
+            now = datetime.now()
+            
+            new_order_data = {
+                "product_id": "test_product_789",
+                "product_name": "Test Yoğurt 500g",
+                "target_quantity": 500.0,
+                "unit": "kg",
+                "priority": "medium",
+                "scheduled_start": (now + timedelta(days=1)).isoformat(),
+                "scheduled_end": (now + timedelta(days=2)).isoformat(),
+                "notes": "Manuel test emri"
+            }
+            
+            response = requests.post(
+                f"{BASE_URL}/production/orders",
+                json=new_order_data,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                if result.get("message") and result.get("order"):
+                    created_order = result["order"]
+                    self.test_order_id = created_order.get("id")
+                    self.log_test("Production Orders - Create", True, f"Yeni emir oluşturuldu: {created_order.get('order_number')}")
+                else:
+                    self.log_test("Production Orders - Create", False, "Response structure invalid")
+            else:
+                self.log_test("Production Orders - Create", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Production Orders - Create", False, f"Exception: {str(e)}")
+        
+        # Test 5.4: PATCH /api/production/orders/{order_id}/status (Durum güncelle)
+        order_id_to_update = getattr(self, 'test_order_id', getattr(self, 'production_order_id', None))
+        if order_id_to_update:
+            try:
+                response = requests.patch(
+                    f"{BASE_URL}/production/orders/{order_id_to_update}/status",
+                    json={"status": "approved", "notes": "Test onayı"},
+                    headers=headers,
+                    timeout=30
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    if result.get("message"):
+                        self.log_test("Production Orders - Update Status", True, f"Durum güncellendi: {result.get('message')}")
+                    else:
+                        self.log_test("Production Orders - Update Status", False, "No message in response")
+                else:
+                    self.log_test("Production Orders - Update Status", False, f"Status: {response.status_code}, Response: {response.text}")
+                    
+            except Exception as e:
+                self.log_test("Production Orders - Update Status", False, f"Exception: {str(e)}")
+        
+        # Test 5.5: POST /api/production/orders/{order_id}/assign (Hatta ve operatöre ata)
+        if order_id_to_update and hasattr(self, 'production_line_id'):
+            try:
+                # Get operator ID
+                operator_headers = self.get_headers("operator1")
+                if operator_headers:
+                    me_response = requests.get(f"{BASE_URL}/auth/me", headers=operator_headers, timeout=30)
+                    if me_response.status_code == 200:
+                        operator_info = me_response.json()
+                        operator_id = operator_info.get("id")
+                        
+                        response = requests.post(
+                            f"{BASE_URL}/production/orders/{order_id_to_update}/assign",
+                            json={"line_id": self.production_line_id, "operator_id": operator_id},
+                            headers=headers,
+                            timeout=30
+                        )
+                        
+                        if response.status_code == 200:
+                            result = response.json()
+                            if result.get("message"):
+                                self.log_test("Production Orders - Assign", True, f"Emir atandı: {result.get('message')}")
+                            else:
+                                self.log_test("Production Orders - Assign", False, "No message in response")
+                        else:
+                            self.log_test("Production Orders - Assign", False, f"Status: {response.status_code}, Response: {response.text}")
+                    else:
+                        self.log_test("Production Orders - Assign", False, "Could not get operator info")
+                else:
+                    self.log_test("Production Orders - Assign", False, "No operator token")
+                    
+            except Exception as e:
+                self.log_test("Production Orders - Assign", False, f"Exception: {str(e)}")
+    
+    def test_raw_material_requirements_api(self):
+        """Test 6: Raw Material Requirements API - Hammadde ihtiyacı"""
+        print("\n📦 Raw Material Requirements API testi...")
+        
+        headers = self.get_headers("uretim_muduru")
+        if not headers:
+            self.log_test("Raw Material Requirements API", False, "No uretim_muduru token")
+            return
+        
+        plan_id = getattr(self, 'production_plan_id', None)
+        if not plan_id:
+            self.log_test("Raw Material Requirements API", False, "No plan ID available")
+            return
+        
+        # Test 6.1: GET /api/production/raw-materials/analysis/{plan_id} (Hammadde ihtiyacı)
+        try:
+            response = requests.get(
+                f"{BASE_URL}/production/raw-materials/analysis/{plan_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                requirements = data.get("requirements", [])
+                summary = data.get("summary", {})
+                
+                if "total_items" in summary:
+                    self.log_test("Raw Material Analysis", True, 
+                        f"Hammadde analizi: {summary.get('total_items')} kalem, {summary.get('insufficient_items', 0)} eksik")
+                else:
+                    self.log_test("Raw Material Analysis", False, "Summary structure invalid")
+            else:
+                self.log_test("Raw Material Analysis", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Raw Material Analysis", False, f"Exception: {str(e)}")
+        
+        # Test 6.2: POST /api/production/raw-materials/calculate/{plan_id} (Yeniden hesapla)
+        try:
+            response = requests.post(
+                f"{BASE_URL}/production/raw-materials/calculate/{plan_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                if result.get("message") and result.get("requirements"):
+                    requirements_count = len(result.get("requirements", []))
+                    self.log_test("Raw Material Calculate", True, f"Hammadde hesaplandı: {requirements_count} kalem")
+                else:
+                    self.log_test("Raw Material Calculate", False, "Response structure invalid")
+            else:
+                self.log_test("Raw Material Calculate", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Raw Material Calculate", False, f"Exception: {str(e)}")
+    
+    def test_quality_control_api(self):
+        """Test 7: Quality Control API - Kalite kontrol"""
+        print("\n🔍 Quality Control API testi...")
+        
+        qc_headers = self.get_headers("kalite_kontrol")
+        if not qc_headers:
+            self.log_test("Quality Control API", False, "No kalite_kontrol token")
+            return
+        
+        # Test 7.1: GET /api/production/quality-control
+        try:
+            response = requests.get(
+                f"{BASE_URL}/production/quality-control",
+                headers=qc_headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                qc_records = data.get("quality_controls", [])
+                self.log_test("Quality Control - Get All", True, f"{len(qc_records)} kalite kontrol kaydı bulundu")
+            else:
+                self.log_test("Quality Control - Get All", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Quality Control - Get All", False, f"Exception: {str(e)}")
+        
+        # Test 7.2: POST /api/production/quality-control (Kalite kontrol kaydı oluştur)
+        order_id = getattr(self, 'production_order_id', None)
+        if order_id:
+            try:
+                # Test Pass durumu
+                qc_data_pass = {
+                    "order_id": order_id,
+                    "batch_number": "BATCH-TEST-001",
+                    "tested_quantity": 100.0,
+                    "passed_quantity": 95.0,
+                    "failed_quantity": 5.0,
+                    "unit": "kg",
+                    "result": "pass",
+                    "test_parameters": {
+                        "pH": "6.5",
+                        "sıcaklık": "4°C",
+                        "nem": "%85"
+                    },
+                    "notes": "Test kalite kontrol - Geçti"
+                }
+                
+                response = requests.post(
+                    f"{BASE_URL}/production/quality-control",
+                    json=qc_data_pass,
+                    headers=qc_headers,
+                    timeout=30
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    if result.get("message") and result.get("quality_control"):
+                        self.log_test("Quality Control - Create Pass", True, f"Kalite kontrol kaydı oluşturuldu: PASS")
+                    else:
+                        self.log_test("Quality Control - Create Pass", False, "Response structure invalid")
+                else:
+                    self.log_test("Quality Control - Create Pass", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+                # Test Fail durumu
+                qc_data_fail = {
+                    "order_id": order_id,
+                    "batch_number": "BATCH-TEST-002",
+                    "tested_quantity": 100.0,
+                    "passed_quantity": 70.0,
+                    "failed_quantity": 30.0,
+                    "unit": "kg",
+                    "result": "fail",
+                    "test_parameters": {
+                        "pH": "5.2",
+                        "sıcaklık": "8°C",
+                        "nem": "%90"
+                    },
+                    "notes": "Test kalite kontrol - Başarısız"
+                }
+                
+                response = requests.post(
+                    f"{BASE_URL}/production/quality-control",
+                    json=qc_data_fail,
+                    headers=qc_headers,
+                    timeout=30
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    if result.get("message"):
+                        self.log_test("Quality Control - Create Fail", True, f"Kalite kontrol kaydı oluşturuldu: FAIL")
+                    else:
+                        self.log_test("Quality Control - Create Fail", False, "Response structure invalid")
+                else:
+                    self.log_test("Quality Control - Create Fail", False, f"Status: {response.status_code}")
+                    
+            except Exception as e:
+                self.log_test("Quality Control - Create", False, f"Exception: {str(e)}")
+        else:
+            self.log_test("Quality Control - Create", False, "No order ID available")
+    
+    def test_production_tracking_api(self):
+        """Test 8: Production Tracking API - Üretim takip"""
+        print("\n📊 Production Tracking API testi...")
+        
+        operator_headers = self.get_headers("operator1")
+        if not operator_headers:
+            self.log_test("Production Tracking API", False, "No operator1 token")
+            return
+        
+        order_id = getattr(self, 'production_order_id', None)
+        if not order_id:
+            self.log_test("Production Tracking API", False, "No order ID available")
+            return
+        
+        # Test 8.1: POST /api/production/tracking (Operatör üretim güncellemesi)
+        try:
+            tracking_data = {
+                "order_id": order_id,
+                "produced_quantity": 50.0,
+                "waste_quantity": 2.0,
+                "notes": "İlk vardiya üretimi"
+            }
+            
+            response = requests.post(
+                f"{BASE_URL}/production/tracking",
+                json=tracking_data,
+                headers=operator_headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                if result.get("message") and result.get("tracking"):
+                    self.log_test("Production Tracking - Create", True, f"Üretim kaydı oluşturuldu: 50 kg üretildi")
+                else:
+                    self.log_test("Production Tracking - Create", False, "Response structure invalid")
+            else:
+                self.log_test("Production Tracking - Create", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Production Tracking - Create", False, f"Exception: {str(e)}")
+        
+        # Test 8.2: GET /api/production/tracking?order_id={order_id}
+        try:
+            response = requests.get(
+                f"{BASE_URL}/production/tracking?order_id={order_id}",
+                headers=operator_headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                tracking_records = data.get("tracking", [])
+                self.log_test("Production Tracking - Get By Order", True, f"{len(tracking_records)} üretim takip kaydı bulundu")
+            else:
+                self.log_test("Production Tracking - Get By Order", False, f"Status: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Production Tracking - Get By Order", False, f"Exception: {str(e)}")
+    
+    def test_production_dashboard_stats(self):
+        """Test 9: Dashboard Stats API - Özet istatistikler"""
+        print("\n📈 Production Dashboard Stats API testi...")
+        
+        headers = self.get_headers("uretim_muduru")
+        if not headers:
+            self.log_test("Production Dashboard Stats", False, "No uretim_muduru token")
+            return
+        
+        # Test 9.1: GET /api/production/dashboard/stats (Özet istatistikler)
+        try:
+            response = requests.get(
+                f"{BASE_URL}/production/dashboard/stats",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                stats = response.json()
+                
+                # Validate expected structure
+                expected_sections = ["plans", "orders", "lines", "quality_control", "boms"]
+                missing_sections = [section for section in expected_sections if section not in stats]
+                
+                if missing_sections:
+                    self.log_test("Production Dashboard Stats", False, f"Missing sections: {missing_sections}")
+                else:
+                    # Extract key metrics
+                    total_plans = stats.get("plans", {}).get("total", 0)
+                    total_orders = stats.get("orders", {}).get("total", 0)
+                    total_lines = stats.get("lines", {}).get("total", 0)
+                    total_qc = stats.get("quality_control", {}).get("total", 0)
+                    total_boms = stats.get("boms", {}).get("total", 0)
+                    
+                    self.log_test("Production Dashboard Stats", True, 
+                        f"Dashboard istatistikleri: {total_plans} plan, {total_orders} emir, {total_lines} hat, {total_qc} kalite kontrol, {total_boms} BOM")
+            else:
+                self.log_test("Production Dashboard Stats", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Production Dashboard Stats", False, f"Exception: {str(e)}")
+
     # ========== MEVSİMSEL TÜKETİM HESAPLAMA SİSTEMİ TESTS ==========
     
     def test_seasonal_consumption_system(self):
