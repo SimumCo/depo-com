@@ -225,7 +225,7 @@ async def get_production_orders(
     if current_user.role == UserRole.PRODUCTION_OPERATOR.value:
         query["assigned_operator_id"] = current_user.id
     
-    orders = await db.production_orders.find(query).sort("created_at", -1).to_list(length=200)
+    orders = await db.production_orders.find(query, {"_id": 0}).sort("created_at", -1).to_list(length=200)
     return {"orders": orders, "total": len(orders)}
 
 
