@@ -1287,8 +1287,8 @@ class APITester:
     # ========== ÜRETİM YÖNETİM SİSTEMİ TESTS ==========
     
     def test_production_management_system(self):
-        """ÜRETİM YÖNETİM SİSTEMİ - Kapsamlı Test Senaryoları"""
-        print("\n🏭 ÜRETİM YÖNETİM SİSTEMİ TEST BAŞLADI")
+        """ÜRETİM YÖNETİM SİSTEMİ - MongoDB Serialization Düzeltilmiş Test"""
+        print("\n🏭 ÜRETİM YÖNETİM SİSTEMİ - HIZLI TEST SENARYOSU")
         
         # Test kullanıcıları
         production_users = {
@@ -1300,29 +1300,41 @@ class APITester:
         # 1. Authentication Tests
         self.test_production_authentication(production_users)
         
-        # 2. Production Lines API Tests
+        # 2. Production Lines API Tests (4 hat olmalı)
         self.test_production_lines_api()
         
-        # 3. Bill of Materials (BOM) API Tests
+        # 3. Bill of Materials (BOM) API Tests (3 BOM olmalı)
         self.test_bom_api()
         
-        # 4. Production Plans API Tests
+        # 4. Production Plans API Tests (1 plan olmalı)
         self.test_production_plans_api()
         
-        # 5. Production Orders API Tests
+        # 5. Production Orders API Tests (2 emir olmalı)
         self.test_production_orders_api()
         
-        # 6. Raw Material Requirements API Tests
-        self.test_raw_material_requirements_api()
+        # 6. Dashboard Stats API Tests
+        self.test_production_dashboard_stats()
         
-        # 7. Quality Control API Tests
+        # 7. Create New Production Order (Süt 1000 litre)
+        self.test_create_new_production_order()
+        
+        # 8. Verify Order Count (3 emir olmalı artık)
+        self.test_verify_order_count()
+        
+        # 9. Update Order Status to Approved
+        self.test_update_order_status()
+        
+        # 10. Assign Order to Line and Operator
+        self.test_assign_order_to_line()
+        
+        # 11. Operator Tests - Only see assigned orders
+        self.test_operator_assigned_orders()
+        
+        # 12. Quality Control Tests
         self.test_quality_control_api()
         
-        # 8. Production Tracking API Tests
-        self.test_production_tracking_api()
-        
-        # 9. Dashboard Stats API Tests
-        self.test_production_dashboard_stats()
+        # 13. Raw Material Analysis Tests
+        self.test_raw_material_analysis()
         
         print("\n🎉 ÜRETİM YÖNETİM SİSTEMİ TEST TAMAMLANDI")
     
