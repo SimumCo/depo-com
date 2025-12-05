@@ -174,7 +174,7 @@ async def generate_orders_from_plan(
     planning_service = ProductionPlanningService(db)
     orders = await planning_service.generate_production_orders_from_plan(
         plan_id, 
-        current_user.get("id")
+        current_user.id
     )
     
     # Hammadde ihtiyacını hesapla
