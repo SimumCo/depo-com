@@ -9,7 +9,11 @@ from models.production import (
     BillOfMaterials, BOMCreate,
     ProductionLine, ProductionLineCreate,
     RawMaterialRequirement, ProductionTracking, QualityControl, QualityControlCreate,
-    ProductionOrderPriority
+    ProductionOrderPriority,
+    MachineDowntime, MachineDowntimeCreate, DowntimeType,
+    RawMaterialUsage, RawMaterialUsageCreate,
+    BatchRecord, BatchRecordCreate,
+    OperatorNote, OperatorNoteCreate
 )
 from models.user import UserRole
 from middleware.auth import get_current_user, require_role
