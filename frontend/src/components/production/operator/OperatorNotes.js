@@ -165,7 +165,6 @@ const OperatorNotes = ({ notes: initialNotes, onRefresh }) => {
                     <SelectValue placeholder="Vardiya seçin" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Seçilmedi</SelectItem>
                     {shifts.map((shift) => (
                       <SelectItem key={shift.value} value={shift.value}>
                         {shift.label}
