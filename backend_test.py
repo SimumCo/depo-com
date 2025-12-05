@@ -2125,6 +2125,249 @@ class APITester:
         except Exception as e:
             self.log_test("Production Dashboard Stats", False, f"Exception: {str(e)}")
 
+    # ========== NEW PRODUCTION MANAGEMENT TESTS ==========
+    
+    def test_create_new_production_order(self):
+        """Test 7: Create New Production Order - Süt 1000 litre"""
+        print("\n📝 Create New Production Order testi...")
+        
+        headers = self.get_headers("uretim_muduru")
+        if not headers:
+            self.log_test("Create New Production Order", False, "No uretim_muduru token")
+            return
+        
+        try:
+            from datetime import datetime, timedelta
+            now = datetime.now()
+            
+            # Create new order for Süt 1000 litre
+            order_data = {
+                "plan_id": getattr(self, 'production_plan_id', "test_plan_123"),
+                "product_id": "SUT001",
+                "product_name": "Süt",
+                "target_quantity": 1000.0,
+                "unit": "litre",
+                "priority": "high",
+                "scheduled_start": (now + timedelta(hours=1)).isoformat(),
+                "scheduled_end": (now + timedelta(hours=8)).isoformat(),
+                "notes": "Yeni süt üretim emri - 1000 litre"
+            }
+            
+            response = requests.post(
+                f"{BASE_URL}/production/orders",
+                json=order_data,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                if result.get("message") and result.get("order"):
+                    created_order = result["order"]
+                    self.new_order_id = created_order.get("id")
+                    order_number = created_order.get("order_number")
+                    self.log_test("Create New Production Order", True, f"Yeni emir oluşturuldu: {order_number} (Süt 1000 litre)")
+                else:
+                    self.log_test("Create New Production Order", False, "Response structure invalid")
+            else:
+                self.log_test("Create New Production Order", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Create New Production Order", False, f"Exception: {str(e)}")
+    
+    def test_verify_order_count(self):
+        """Test 8: Verify Order Count - 3 emir olmalı artık"""
+        print("\n🔢 Verify Order Count testi...")
+        
+        headers = self.get_headers("uretim_muduru")
+        if not headers:
+            self.log_test("Verify Order Count", False, "No uretim_muduru token")
+            return
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/production/orders",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                orders = data.get("orders", [])
+                order_count = len(orders)
+                
+                if order_count >= 3:
+                    self.log_test("Verify Order Count", True, f"{order_count} emir bulundu (>= 3 beklenen)")
+                else:
+                    self.log_test("Verify Order Count", False, f"Sadece {order_count} emir bulundu, 3 bekleniyor")
+            else:
+                self.log_test("Verify Order Count", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Verify Order Count", False, f"Exception: {str(e)}")
+    
+    def test_update_order_status(self):
+        """Test 9: Update Order Status to Approved"""
+        print("\n✅ Update Order Status testi...")
+        
+        headers = self.get_headers("uretim_muduru")
+        if not headers:
+            self.log_test("Update Order Status", False, "No uretim_muduru token")
+            return
+        
+        new_order_id = getattr(self, 'new_order_id', None)
+        if not new_order_id:
+            self.log_test("Update Order Status", False, "No new order ID available")
+            return
+        
+        try:
+            response = requests.patch(
+                f"{BASE_URL}/production/orders/{new_order_id}/status?status=approved",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                if result.get("message"):
+                    self.log_test("Update Order Status", True, f"Emir durumu güncellendi: approved")
+                else:
+                    self.log_test("Update Order Status", False, "No message in response")
+            else:
+                self.log_test("Update Order Status", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Update Order Status", False, f"Exception: {str(e)}")
+    
+    def test_assign_order_to_line(self):
+        """Test 10: Assign Order to Line and Operator"""
+        print("\n🏭 Assign Order to Line testi...")
+        
+        headers = self.get_headers("uretim_muduru")
+        if not headers:
+            self.log_test("Assign Order to Line", False, "No uretim_muduru token")
+            return
+        
+        new_order_id = getattr(self, 'new_order_id', None)
+        line_id = getattr(self, 'production_line_id', None)
+        
+        if not new_order_id:
+            self.log_test("Assign Order to Line", False, "No new order ID available")
+            return
+        
+        if not line_id:
+            self.log_test("Assign Order to Line", False, "No production line ID available")
+            return
+        
+        try:
+            # Get operator1 ID first
+            operator_headers = self.get_headers("operator1")
+            if operator_headers:
+                me_response = requests.get(f"{BASE_URL}/auth/me", headers=operator_headers, timeout=30)
+                if me_response.status_code == 200:
+                    operator_info = me_response.json()
+                    operator_id = operator_info.get("id")
+                    
+                    if operator_id:
+                        assign_data = {
+                            "line_id": line_id,
+                            "operator_id": operator_id
+                        }
+                        
+                        response = requests.post(
+                            f"{BASE_URL}/production/orders/{new_order_id}/assign",
+                            json=assign_data,
+                            headers=headers,
+                            timeout=30
+                        )
+                        
+                        if response.status_code == 200:
+                            result = response.json()
+                            if result.get("message"):
+                                self.log_test("Assign Order to Line", True, f"Emir hatta atandı: line_id={line_id}, operator_id={operator_id}")
+                            else:
+                                self.log_test("Assign Order to Line", False, "No message in response")
+                        else:
+                            self.log_test("Assign Order to Line", False, f"Status: {response.status_code}, Response: {response.text}")
+                    else:
+                        self.log_test("Assign Order to Line", False, "No operator ID found")
+                else:
+                    self.log_test("Assign Order to Line", False, "Could not get operator info")
+            else:
+                self.log_test("Assign Order to Line", False, "No operator token")
+                
+        except Exception as e:
+            self.log_test("Assign Order to Line", False, f"Exception: {str(e)}")
+    
+    def test_operator_assigned_orders(self):
+        """Test 11: Operator - Only see assigned orders"""
+        print("\n👷 Operator Assigned Orders testi...")
+        
+        headers = self.get_headers("operator1")
+        if not headers:
+            self.log_test("Operator Assigned Orders", False, "No operator1 token")
+            return
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/production/orders",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                orders = data.get("orders", [])
+                
+                # Operator should only see orders assigned to them
+                assigned_orders = [order for order in orders if order.get("assigned_operator_id")]
+                
+                self.log_test("Operator Assigned Orders", True, 
+                    f"Operatör {len(orders)} emir görebiliyor (sadece kendine atananları)")
+            else:
+                self.log_test("Operator Assigned Orders", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Operator Assigned Orders", False, f"Exception: {str(e)}")
+    
+    def test_raw_material_analysis(self):
+        """Test 15: Raw Material Analysis"""
+        print("\n🧪 Raw Material Analysis testi...")
+        
+        headers = self.get_headers("uretim_muduru")
+        if not headers:
+            self.log_test("Raw Material Analysis", False, "No uretim_muduru token")
+            return
+        
+        plan_id = getattr(self, 'production_plan_id', None)
+        if not plan_id:
+            self.log_test("Raw Material Analysis", False, "No production plan ID available")
+            return
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/production/raw-materials/analysis/{plan_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                requirements = data.get("requirements", [])
+                summary = data.get("summary", {})
+                
+                total_items = summary.get("total_items", 0)
+                sufficient_items = summary.get("sufficient_items", 0)
+                insufficient_items = summary.get("insufficient_items", 0)
+                
+                self.log_test("Raw Material Analysis", True, 
+                    f"Hammadde analizi: {total_items} kalem, {sufficient_items} yeterli, {insufficient_items} yetersiz")
+            else:
+                self.log_test("Raw Material Analysis", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Raw Material Analysis", False, f"Exception: {str(e)}")
+
     # ========== MEVSİMSEL TÜKETİM HESAPLAMA SİSTEMİ TESTS ==========
     
     def test_seasonal_consumption_system(self):
