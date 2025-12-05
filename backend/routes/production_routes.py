@@ -778,7 +778,7 @@ async def get_production_dashboard_stats(
     total_plans = await db.production_plans.count_documents({})
     active_plans = await db.production_plans.count_documents({
         "status": {"$in": [ProductionPlanStatus.APPROVED.value, ProductionPlanStatus.IN_PROGRESS.value]}
-    }, {"_id": 0})
+    })
     
     # Toplam emir sayısı
     total_orders = await db.production_orders.count_documents({})
