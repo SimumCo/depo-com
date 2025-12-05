@@ -2269,14 +2269,12 @@ class APITester:
                     operator_id = operator_info.get("id")
                     
                     if operator_id:
-                        assign_data = {
-                            "line_id": line_id,
-                            "operator_id": operator_id
-                        }
-                        
                         response = requests.post(
                             f"{BASE_URL}/production/orders/{new_order_id}/assign",
-                            json=assign_data,
+                            params={
+                                "line_id": line_id,
+                                "operator_id": operator_id
+                            },
                             headers=headers,
                             timeout=30
                         )
