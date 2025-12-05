@@ -152,7 +152,7 @@ async def approve_production_plan(
         {
             "$set": {
                 "status": ProductionPlanStatus.APPROVED.value,
-                "approved_by": current_user["id"],
+                "approved_by": current_user.id,
                 "updated_at": datetime.now()
             }
         }
