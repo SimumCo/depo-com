@@ -796,7 +796,7 @@ async def get_production_dashboard_stats(
     total_lines = await db.production_lines.count_documents({})
     active_lines = await db.production_lines.count_documents({
         "status": "active"
-    }, {"_id": 0})
+    })
     
     # Kalite kontrol
     total_qc = await db.quality_control.count_documents({})
