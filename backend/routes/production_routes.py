@@ -653,7 +653,7 @@ async def create_quality_control(
         product_id=order.get("product_id", ""),
         product_name=order.get("product_name", ""),
         batch_number=qc_data.batch_number,
-        inspector_id=current_user["id"],
+        inspector_id=current_user.id,
         inspector_name=current_user.get("full_name", ""),
         result=qc_data.result,
         tested_quantity=qc_data.tested_quantity,
