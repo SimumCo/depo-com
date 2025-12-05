@@ -81,7 +81,7 @@ async def create_production_plan(
         end_date=plan_data.end_date,
         items=plan_data.items,
         notes=plan_data.notes,
-        created_by=current_user.get("id"),
+        created_by=current_user.id,
         status=ProductionPlanStatus.DRAFT
     )
     
