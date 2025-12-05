@@ -787,7 +787,7 @@ async def get_production_dashboard_stats(
     })
     in_progress_orders = await db.production_orders.count_documents({
         "status": ProductionOrderStatus.IN_PROGRESS.value
-    }, {"_id": 0})
+    })
     completed_orders = await db.production_orders.count_documents({
         "status": ProductionOrderStatus.COMPLETED.value
     }, {"_id": 0})
