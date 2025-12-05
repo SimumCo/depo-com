@@ -233,7 +233,7 @@ const ProductionOrderList = ({ role }) => {
             <div className="space-y-4">
               <div>
                 <p className="text-sm text-muted-foreground">Emir: {selectedOrder.order_number}</p>
-                <p className="font-semibold">{selected Order.product_name}</p>
+                <p className="font-semibold">{selectedOrder.product_name}</p>
                 <p className="text-sm">{selectedOrder.target_quantity} {selectedOrder.unit}</p>
               </div>
               <div>
