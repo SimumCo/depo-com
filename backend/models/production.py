@@ -259,3 +259,126 @@ class QualityControlCreate(BaseModel):
     result: QualityControlResult
     test_parameters: Dict[str, str] = {}
     notes: Optional[str] = None
+
+
+# ========== NEW MODELS FOR OPERATOR PANEL ==========
+
+class DowntimeType(str, Enum):
+    """Makine Duruş Tipleri"""
+    BREAKDOWN = "breakdown"  # Arıza
+    MAINTENANCE = "maintenance"  # Bakım
+    SETUP = "setup"  # Ayar/Kurulum
+    NO_MATERIAL = "no_material"  # Hammadde Yok
+    NO_OPERATOR = "no_operator"  # Operatör Yok
+    PLANNED_STOP = "planned_stop"  # Planlı Duruş
+    OTHER = "other"  # Diğer
+
+
+class MachineDowntime(BaseModel):
+    """Makine Duruş Kaydı"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    order_id: Optional[str] = None
+    line_id: str
+    line_name: str
+    downtime_type: DowntimeType
+    start_time: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    end_time: Optional[datetime] = None
+    duration_minutes: Optional[float] = None
+    reason: Optional[str] = None  # Detaylı açıklama
+    operator_id: str
+    operator_name: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class RawMaterialUsage(BaseModel):
+    """Hammadde Kullanım Kaydı"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    order_id: str
+    order_number: str
+    batch_number: Optional[str] = None  # Üretim batch numarası
+    raw_material_id: str
+    raw_material_name: str
+    used_quantity: float
+    unit: str
+    lot_number: Optional[str] = None  # Hammadde lot numarası
+    operator_id: str
+    operator_name: str
+    usage_time: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    notes: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class BatchRecord(BaseModel):
+    """Batch/Lot Üretim Kaydı"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    batch_number: str  # "BATCH-20250105-001"
+    order_id: str
+    order_number: str
+    product_id: str
+    product_name: str
+    quantity: float
+    unit: str
+    line_id: str
+    line_name: str
+    operator_id: str
+    operator_name: str
+    production_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    expiry_date: Optional[datetime] = None
+    status: str = "completed"  # completed, in_progress, quality_check
+    notes: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class OperatorNote(BaseModel):
+    """Operatör Notları"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    order_id: Optional[str] = None
+    line_id: Optional[str] = None
+    note_type: str = "general"  # general, issue, quality, safety
+    note_text: str
+    operator_id: str
+    operator_name: str
+    shift: Optional[str] = None  # "Sabah", "Akşam", "Gece"
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+# ========== CREATE SCHEMAS FOR NEW MODELS ==========
+
+class MachineDowntimeCreate(BaseModel):
+    order_id: Optional[str] = None
+    line_id: str
+    downtime_type: DowntimeType
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+    reason: Optional[str] = None
+
+
+class RawMaterialUsageCreate(BaseModel):
+    order_id: str
+    batch_number: Optional[str] = None
+    raw_material_id: str
+    raw_material_name: str
+    used_quantity: float
+    unit: str
+    lot_number: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class BatchRecordCreate(BaseModel):
+    order_id: str
+    quantity: float
+    expiry_date: Optional[datetime] = None
+    notes: Optional[str] = None
+
+
+class OperatorNoteCreate(BaseModel):
+    order_id: Optional[str] = None
+    line_id: Optional[str] = None
+    note_type: str = "general"
+    note_text: str
+    shift: Optional[str] = None
