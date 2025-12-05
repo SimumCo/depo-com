@@ -269,7 +269,7 @@ async def create_production_order(
         scheduled_end=order_data.scheduled_end,
         notes=order_data.notes,
         status=ProductionOrderStatus.PENDING,
-        created_by=current_user.get("id")
+        created_by=current_user.id
     )
     
     await db.production_orders.insert_one(order.model_dump())
