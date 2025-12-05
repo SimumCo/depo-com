@@ -222,7 +222,7 @@ async def get_production_orders(
         query["line_id"] = line_id
     
     # Operatör ise sadece kendi emirlerini görsün
-    if current_user.role == UserRole.PRODUCTION_OPERATOR.value:
+    if current_user.get("role") == UserRole.PRODUCTION_OPERATOR.value:
         query["assigned_operator_id"] = current_user.get("id")
     
     orders = await db.production_orders.find(query, {"_id": 0}).sort("created_at", -1).to_list(length=200)
@@ -654,7 +654,7 @@ async def create_quality_control(
         product_name=order.get("product_name", ""),
         batch_number=qc_data.batch_number,
         inspector_id=current_user.get("id"),
-        inspector_name=current_user.full_name,
+        inspector_name=current_user.get("full_name", ""),
         result=qc_data.result,
         tested_quantity=qc_data.tested_quantity,
         passed_quantity=qc_data.passed_quantity,
@@ -720,7 +720,7 @@ async def create_tracking_record(
         raise HTTPException(status_code=404, detail="Emir bulunamadı")
     
     # Operatör kontrolü
-    if current_user.role == UserRole.PRODUCTION_OPERATOR.value:
+    if current_user.get("role") == UserRole.PRODUCTION_OPERATOR.value:
         if order.get("assigned_operator_id") != current_user.get("id"):
             raise HTTPException(status_code=403, detail="Bu emre erişim yetkiniz yok")
     
@@ -731,7 +731,7 @@ async def create_tracking_record(
         line_id=order.get("line_id", ""),
         line_name=order.get("line_name", ""),
         operator_id=current_user.get("id"),
-        operator_name=current_user.full_name,
+        operator_name=current_user.get("full_name", ""),
         produced_quantity=produced_quantity,
         waste_quantity=waste_quantity,
         unit=order.get("unit", ""),
