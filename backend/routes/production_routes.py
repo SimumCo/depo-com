@@ -39,7 +39,7 @@ async def get_production_plans(
     if plan_type:
         query["plan_type"] = plan_type
     
-    plans = await db.production_plans.find(query, {"_id": 0}).sort("created_at", -1).to_list(length=100)
+    plans = await db.production_plans.find(query, {"_id": 0}, {"_id": 0}).sort("created_at", -1).to_list(length=100)
     return {"plans": plans, "total": len(plans)}
 
 
@@ -50,7 +50,7 @@ async def get_production_plan(
 ):
     """Belirli bir üretim planını getir"""
     
-    plan = await db.production_plans.find_one({"id": plan_id})
+    plan = await db.production_plans.find_one({"id": plan_id}, {"_id": 0})
     if not plan:
         raise HTTPException(status_code=404, detail="Plan bulunamadı")
     
@@ -104,7 +104,7 @@ async def update_production_plan(
 ):
     """Üretim planını güncelle"""
     
-    plan = await db.production_plans.find_one({"id": plan_id})
+    plan = await db.production_plans.find_one({"id": plan_id}, {"_id": 0})
     if not plan:
         raise HTTPException(status_code=404, detail="Plan bulunamadı")
     
@@ -143,7 +143,7 @@ async def approve_production_plan(
 ):
     """Üretim planını onayla"""
     
-    plan = await db.production_plans.find_one({"id": plan_id})
+    plan = await db.production_plans.find_one({"id": plan_id}, {"_id": 0})
     if not plan:
         raise HTTPException(status_code=404, detail="Plan bulunamadı")
     
@@ -225,7 +225,7 @@ async def get_production_orders(
     if current_user.role == UserRole.PRODUCTION_OPERATOR.value:
         query["assigned_operator_id"] = current_user.id
     
-    orders = await db.production_orders.find(query, {"_id": 0}).sort("created_at", -1).to_list(length=200)
+    orders = await db.production_orders.find(query, {"_id": 0}, {"_id": 0}).sort("created_at", -1).to_list(length=200)
     return {"orders": orders, "total": len(orders)}
 
 
@@ -236,7 +236,7 @@ async def get_production_order(
 ):
     """Belirli bir üretim emrini getir"""
     
-    order = await db.production_orders.find_one({"id": order_id})
+    order = await db.production_orders.find_one({"id": order_id}, {"_id": 0})
     if not order:
         raise HTTPException(status_code=404, detail="Emir bulunamadı")
     
@@ -289,7 +289,7 @@ async def update_order_status(
 ):
     """Üretim emri durumunu güncelle"""
     
-    order = await db.production_orders.find_one({"id": order_id})
+    order = await db.production_orders.find_one({"id": order_id}, {"_id": 0})
     if not order:
         raise HTTPException(status_code=404, detail="Emir bulunamadı")
     
@@ -351,7 +351,7 @@ async def get_boms(
     if product_id:
         query["product_id"] = product_id
     
-    boms = await db.bill_of_materials.find(query, {"_id": 0}).to_list(length=100)
+    boms = await db.bill_of_materials.find(query, {"_id": 0}, {"_id": 0}).to_list(length=100)
     return {"boms": boms, "total": len(boms)}
 
 
@@ -362,7 +362,7 @@ async def get_bom(
 ):
     """Belirli bir reçeteyi getir"""
     
-    bom = await db.bill_of_materials.find_one({"id": bom_id})
+    bom = await db.bill_of_materials.find_one({"id": bom_id}, {"_id": 0})
     if not bom:
         raise HTTPException(status_code=404, detail="Reçete bulunamadı")
     
@@ -411,7 +411,7 @@ async def update_bom(
 ):
     """Reçeteyi güncelle"""
     
-    bom = await db.bill_of_materials.find_one({"id": bom_id})
+    bom = await db.bill_of_materials.find_one({"id": bom_id}, {"_id": 0})
     if not bom:
         raise HTTPException(status_code=404, detail="Reçete bulunamadı")
     
@@ -465,7 +465,7 @@ async def get_production_lines(
     if status:
         query["status"] = status
     
-    lines = await db.production_lines.find(query, {"_id": 0}).to_list(length=100)
+    lines = await db.production_lines.find(query, {"_id": 0}, {"_id": 0}).to_list(length=100)
     return {"lines": lines, "total": len(lines)}
 
 
@@ -476,7 +476,7 @@ async def get_production_line(
 ):
     """Belirli bir üretim hattını getir"""
     
-    line = await db.production_lines.find_one({"id": line_id})
+    line = await db.production_lines.find_one({"id": line_id}, {"_id": 0})
     if not line:
         raise HTTPException(status_code=404, detail="Hat bulunamadı")
     
@@ -520,7 +520,7 @@ async def update_production_line(
 ):
     """Üretim hattını güncelle"""
     
-    line = await db.production_lines.find_one({"id": line_id})
+    line = await db.production_lines.find_one({"id": line_id}, {"_id": 0})
     if not line:
         raise HTTPException(status_code=404, detail="Hat bulunamadı")
     
@@ -572,7 +572,7 @@ async def get_raw_material_analysis(
     
     requirements = await db.raw_material_requirements.find({
         "plan_id": plan_id
-    }).to_list(length=None)
+    }, {"_id": 0}).to_list(length=None)
     
     # Özet istatistikler
     total_items = len(requirements)
@@ -643,7 +643,7 @@ async def create_quality_control(
     """Kalite kontrol kaydı oluştur"""
     
     # Emri getir
-    order = await db.production_orders.find_one({"id": qc_data.order_id})
+    order = await db.production_orders.find_one({"id": qc_data.order_id}, {"_id": 0})
     if not order:
         raise HTTPException(status_code=404, detail="Emir bulunamadı")
     
@@ -715,7 +715,7 @@ async def create_tracking_record(
     """Üretim takip kaydı oluştur (operatör güncelleme)"""
     
     # Emri getir
-    order = await db.production_orders.find_one({"id": order_id})
+    order = await db.production_orders.find_one({"id": order_id}, {"_id": 0})
     if not order:
         raise HTTPException(status_code=404, detail="Emir bulunamadı")
     
@@ -775,39 +775,39 @@ async def get_production_dashboard_stats(
     """Üretim dashboard istatistikleri"""
     
     # Toplam plan sayısı
-    total_plans = await db.production_plans.count_documents({})
+    total_plans = await db.production_plans.count_documents({}, {"_id": 0})
     active_plans = await db.production_plans.count_documents({
         "status": {"$in": [ProductionPlanStatus.APPROVED.value, ProductionPlanStatus.IN_PROGRESS.value]}
-    })
+    }, {"_id": 0})
     
     # Toplam emir sayısı
-    total_orders = await db.production_orders.count_documents({})
+    total_orders = await db.production_orders.count_documents({}, {"_id": 0})
     pending_orders = await db.production_orders.count_documents({
         "status": ProductionOrderStatus.PENDING.value
-    })
+    }, {"_id": 0})
     in_progress_orders = await db.production_orders.count_documents({
         "status": ProductionOrderStatus.IN_PROGRESS.value
-    })
+    }, {"_id": 0})
     completed_orders = await db.production_orders.count_documents({
         "status": ProductionOrderStatus.COMPLETED.value
-    })
+    }, {"_id": 0})
     
     # Üretim hatları
-    total_lines = await db.production_lines.count_documents({})
+    total_lines = await db.production_lines.count_documents({}, {"_id": 0})
     active_lines = await db.production_lines.count_documents({
         "status": "active"
-    })
+    }, {"_id": 0})
     
     # Kalite kontrol
-    total_qc = await db.quality_control.count_documents({})
+    total_qc = await db.quality_control.count_documents({}, {"_id": 0})
     passed_qc = await db.quality_control.count_documents({
         "result": "pass"
-    })
+    }, {"_id": 0})
     
     # BOM sayısı
     total_boms = await db.bill_of_materials.count_documents({
         "is_active": True
-    })
+    }, {"_id": 0})
     
     return {
         "plans": {
