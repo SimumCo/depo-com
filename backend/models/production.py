@@ -347,6 +347,106 @@ class OperatorNote(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+
+
+# ========== QC SPECIALIST MODELS ==========
+
+class NonConformanceType(str, Enum):
+    """Uygunsuzluk Tipleri"""
+    PHYSICAL = "physical"  # Fiziksel
+    CHEMICAL = "chemical"  # Kimyasal
+    MICROBIOLOGICAL = "microbiological"  # Mikrobiyolojik
+    SENSORY = "sensory"  # Duyusal
+    PACKAGING = "packaging"  # Ambalaj
+    LABELING = "labeling"  # Etiketleme
+    OTHER = "other"  # Diğer
+
+
+class NonConformanceSeverity(str, Enum):
+    """Uygunsuzluk Şiddeti"""
+    MINOR = "minor"  # Minör
+    MAJOR = "major"  # Majör
+    CRITICAL = "critical"  # Kritik
+
+
+class NonConformanceReport(BaseModel):
+    """Uygunsuzluk Raporu"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    ncr_number: str  # "NCR-20250105-001"
+    qc_record_id: Optional[str] = None
+    batch_number: Optional[str] = None
+    order_id: Optional[str] = None
+    product_id: str
+    product_name: str
+    nonconformance_type: NonConformanceType
+    severity: NonConformanceSeverity
+    description: str
+    quantity_affected: float
+    unit: str
+    root_cause: Optional[str] = None
+    corrective_action: Optional[str] = None
+    preventive_action: Optional[str] = None
+    capa_required: bool = False  # CAPA (Corrective and Preventive Action)
+    status: str = "open"  # open, in_progress, closed
+    reported_by: str  # User ID
+    reported_by_name: str
+    assigned_to: Optional[str] = None
+    closed_date: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class TestType(str, Enum):
+    """Test Tipleri"""
+    PHYSICAL = "physical"  # pH, Nem, Yoğunluk
+    CHEMICAL = "chemical"  # Kimyasal analiz
+    MICROBIOLOGICAL = "microbiological"  # Mikrobiyolojik
+    SENSORY = "sensory"  # Duyusal (görsel, tat, koku)
+    HACCP = "haccp"  # HACCP kritik kontrol noktaları
+
+
+class QualityTest(BaseModel):
+    """Kalite Test Kaydı (Detaylı)"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    qc_record_id: str
+    batch_number: str
+    test_type: TestType
+    test_name: str  # "pH Testi", "Nem Analizi", vb.
+    test_method: Optional[str] = None  # "TS EN ISO 1234"
+    measured_value: Optional[str] = None
+    unit: Optional[str] = None
+    specification_min: Optional[float] = None
+    specification_max: Optional[float] = None
+    result: str = "pending"  # pass, fail, pending
+    tested_by: str
+    tested_by_name: str
+    test_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    notes: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class HACCPRecord(BaseModel):
+    """HACCP Kritik Kontrol Noktası Kaydı"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    ccp_number: str  # "CCP-1", "CCP-2"
+    ccp_name: str  # "Pastörizasyon Sıcaklığı"
+    order_id: Optional[str] = None
+    batch_number: Optional[str] = None
+    monitored_parameter: str  # "Sıcaklık"
+    measured_value: str
+    unit: str
+    critical_limit_min: Optional[float] = None
+    critical_limit_max: Optional[float] = None
+    status: str = "in_control"  # in_control, deviation
+    corrective_action: Optional[str] = None
+    monitored_by: str
+    monitored_by_name: str
+    monitoring_time: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 # ========== CREATE SCHEMAS FOR NEW MODELS ==========
 
 class MachineDowntimeCreate(BaseModel):
