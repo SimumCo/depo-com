@@ -42,7 +42,7 @@ const PendingBatchesList = ({ onRefresh }) => {
       const data = await productionApi.getQCPendingBatches();
       setPending(data);
     } catch (error) {
-      toast.error('Bekleyen batch\'ler yüklenemedi');
+      toast.error('Bekleyen batch listesi yüklenemedi');
     } finally {
       setLoading(false);
     }
