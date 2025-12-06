@@ -482,3 +482,51 @@ class OperatorNoteCreate(BaseModel):
     note_type: str = "general"
     note_text: str
     shift: Optional[str] = None
+
+
+# ========== QC CREATE SCHEMAS ==========
+
+class NonConformanceReportCreate(BaseModel):
+    qc_record_id: Optional[str] = None
+    batch_number: Optional[str] = None
+    order_id: Optional[str] = None
+    product_id: str
+    product_name: str
+    nonconformance_type: NonConformanceType
+    severity: NonConformanceSeverity
+    description: str
+    quantity_affected: float
+    unit: str
+    root_cause: Optional[str] = None
+    corrective_action: Optional[str] = None
+    preventive_action: Optional[str] = None
+    capa_required: bool = False
+
+
+class QualityTestCreate(BaseModel):
+    qc_record_id: str
+    batch_number: str
+    test_type: TestType
+    test_name: str
+    test_method: Optional[str] = None
+    measured_value: Optional[str] = None
+    unit: Optional[str] = None
+    specification_min: Optional[float] = None
+    specification_max: Optional[float] = None
+    result: str = "pending"
+    notes: Optional[str] = None
+
+
+class HACCPRecordCreate(BaseModel):
+    ccp_number: str
+    ccp_name: str
+    order_id: Optional[str] = None
+    batch_number: Optional[str] = None
+    monitored_parameter: str
+    measured_value: str
+    unit: str
+    critical_limit_min: Optional[float] = None
+    critical_limit_max: Optional[float] = None
+    status: str = "in_control"
+    corrective_action: Optional[str] = None
+
