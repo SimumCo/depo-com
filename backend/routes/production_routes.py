@@ -1296,6 +1296,358 @@ async def get_operator_dashboard_stats(
         "my_orders": my_orders,
         "in_progress": in_progress,
         "completed_today": completed_today,
+
+
+
+# ========== QC SPECIALIST ENDPOINTS ==========
+
+@router.get("/qc/pending-batches")
+async def get_qc_pending_batches(
+    current_user: dict = Depends(require_role([
+        UserRole.QUALITY_CONTROL,
+        UserRole.PRODUCTION_MANAGER,
+        UserRole.ADMIN
+    ]))
+):
+    """Kalite kontrolü bekleyen batch'leri getir"""
+    
+    # Quality check statüsündeki emirleri al
+    orders = await db.production_orders.find({
+        "status": ProductionOrderStatus.QUALITY_CHECK.value
+    }, {"_id": 0}).sort("created_at", -1).to_list(length=100)
+    
+    # İlgili batch'leri al
+    batch_numbers = [order.get("order_number") for order in orders if order.get("order_number")]
+    batches = await db.batch_records.find({
+        "order_number": {"$in": batch_numbers}
+    }, {"_id": 0}).to_list(length=100)
+    
+    return {
+        "pending_orders": orders,
+        "pending_batches": batches,
+        "total": len(orders)
+    }
+
+
+@router.get("/qc/dashboard/stats")
+async def get_qc_dashboard_stats(
+    current_user: dict = Depends(require_role([
+        UserRole.QUALITY_CONTROL,
+        UserRole.PRODUCTION_MANAGER,
+        UserRole.ADMIN
+    ]))
+):
+    """QC dashboard istatistikleri"""
+    
+    from datetime import timedelta
+    today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    week_start = today_start - timedelta(days=7)
+    
+    # Bekleyen testler
+    pending_tests = await db.production_orders.count_documents({
+        "status": ProductionOrderStatus.QUALITY_CHECK.value
+    })
+    
+    # Bugün yapılan testler
+    tests_today = await db.quality_control.count_documents({
+        "inspection_date": {"$gte": today_start}
+    })
+    
+    # Bu hafta geçen/kalan
+    qc_pass_week = await db.quality_control.count_documents({
+        "result": "pass",
+        "inspection_date": {"$gte": week_start}
+    })
+    
+    qc_fail_week = await db.quality_control.count_documents({
+        "result": "fail",
+        "inspection_date": {"$gte": week_start}
+    })
+    
+    # Açık NCR'ler
+    open_ncrs = await db.non_conformance_reports.count_documents({
+        "status": {"$in": ["open", "in_progress"]}
+    })
+    
+    # Kritik HACCP sapmaları
+    haccp_deviations = await db.haccp_records.count_documents({
+        "status": "deviation",
+        "monitoring_time": {"$gte": week_start}
+    })
+    
+    return {
+        "pending_tests": pending_tests,
+        "tests_today": tests_today,
+        "qc_pass_week": qc_pass_week,
+        "qc_fail_week": qc_fail_week,
+        "pass_rate_week": round((qc_pass_week / (qc_pass_week + qc_fail_week) * 100), 2) if (qc_pass_week + qc_fail_week) > 0 else 0,
+        "open_ncrs": open_ncrs,
+        "haccp_deviations": haccp_deviations
+    }
+
+
+# ========== NON-CONFORMANCE REPORTS ==========
+
+@router.get("/qc/ncr")
+async def get_non_conformance_reports(
+    status: Optional[str] = None,
+    severity: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Uygunsuzluk raporlarını getir"""
+    
+    query = {}
+    if status:
+        query["status"] = status
+    if severity:
+        query["severity"] = severity
+    
+    ncrs = await db.non_conformance_reports.find(query, {"_id": 0}).sort("created_at", -1).to_list(length=100)
+    return {"ncrs": ncrs, "total": len(ncrs)}
+
+
+@router.post("/qc/ncr")
+async def create_non_conformance_report(
+    ncr_data: NonConformanceReportCreate,
+    current_user: dict = Depends(require_role([
+        UserRole.QUALITY_CONTROL,
+        UserRole.PRODUCTION_MANAGER,
+        UserRole.ADMIN
+    ]))
+):
+    """Uygunsuzluk raporu oluştur"""
+    
+    # NCR numarası oluştur
+    ncr_number = f"NCR-{datetime.now().strftime('%Y%m%d')}-{str(uuid.uuid4())[:6]}"
+    
+    ncr = NonConformanceReport(
+        ncr_number=ncr_number,
+        qc_record_id=ncr_data.qc_record_id,
+        batch_number=ncr_data.batch_number,
+        order_id=ncr_data.order_id,
+        product_id=ncr_data.product_id,
+        product_name=ncr_data.product_name,
+        nonconformance_type=ncr_data.nonconformance_type,
+        severity=ncr_data.severity,
+        description=ncr_data.description,
+        quantity_affected=ncr_data.quantity_affected,
+        unit=ncr_data.unit,
+        root_cause=ncr_data.root_cause,
+        corrective_action=ncr_data.corrective_action,
+        preventive_action=ncr_data.preventive_action,
+        capa_required=ncr_data.capa_required,
+        reported_by=current_user.id,
+        reported_by_name=current_user.full_name
+    )
+    
+    await db.non_conformance_reports.insert_one(ncr.model_dump())
+    
+    return {
+        "message": "Uygunsuzluk raporu oluşturuldu",
+        "ncr": ncr.model_dump()
+    }
+
+
+@router.patch("/qc/ncr/{ncr_id}/status")
+async def update_ncr_status(
+    ncr_id: str,
+    status: str,
+    assigned_to: Optional[str] = None,
+    current_user: dict = Depends(require_role([
+        UserRole.QUALITY_CONTROL,
+        UserRole.PRODUCTION_MANAGER,
+        UserRole.ADMIN
+    ]))
+):
+    """NCR durumunu güncelle"""
+    
+    update_data = {
+        "status": status,
+        "updated_at": datetime.now()
+    }
+    
+    if assigned_to:
+        update_data["assigned_to"] = assigned_to
+    
+    if status == "closed":
+        update_data["closed_date"] = datetime.now()
+    
+    await db.non_conformance_reports.update_one(
+        {"id": ncr_id},
+        {"$set": update_data}
+    )
+    
+    return {"message": "NCR durumu güncellendi"}
+
+
+# ========== QUALITY TESTS ==========
+
+@router.get("/qc/tests")
+async def get_quality_tests(
+    qc_record_id: Optional[str] = None,
+    batch_number: Optional[str] = None,
+    test_type: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Kalite test kayıtlarını getir"""
+    
+    query = {}
+    if qc_record_id:
+        query["qc_record_id"] = qc_record_id
+    if batch_number:
+        query["batch_number"] = batch_number
+    if test_type:
+        query["test_type"] = test_type
+    
+    tests = await db.quality_tests.find(query, {"_id": 0}).sort("test_date", -1).to_list(length=200)
+    return {"tests": tests, "total": len(tests)}
+
+
+@router.post("/qc/tests")
+async def create_quality_test(
+    test_data: QualityTestCreate,
+    current_user: dict = Depends(require_role([
+        UserRole.QUALITY_CONTROL,
+        UserRole.PRODUCTION_MANAGER,
+        UserRole.ADMIN
+    ]))
+):
+    """Kalite test kaydı oluştur"""
+    
+    test = QualityTest(
+        qc_record_id=test_data.qc_record_id,
+        batch_number=test_data.batch_number,
+        test_type=test_data.test_type,
+        test_name=test_data.test_name,
+        test_method=test_data.test_method,
+        measured_value=test_data.measured_value,
+        unit=test_data.unit,
+        specification_min=test_data.specification_min,
+        specification_max=test_data.specification_max,
+        result=test_data.result,
+        tested_by=current_user.id,
+        tested_by_name=current_user.full_name,
+        notes=test_data.notes
+    )
+    
+    await db.quality_tests.insert_one(test.model_dump())
+    
+    return {
+        "message": "Test kaydı oluşturuldu",
+        "test": test.model_dump()
+    }
+
+
+# ========== HACCP RECORDS ==========
+
+@router.get("/qc/haccp")
+async def get_haccp_records(
+    ccp_number: Optional[str] = None,
+    status: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """HACCP kayıtlarını getir"""
+    
+    query = {}
+    if ccp_number:
+        query["ccp_number"] = ccp_number
+    if status:
+        query["status"] = status
+    
+    records = await db.haccp_records.find(query, {"_id": 0}).sort("monitoring_time", -1).to_list(length=200)
+    return {"haccp_records": records, "total": len(records)}
+
+
+@router.post("/qc/haccp")
+async def create_haccp_record(
+    haccp_data: HACCPRecordCreate,
+    current_user: dict = Depends(require_role([
+        UserRole.QUALITY_CONTROL,
+        UserRole.PRODUCTION_MANAGER,
+        UserRole.PRODUCTION_OPERATOR,
+        UserRole.ADMIN
+    ]))
+):
+    """HACCP kaydı oluştur"""
+    
+    record = HACCPRecord(
+        ccp_number=haccp_data.ccp_number,
+        ccp_name=haccp_data.ccp_name,
+        order_id=haccp_data.order_id,
+        batch_number=haccp_data.batch_number,
+        monitored_parameter=haccp_data.monitored_parameter,
+        measured_value=haccp_data.measured_value,
+        unit=haccp_data.unit,
+        critical_limit_min=haccp_data.critical_limit_min,
+        critical_limit_max=haccp_data.critical_limit_max,
+        status=haccp_data.status,
+        corrective_action=haccp_data.corrective_action,
+        monitored_by=current_user.id,
+        monitored_by_name=current_user.full_name
+    )
+    
+    await db.haccp_records.insert_one(record.model_dump())
+    
+    return {
+        "message": "HACCP kaydı oluşturuldu",
+        "record": record.model_dump()
+    }
+
+
+# ========== QC TREND ANALYSIS ==========
+
+@router.get("/qc/trend-analysis")
+async def get_qc_trend_analysis(
+    product_id: Optional[str] = None,
+    days: int = 30,
+    current_user: dict = Depends(require_role([
+        UserRole.QUALITY_CONTROL,
+        UserRole.PRODUCTION_MANAGER,
+        UserRole.ADMIN
+    ]))
+):
+    """QC trend analizi"""
+    
+    from datetime import timedelta
+    start_date = datetime.now() - timedelta(days=days)
+    
+    query = {"inspection_date": {"$gte": start_date}}
+    if product_id:
+        query["product_id"] = product_id
+    
+    # Tüm QC kayıtlarını al
+    qc_records = await db.quality_control.find(query, {"_id": 0}).sort("inspection_date", 1).to_list(length=500)
+    
+    # Günlük bazda grupla
+    daily_stats = {}
+    for record in qc_records:
+        date_key = record.get("inspection_date").strftime("%Y-%m-%d")
+        if date_key not in daily_stats:
+            daily_stats[date_key] = {"pass": 0, "fail": 0, "total": 0}
+        
+        daily_stats[date_key]["total"] += 1
+        if record.get("result") == "pass":
+            daily_stats[date_key]["pass"] += 1
+        elif record.get("result") == "fail":
+            daily_stats[date_key]["fail"] += 1
+    
+    # Pass rate hesapla
+    trend_data = []
+    for date_key, stats in sorted(daily_stats.items()):
+        pass_rate = (stats["pass"] / stats["total"] * 100) if stats["total"] > 0 else 0
+        trend_data.append({
+            "date": date_key,
+            "pass": stats["pass"],
+            "fail": stats["fail"],
+            "total": stats["total"],
+            "pass_rate": round(pass_rate, 2)
+        })
+    
+    return {
+        "trend_data": trend_data,
+        "period_days": days
+    }
+
         "active_downtimes": active_downtimes,
         "recent_notes": recent_notes
     }
