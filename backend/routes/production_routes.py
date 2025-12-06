@@ -1296,7 +1296,9 @@ async def get_operator_dashboard_stats(
         "my_orders": my_orders,
         "in_progress": in_progress,
         "completed_today": completed_today,
-
+        "active_downtimes": active_downtimes,
+        "recent_notes": recent_notes
+    }
 
 
 # ========== QC SPECIALIST ENDPOINTS ==========
