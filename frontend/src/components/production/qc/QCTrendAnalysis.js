@@ -15,6 +15,7 @@ const QCTrendAnalysis = () => {
 
   useEffect(() => {
     fetchTrend();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [days]);
 
   const fetchTrend = async () => {
