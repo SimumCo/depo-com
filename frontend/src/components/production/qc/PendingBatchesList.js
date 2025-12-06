@@ -135,7 +135,7 @@ const PendingBatchesList = ({ onRefresh }) => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ClipboardCheck className="h-5 w-5" />
-            Kalite Kontrolü Bekleyen Batch'ler ({pending.pending_orders.length})
+            Kalite Kontrolü Bekleyen Batchler ({pending.pending_orders.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
