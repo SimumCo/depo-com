@@ -1648,6 +1648,3 @@ async def get_qc_trend_analysis(
         "period_days": days
     }
 
-        "active_downtimes": active_downtimes,
-        "recent_notes": recent_notes
-    }
