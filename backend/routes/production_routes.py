@@ -13,7 +13,10 @@ from models.production import (
     MachineDowntime, MachineDowntimeCreate, DowntimeType,
     RawMaterialUsage, RawMaterialUsageCreate,
     BatchRecord, BatchRecordCreate,
-    OperatorNote, OperatorNoteCreate
+    OperatorNote, OperatorNoteCreate,
+    NonConformanceReport, NonConformanceReportCreate, NonConformanceType, NonConformanceSeverity,
+    QualityTest, QualityTestCreate, TestType,
+    HACCPRecord, HACCPRecordCreate
 )
 from models.user import UserRole
 from middleware.auth import get_current_user, require_role
