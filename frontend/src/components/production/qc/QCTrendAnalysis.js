@@ -13,12 +13,7 @@ const QCTrendAnalysis = () => {
   const [loading, setLoading] = useState(true);
   const [days, setDays] = useState(30);
 
-  useEffect(() => {
-    fetchTrend();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [days]);
-
-  const fetchTrend = async () => {
+  const fetchTrend = React.useCallback(async () => {
     setLoading(true);
     try {
       const data = await productionApi.getQCTrendAnalysis(null, days);
@@ -28,7 +23,11 @@ const QCTrendAnalysis = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [days]);
+
+  useEffect(() => {
+    fetchTrend();
+  }, [fetchTrend]);
 
   const getTrendIcon = (currentRate, previousRate) => {
     if (!previousRate) return <Minus className="h-4 w-4 text-gray-400" />;
