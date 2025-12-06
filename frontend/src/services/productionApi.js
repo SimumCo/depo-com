@@ -328,6 +328,74 @@ export const getOperatorDashboardStats = async () => {
   return response.data;
 };
 
+
+// ========== QC SPECIALIST ENDPOINTS ==========
+
+export const getQCPendingBatches = async () => {
+  const response = await api.get('/api/production/qc/pending-batches');
+  return response.data;
+};
+
+export const getQCDashboardStats = async () => {
+  const response = await api.get('/api/production/qc/dashboard/stats');
+  return response.data;
+};
+
+export const getNonConformanceReports = async (status = null, severity = null) => {
+  const params = {};
+  if (status) params.status = status;
+  if (severity) params.severity = severity;
+  const response = await api.get('/api/production/qc/ncr', { params });
+  return response.data;
+};
+
+export const createNonConformanceReport = async (ncrData) => {
+  const response = await api.post('/api/production/qc/ncr', ncrData);
+  return response.data;
+};
+
+export const updateNCRStatus = async (ncrId, status, assignedTo = null) => {
+  const params = { status };
+  if (assignedTo) params.assigned_to = assignedTo;
+  const response = await api.patch(`/api/production/qc/ncr/${ncrId}/status`, null, { params });
+  return response.data;
+};
+
+export const getQualityTests = async (qcRecordId = null, batchNumber = null, testType = null) => {
+  const params = {};
+  if (qcRecordId) params.qc_record_id = qcRecordId;
+  if (batchNumber) params.batch_number = batchNumber;
+  if (testType) params.test_type = testType;
+  const response = await api.get('/api/production/qc/tests', { params });
+  return response.data;
+};
+
+export const createQualityTest = async (testData) => {
+  const response = await api.post('/api/production/qc/tests', testData);
+  return response.data;
+};
+
+export const getHACCPRecords = async (ccpNumber = null, status = null) => {
+  const params = {};
+  if (ccpNumber) params.ccp_number = ccpNumber;
+  if (status) params.status = status;
+  const response = await api.get('/api/production/qc/haccp', { params });
+  return response.data;
+};
+
+export const createHACCPRecord = async (haccpData) => {
+  const response = await api.post('/api/production/qc/haccp', haccpData);
+  return response.data;
+};
+
+export const getQCTrendAnalysis = async (productId = null, days = 30) => {
+  const params = { days };
+  if (productId) params.product_id = productId;
+  const response = await api.get('/api/production/qc/trend-analysis', { params });
+  return response.data;
+};
+
+
 export default {
   getProductionLines,
   getProductionLine,
