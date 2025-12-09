@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { Badge } from '../components/ui/badge';
 import { 
   Package, TruckIcon, AlertTriangle, MapPin, 
-  ClipboardList, Lock 
+  ClipboardList, Lock, FileText, Search, BarChart3, CalendarCheck
 } from 'lucide-react';
 import { toast } from 'sonner';
 import * as productionApi from '../services/productionApi';
@@ -18,6 +18,15 @@ import StockLocationManager from '../components/production/warehouse/StockLocati
 import StockCountPanel from '../components/production/warehouse/StockCountPanel';
 import StockBlockPanel from '../components/production/warehouse/StockBlockPanel';
 import ExpiringStockAlert from '../components/production/warehouse/ExpiringStockAlert';
+
+// New components
+import DailyProductEntries from '../components/production/warehouse/DailyProductEntries';
+import PendingSalesRepOrders from '../components/production/warehouse/PendingSalesRepOrders';
+import PendingLogisticsLoading from '../components/production/warehouse/PendingLogisticsLoading';
+import CriticalStockLevels from '../components/production/warehouse/CriticalStockLevels';
+import QuickProductSearch from '../components/production/warehouse/QuickProductSearch';
+import WarehouseStockReport from '../components/production/warehouse/WarehouseStockReport';
+import StockCountVariance from '../components/production/warehouse/StockCountVariance';
 
 const WarehouseSupervisorDashboard = () => {
   const [stats, setStats] = useState(null);
