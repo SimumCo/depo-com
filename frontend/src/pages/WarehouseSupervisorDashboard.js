@@ -55,11 +55,16 @@ const WarehouseSupervisorDashboard = () => {
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-6">
         <div className="container mx-auto px-4">
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Package className="h-8 w-8" />
-            Depo Sorumlusu Paneli
-          </h1>
-          <p className="text-blue-100 mt-1">Stok hareketlerini yönetin ve takip edin</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold flex items-center gap-3">
+                <Package className="h-8 w-8" />
+                Depo Sorumlusu Paneli
+              </h1>
+              <p className="text-blue-100 mt-1">Stok hareketlerini yönetin ve takip edin</p>
+            </div>
+            <LogoutButton />
+          </div>
         </div>
       </div>
 
