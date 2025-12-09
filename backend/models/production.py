@@ -525,6 +525,173 @@ class HACCPRecordCreate(BaseModel):
     monitored_parameter: str
     measured_value: str
     unit: str
+
+
+
+# ========== WAREHOUSE MODELS ==========
+
+class TransactionType(str, Enum):
+    """Depo Hareket Tipleri"""
+    RAW_MATERIAL_OUT = "raw_material_out"  # Hammadde Çıkışı
+    FINISHED_GOOD_IN = "finished_good_in"  # Mamul Girişi
+    INTERNAL_TRANSFER = "internal_transfer"  # İç Transfer
+    STOCK_ADJUSTMENT = "stock_adjustment"  # Stok Düzeltme
+    RETURN = "return"  # İade
+    WASTE = "waste"  # Fire
+
+
+class WarehouseTransaction(BaseModel):
+    """Depo Hareket Kaydı"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    transaction_number: str  # "WHT-20250105-001"
+    transaction_type: TransactionType
+    order_id: Optional[str] = None
+    batch_number: Optional[str] = None
+    product_id: str
+    product_name: str
+    quantity: float
+    unit: str
+    from_location: Optional[str] = None
+    to_location: Optional[str] = None
+    lot_number: Optional[str] = None
+    expiry_date: Optional[datetime] = None
+    operator_id: str
+    operator_name: str
+    notes: Optional[str] = None
+    transaction_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class StockLocation(BaseModel):
+    """Raf ve Lokasyon"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    location_code: str  # "A-01-05" (Bölüm-Raf-Göz)
+    location_name: str
+    zone: str  # "Hammadde", "Yarı Mamul", "Mamul"
+    capacity: Optional[float] = None
+    unit: Optional[str] = None
+    current_stock: float = 0
+    is_active: bool = True
+    temperature_controlled: bool = False
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class StockItem(BaseModel):
+    """Stok Kalemi (Lokasyonda ne var)"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    location_id: str
+    location_code: str
+    product_id: str
+    product_name: str
+    lot_number: Optional[str] = None
+    batch_number: Optional[str] = None
+    quantity: float
+    unit: str
+    expiry_date: Optional[datetime] = None
+    received_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    status: str = "available"  # available, blocked, reserved
+    block_reason: Optional[str] = None
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class StockCount(BaseModel):
+    """Stok Sayım Kaydı"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    count_number: str  # "CNT-20250105-001"
+    location_id: Optional[str] = None
+    product_id: str
+    product_name: str
+    system_quantity: float
+    counted_quantity: float
+    difference: float
+    unit: str
+    counted_by: str
+    counted_by_name: str
+    count_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    notes: Optional[str] = None
+    approved: bool = False
+    approved_by: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class StockBlock(BaseModel):
+    """Stok Blokaj"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    block_number: str  # "BLK-20250105-001"
+    stock_item_id: str
+    product_id: str
+    product_name: str
+    lot_number: Optional[str] = None
+    batch_number: Optional[str] = None
+    quantity: float
+    unit: str
+    reason: str
+    blocked_by: str
+    blocked_by_name: str
+    block_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    qc_status: str = "pending"  # pending, approved, rejected
+    qc_inspected_by: Optional[str] = None
+    release_date: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+# ========== WAREHOUSE CREATE SCHEMAS ==========
+
+class WarehouseTransactionCreate(BaseModel):
+    transaction_type: TransactionType
+    order_id: Optional[str] = None
+    batch_number: Optional[str] = None
+    product_id: str
+    product_name: str
+    quantity: float
+    unit: str
+    from_location: Optional[str] = None
+    to_location: Optional[str] = None
+    lot_number: Optional[str] = None
+    expiry_date: Optional[datetime] = None
+    notes: Optional[str] = None
+
+
+class StockLocationCreate(BaseModel):
+    location_code: str
+    location_name: str
+    zone: str
+    capacity: Optional[float] = None
+    unit: Optional[str] = None
+    temperature_controlled: bool = False
+
+
+class StockItemUpdate(BaseModel):
+    quantity: Optional[float] = None
+    status: Optional[str] = None
+    block_reason: Optional[str] = None
+
+
+class StockCountCreate(BaseModel):
+    location_id: Optional[str] = None
+    product_id: str
+    product_name: str
+    system_quantity: float
+    counted_quantity: float
+    unit: str
+    notes: Optional[str] = None
+
+
+class StockBlockCreate(BaseModel):
+    stock_item_id: str
+    product_id: str
+    product_name: str
+    lot_number: Optional[str] = None
+    batch_number: Optional[str] = None
+    quantity: float
+    unit: str
+    reason: str
+
     critical_limit_min: Optional[float] = None
     critical_limit_max: Optional[float] = None
     status: str = "in_control"
