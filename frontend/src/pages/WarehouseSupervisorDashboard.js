@@ -31,7 +31,7 @@ import StockCountVariance from '../components/production/warehouse/StockCountVar
 const WarehouseSupervisorDashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('raw-out');
+  const [activeTab, setActiveTab] = useState('daily-entries');
 
   useEffect(() => {
     fetchStats();
