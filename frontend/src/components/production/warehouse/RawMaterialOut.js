@@ -1,6 +1,4 @@
-/* eslint-disable react-hooks/immutability, react-hooks/exhaustive-deps */
-// Raw Material Out - Warehouse Panel
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
@@ -29,11 +27,7 @@ const RawMaterialOut = ({ onRefresh }) => {
     notes: ''
   });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [transData, ordersData, locsData] = await Promise.all([
         productionApi.getWarehouseTransactions('raw_material_out', 7),
@@ -46,7 +40,11 @@ const RawMaterialOut = ({ onRefresh }) => {
     } catch (error) {
       toast.error('Veriler yüklenemedi');
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -144,7 +142,6 @@ const RawMaterialOut = ({ onRefresh }) => {
         </CardContent>
       </Card>
 
-      {/* Create Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>

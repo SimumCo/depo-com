@@ -1,5 +1,4 @@
-/* eslint-disable react-hooks/immutability, react-hooks/exhaustive-deps */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
@@ -23,21 +22,18 @@ const StockCountPanel = ({ onRefresh }) => {
     notes: ''
   });
 
-  const fetchData = React.useCallback(async () => { // moved
-  }, []);
-
-  useEffect(() => {
-    fetchCounts();
-  }, []);
-
-  const fetchCounts = async () => {
+  const fetchCounts = useCallback(async () => {
     try {
       const data = await productionApi.getStockCounts(30);
       setCounts(data.stock_counts || []);
     } catch (error) {
       toast.error('Sayım kayıtları yüklenemedi');
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchCounts();
+  }, [fetchCounts]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

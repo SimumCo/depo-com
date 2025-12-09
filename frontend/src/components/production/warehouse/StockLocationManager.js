@@ -1,5 +1,4 @@
-/* eslint-disable react-hooks/immutability, react-hooks/exhaustive-deps */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
@@ -24,21 +23,18 @@ const StockLocationManager = () => {
     temperature_controlled: false
   });
 
-  const fetchData = React.useCallback(async () => { // moved
-  }, []);
-
-  useEffect(() => {
-    fetchLocations();
-  }, []);
-
-  const fetchLocations = async () => {
+  const fetchLocations = useCallback(async () => {
     try {
       const data = await productionApi.getStockLocations();
       setLocations(data.locations || []);
     } catch (error) {
       toast.error('Lokasyonlar yüklenemedi');
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchLocations();
+  }, [fetchLocations]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

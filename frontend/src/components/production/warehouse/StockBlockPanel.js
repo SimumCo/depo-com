@@ -1,5 +1,4 @@
-/* eslint-disable react-hooks/immutability, react-hooks/exhaustive-deps */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
@@ -25,21 +24,18 @@ const StockBlockPanel = ({ onRefresh }) => {
     reason: ''
   });
 
-  const fetchData = React.useCallback(async () => { // moved
-  }, []);
-
-  useEffect(() => {
-    fetchBlocks();
-  }, []);
-
-  const fetchBlocks = async () => {
+  const fetchBlocks = useCallback(async () => {
     try {
       const data = await productionApi.getStockBlocks();
       setBlocks(data.stock_blocks || []);
     } catch (error) {
       toast.error('Blokaj kayıtları yüklenemedi');
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchBlocks();
+  }, [fetchBlocks]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

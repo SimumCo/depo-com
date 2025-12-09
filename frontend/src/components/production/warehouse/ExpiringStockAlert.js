@@ -1,5 +1,4 @@
-/* eslint-disable react-hooks/immutability, react-hooks/exhaustive-deps */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/table';
@@ -12,21 +11,18 @@ const ExpiringStockAlert = () => {
   const [items, setItems] = useState([]);
   const [days, setDays] = useState(30);
 
-  const fetchData = React.useCallback(async () => { // moved
-  }, []);
-
-  useEffect(() => {
-    fetchExpiring();
-  }, [days]);
-
-  const fetchExpiring = async () => {
+  const fetchExpiring = useCallback(async () => {
     try {
       const data = await productionApi.getExpiringStockItems(days);
       setItems(data.expiring_items || []);
     } catch (error) {
       toast.error('FIFO/FEFO uyarıları yüklenemedi');
     }
-  };
+  }, [days]);
+
+  useEffect(() => {
+    fetchExpiring();
+  }, [fetchExpiring]);
 
   const getDaysUntilExpiry = (expiryDate) => {
     const today = new Date();

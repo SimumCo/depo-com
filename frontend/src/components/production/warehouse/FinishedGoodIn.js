@@ -1,5 +1,4 @@
-/* eslint-disable react-hooks/immutability, react-hooks/exhaustive-deps */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
@@ -24,21 +23,18 @@ const FinishedGoodIn = ({ onRefresh }) => {
     notes: ''
   });
 
-  const fetchData = React.useCallback(async () => { // moved
-  }, []);
-
-  useEffect(() => {
-    fetchTransactions();
-  }, []);
-
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     try {
       const data = await productionApi.getWarehouseTransactions('finished_good_in', 7);
       setTransactions(data.transactions || []);
     } catch (error) {
       toast.error('Veriler yüklenemedi');
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchTransactions();
+  }, [fetchTransactions]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
