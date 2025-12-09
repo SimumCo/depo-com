@@ -479,9 +479,6 @@ export const releaseStockBlock = async (blockId, qcStatus) => {
   return response.data;
 };
 
-};
-
-
 export default {
   getProductionLines,
   getProductionLine,
