@@ -9,6 +9,7 @@ import ProductionPlanManager from '../components/production/ProductionPlanManage
 import ProductionOrderList from '../components/production/ProductionOrderList';
 import BOMManager from '../components/production/BOMManager';
 import RawMaterialAnalysis from '../components/production/RawMaterialAnalysis';
+import Layout from '../components/Layout';
 import { toast } from 'sonner';
 
 const ProductionManagerDashboard = () => {
@@ -30,19 +31,16 @@ const ProductionManagerDashboard = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-6">
-        <div className="container mx-auto px-4">
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Factory className="h-8 w-8" />
-            Üretim Yönetimi Dashboard
-          </h1>
-          <p className="text-blue-100 mt-1">Üretim süreçlerini yönetin ve takip edin</p>
-        </div>
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
+    );
+  }
 
-      <div className="container mx-auto px-4 py-6">
+  return (
+    <Layout title="Üretim Yönetimi Dashboard">
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
           <Card>
