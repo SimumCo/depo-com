@@ -1656,3 +1656,460 @@ async def get_qc_trend_analysis(
         "period_days": days
     }
 
+
+
+
+# ========== WAREHOUSE SUPERVISOR ENDPOINTS ==========
+
+@router.get("/warehouse/dashboard/stats")
+async def get_warehouse_dashboard_stats(
+    current_user: dict = Depends(require_role([
+        UserRole.WAREHOUSE_SUPERVISOR,
+        UserRole.PRODUCTION_MANAGER,
+        UserRole.ADMIN
+    ]))
+):
+    """Depo dashboard istatistikleri"""
+    
+    from datetime import timedelta
+    today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    week_start = today_start - timedelta(days=7)
+    
+    # Bugünkü hareketler
+    transactions_today = await db.warehouse_transactions.count_documents({
+        "transaction_date": {"$gte": today_start}
+    })
+    
+    # Bu hafta çıkışlar
+    raw_material_outs = await db.warehouse_transactions.count_documents({
+        "transaction_type": TransactionType.RAW_MATERIAL_OUT.value,
+        "transaction_date": {"$gte": week_start}
+    })
+    
+    # Bu hafta girişler
+    finished_good_ins = await db.warehouse_transactions.count_documents({
+        "transaction_type": TransactionType.FINISHED_GOOD_IN.value,
+        "transaction_date": {"$gte": week_start}
+    })
+    
+    # Blokeli stoklar
+    blocked_items = await db.stock_items.count_documents({
+        "status": "blocked"
+    })
+    
+    # Yaklaşan SKT'ler (30 gün içinde)
+    expiry_threshold = datetime.now() + timedelta(days=30)
+    expiring_soon = await db.stock_items.count_documents({
+        "expiry_date": {"$lte": expiry_threshold, "$gte": datetime.now()}
+    })
+    
+    # Toplam lokasyon
+    total_locations = await db.stock_locations.count_documents({"is_active": True})
+    
+    # Dolu lokasyonlar
+    occupied_locations = await db.stock_items.count_documents({
+        "quantity": {"$gt": 0}
+    })
+    
+    return {
+        "transactions_today": transactions_today,
+        "raw_material_outs": raw_material_outs,
+        "finished_good_ins": finished_good_ins,
+        "blocked_items": blocked_items,
+        "expiring_soon": expiring_soon,
+        "total_locations": total_locations,
+        "occupied_locations": occupied_locations,
+        "occupancy_rate": round((occupied_locations / total_locations * 100), 2) if total_locations > 0 else 0
+    }
+
+
+# ========== WAREHOUSE TRANSACTIONS ==========
+
+@router.get("/warehouse/transactions")
+async def get_warehouse_transactions(
+    transaction_type: Optional[str] = None,
+    days: int = 30,
+    current_user: dict = Depends(get_current_user)
+):
+    """Depo hareketlerini getir"""
+    
+    from datetime import timedelta
+    start_date = datetime.now() - timedelta(days=days)
+    
+    query = {"transaction_date": {"$gte": start_date}}
+    if transaction_type:
+        query["transaction_type"] = transaction_type
+    
+    transactions = await db.warehouse_transactions.find(query, {"_id": 0}).sort("transaction_date", -1).to_list(length=200)
+    return {"transactions": transactions, "total": len(transactions)}
+
+
+@router.post("/warehouse/transactions/raw-material-out")
+async def create_raw_material_out(
+    transaction_data: WarehouseTransactionCreate,
+    current_user: dict = Depends(require_role([
+        UserRole.WAREHOUSE_SUPERVISOR,
+        UserRole.PRODUCTION_MANAGER
+    ]))
+):
+    """Hammadde çıkışı"""
+    
+    # Transaction number oluştur
+    trans_number = f"WHT-{datetime.now().strftime('%Y%m%d')}-{str(uuid.uuid4())[:6]}"
+    
+    transaction = WarehouseTransaction(
+        transaction_number=trans_number,
+        transaction_type=TransactionType.RAW_MATERIAL_OUT,
+        order_id=transaction_data.order_id,
+        batch_number=transaction_data.batch_number,
+        product_id=transaction_data.product_id,
+        product_name=transaction_data.product_name,
+        quantity=transaction_data.quantity,
+        unit=transaction_data.unit,
+        from_location=transaction_data.from_location,
+        to_location=transaction_data.to_location,
+        lot_number=transaction_data.lot_number,
+        expiry_date=transaction_data.expiry_date,
+        operator_id=current_user.id,
+        operator_name=current_user.full_name,
+        notes=transaction_data.notes
+    )
+    
+    await db.warehouse_transactions.insert_one(transaction.model_dump())
+    
+    # Stoktan düş (eğer lokasyon belirtilmişse)
+    if transaction_data.from_location:
+        await db.stock_items.update_one(
+            {
+                "location_code": transaction_data.from_location,
+                "product_id": transaction_data.product_id
+            },
+            {"$inc": {"quantity": -transaction_data.quantity}}
+        )
+    
+    return {
+        "message": "Hammadde çıkışı kaydedildi",
+        "transaction": transaction.model_dump()
+    }
+
+
+@router.post("/warehouse/transactions/finished-good-in")
+async def create_finished_good_in(
+    transaction_data: WarehouseTransactionCreate,
+    current_user: dict = Depends(require_role([
+        UserRole.WAREHOUSE_SUPERVISOR,
+        UserRole.PRODUCTION_MANAGER
+    ]))
+):
+    """Mamul girişi (Üretimden gelen)"""
+    
+    trans_number = f"WHT-{datetime.now().strftime('%Y%m%d')}-{str(uuid.uuid4())[:6]}"
+    
+    transaction = WarehouseTransaction(
+        transaction_number=trans_number,
+        transaction_type=TransactionType.FINISHED_GOOD_IN,
+        order_id=transaction_data.order_id,
+        batch_number=transaction_data.batch_number,
+        product_id=transaction_data.product_id,
+        product_name=transaction_data.product_name,
+        quantity=transaction_data.quantity,
+        unit=transaction_data.unit,
+        from_location=transaction_data.from_location,
+        to_location=transaction_data.to_location,
+        lot_number=transaction_data.lot_number,
+        expiry_date=transaction_data.expiry_date,
+        operator_id=current_user.id,
+        operator_name=current_user.full_name,
+        notes=transaction_data.notes
+    )
+    
+    await db.warehouse_transactions.insert_one(transaction.model_dump())
+    
+    # Stok item oluştur veya güncelle
+    if transaction_data.to_location:
+        existing = await db.stock_items.find_one({
+            "location_code": transaction_data.to_location,
+            "product_id": transaction_data.product_id,
+            "lot_number": transaction_data.lot_number
+        })
+        
+        if existing:
+            await db.stock_items.update_one(
+                {"id": existing["id"]},
+                {"$inc": {"quantity": transaction_data.quantity}}
+            )
+        else:
+            # Yeni stok item
+            stock_item = StockItem(
+                location_id="",
+                location_code=transaction_data.to_location,
+                product_id=transaction_data.product_id,
+                product_name=transaction_data.product_name,
+                lot_number=transaction_data.lot_number,
+                batch_number=transaction_data.batch_number,
+                quantity=transaction_data.quantity,
+                unit=transaction_data.unit,
+                expiry_date=transaction_data.expiry_date
+            )
+            await db.stock_items.insert_one(stock_item.model_dump())
+    
+    return {
+        "message": "Mamul girişi kaydedildi",
+        "transaction": transaction.model_dump()
+    }
+
+
+# ========== STOCK LOCATIONS ==========
+
+@router.get("/warehouse/locations")
+async def get_stock_locations(
+    zone: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Stok lokasyonlarını getir"""
+    
+    query = {"is_active": True}
+    if zone:
+        query["zone"] = zone
+    
+    locations = await db.stock_locations.find(query, {"_id": 0}).sort("location_code", 1).to_list(length=500)
+    return {"locations": locations, "total": len(locations)}
+
+
+@router.post("/warehouse/locations")
+async def create_stock_location(
+    location_data: StockLocationCreate,
+    current_user: dict = Depends(require_role([
+        UserRole.WAREHOUSE_SUPERVISOR,
+        UserRole.ADMIN
+    ]))
+):
+    """Yeni lokasyon oluştur"""
+    
+    # Aynı kod var mı kontrol et
+    existing = await db.stock_locations.find_one({"location_code": location_data.location_code})
+    if existing:
+        raise HTTPException(status_code=400, detail="Bu lokasyon kodu zaten mevcut")
+    
+    location = StockLocation(**location_data.model_dump())
+    await db.stock_locations.insert_one(location.model_dump())
+    
+    return {
+        "message": "Lokasyon oluşturuldu",
+        "location": location.model_dump()
+    }
+
+
+# ========== STOCK ITEMS ==========
+
+@router.get("/warehouse/stock-items")
+async def get_stock_items(
+    location_code: Optional[str] = None,
+    product_id: Optional[str] = None,
+    status: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Stok kalemlerini getir"""
+    
+    query = {}
+    if location_code:
+        query["location_code"] = location_code
+    if product_id:
+        query["product_id"] = product_id
+    if status:
+        query["status"] = status
+    
+    items = await db.stock_items.find(query, {"_id": 0}).sort("updated_at", -1).to_list(length=500)
+    return {"stock_items": items, "total": len(items)}
+
+
+@router.get("/warehouse/stock-items/expiring")
+async def get_expiring_stock_items(
+    days: int = 30,
+    current_user: dict = Depends(get_current_user)
+):
+    """Yaklaşan SKT'li ürünleri getir (FIFO/FEFO uyarısı)"""
+    
+    from datetime import timedelta
+    threshold = datetime.now() + timedelta(days=days)
+    
+    items = await db.stock_items.find({
+        "expiry_date": {"$lte": threshold, "$gte": datetime.now()},
+        "quantity": {"$gt": 0}
+    }, {"_id": 0}).sort("expiry_date", 1).to_list(length=200)
+    
+    return {"expiring_items": items, "total": len(items)}
+
+
+@router.patch("/warehouse/stock-items/{item_id}")
+async def update_stock_item(
+    item_id: str,
+    update_data: StockItemUpdate,
+    current_user: dict = Depends(require_role([
+        UserRole.WAREHOUSE_SUPERVISOR,
+        UserRole.ADMIN
+    ]))
+):
+    """Stok kalemi güncelle"""
+    
+    update_dict = {k: v for k, v in update_data.model_dump().items() if v is not None}
+    update_dict["updated_at"] = datetime.now()
+    
+    await db.stock_items.update_one(
+        {"id": item_id},
+        {"$set": update_dict}
+    )
+    
+    return {"message": "Stok kalemi güncellendi"}
+
+
+# ========== STOCK COUNT ==========
+
+@router.get("/warehouse/stock-counts")
+async def get_stock_counts(
+    days: int = 30,
+    current_user: dict = Depends(get_current_user)
+):
+    """Stok sayım kayıtlarını getir"""
+    
+    from datetime import timedelta
+    start_date = datetime.now() - timedelta(days=days)
+    
+    counts = await db.stock_counts.find({
+        "count_date": {"$gte": start_date}
+    }, {"_id": 0}).sort("count_date", -1).to_list(length=200)
+    
+    return {"stock_counts": counts, "total": len(counts)}
+
+
+@router.post("/warehouse/stock-counts")
+async def create_stock_count(
+    count_data: StockCountCreate,
+    current_user: dict = Depends(require_role([
+        UserRole.WAREHOUSE_SUPERVISOR,
+        UserRole.ADMIN
+    ]))
+):
+    """Stok sayımı oluştur"""
+    
+    count_number = f"CNT-{datetime.now().strftime('%Y%m%d')}-{str(uuid.uuid4())[:6]}"
+    
+    difference = count_data.counted_quantity - count_data.system_quantity
+    
+    count = StockCount(
+        count_number=count_number,
+        location_id=count_data.location_id,
+        product_id=count_data.product_id,
+        product_name=count_data.product_name,
+        system_quantity=count_data.system_quantity,
+        counted_quantity=count_data.counted_quantity,
+        difference=difference,
+        unit=count_data.unit,
+        counted_by=current_user.id,
+        counted_by_name=current_user.full_name,
+        notes=count_data.notes
+    )
+    
+    await db.stock_counts.insert_one(count.model_dump())
+    
+    return {
+        "message": "Sayım kaydı oluşturuldu",
+        "count": count.model_dump(),
+        "difference": difference
+    }
+
+
+# ========== STOCK BLOCK ==========
+
+@router.get("/warehouse/stock-blocks")
+async def get_stock_blocks(
+    qc_status: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Stok blokaj kayıtlarını getir"""
+    
+    query = {}
+    if qc_status:
+        query["qc_status"] = qc_status
+    
+    blocks = await db.stock_blocks.find(query, {"_id": 0}).sort("block_date", -1).to_list(length=100)
+    return {"stock_blocks": blocks, "total": len(blocks)}
+
+
+@router.post("/warehouse/stock-blocks")
+async def create_stock_block(
+    block_data: StockBlockCreate,
+    current_user: dict = Depends(require_role([
+        UserRole.WAREHOUSE_SUPERVISOR,
+        UserRole.QUALITY_CONTROL,
+        UserRole.ADMIN
+    ]))
+):
+    """Stok blokajı oluştur"""
+    
+    block_number = f"BLK-{datetime.now().strftime('%Y%m%d')}-{str(uuid.uuid4())[:6]}"
+    
+    block = StockBlock(
+        block_number=block_number,
+        stock_item_id=block_data.stock_item_id,
+        product_id=block_data.product_id,
+        product_name=block_data.product_name,
+        lot_number=block_data.lot_number,
+        batch_number=block_data.batch_number,
+        quantity=block_data.quantity,
+        unit=block_data.unit,
+        reason=block_data.reason,
+        blocked_by=current_user.id,
+        blocked_by_name=current_user.full_name
+    )
+    
+    await db.stock_blocks.insert_one(block.model_dump())
+    
+    # Stok item'ı blokeli yap
+    await db.stock_items.update_one(
+        {"id": block_data.stock_item_id},
+        {"$set": {"status": "blocked", "block_reason": block_data.reason}}
+    )
+    
+    return {
+        "message": "Stok blokajı oluşturuldu",
+        "block": block.model_dump()
+    }
+
+
+@router.patch("/warehouse/stock-blocks/{block_id}/release")
+async def release_stock_block(
+    block_id: str,
+    qc_status: str,
+    current_user: dict = Depends(require_role([
+        UserRole.QUALITY_CONTROL,
+        UserRole.WAREHOUSE_SUPERVISOR,
+        UserRole.ADMIN
+    ]))
+):
+    """Stok blokajını kaldır"""
+    
+    block = await db.stock_blocks.find_one({"id": block_id}, {"_id": 0})
+    if not block:
+        raise HTTPException(status_code=404, detail="Blokaj kaydı bulunamadı")
+    
+    await db.stock_blocks.update_one(
+        {"id": block_id},
+        {
+            "$set": {
+                "qc_status": qc_status,
+                "qc_inspected_by": current_user.id,
+                "release_date": datetime.now()
+            }
+        }
+    )
+    
+    # Stok item'ı serbest bırak
+    if qc_status == "approved":
+        await db.stock_items.update_one(
+            {"id": block.get("stock_item_id")},
+            {"$set": {"status": "available", "block_reason": None}}
+        )
+    
+    return {"message": f"Blokaj {'kaldırıldı' if qc_status == 'approved' else 'reddedildi'}"}
+
