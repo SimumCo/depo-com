@@ -140,6 +140,30 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/production-operator/*"
+            element={
+              <ProtectedRoute allowedRoles={['production_operator']}>
+                <ProductionOperatorDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/quality-control/*"
+            element={
+              <ProtectedRoute allowedRoles={['quality_control']}>
+                <QualityControlDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/warehouse-supervisor/*"
+            element={
+              <ProtectedRoute allowedRoles={['warehouse_supervisor', 'warehouse_manager']}>
+                <WarehouseSupervisorDashboard />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </BrowserRouter>
       <Toaster />
