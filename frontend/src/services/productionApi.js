@@ -512,3 +512,54 @@ export default {
   getProducts,
   getUsers,
 };
+
+// ========== NEW WAREHOUSE SUPERVISOR FEATURES ==========
+
+export const getDailyProductEntries = async (days = 1) => {
+  const response = await api.get('/api/production/warehouse/daily-entries', { params: { days } });
+  return response.data;
+};
+
+export const getPendingSalesRepOrders = async () => {
+  const response = await api.get('/api/production/warehouse/pending-sales-rep-orders');
+  return response.data;
+};
+
+export const approveSalesRepOrder = async (orderId) => {
+  const response = await api.post(`/api/production/warehouse/approve-sales-rep-order/${orderId}`);
+  return response.data;
+};
+
+export const getPendingLogisticsLoading = async () => {
+  const response = await api.get('/api/production/warehouse/pending-logistics-loading');
+  return response.data;
+};
+
+export const approveLogisticsLoading = async (loadingId, vehiclePlate, driverName) => {
+  const response = await api.post(`/api/production/warehouse/approve-logistics-loading/${loadingId}`, null, {
+    params: { vehicle_plate: vehiclePlate, driver_name: driverName }
+  });
+  return response.data;
+};
+
+export const getCriticalStockLevels = async (criticalDays = 4) => {
+  const response = await api.get('/api/production/warehouse/critical-stock-levels', { 
+    params: { critical_days: criticalDays } 
+  });
+  return response.data;
+};
+
+export const getWarehouseStockReport = async () => {
+  const response = await api.get('/api/production/warehouse/stock-report');
+  return response.data;
+};
+
+export const searchWarehouseProducts = async (query) => {
+  const response = await api.get('/api/production/warehouse/search-products', { params: { q: query } });
+  return response.data;
+};
+
+export const getStockCountVariance = async (days = 30) => {
+  const response = await api.get('/api/production/warehouse/stock-count-variance', { params: { days } });
+  return response.data;
+};
