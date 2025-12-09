@@ -79,6 +79,16 @@ async def seed_production_data():
         },
         {
             "id": str(uuid.uuid4()),
+            "username": "depo_muduru",
+            "password_hash": pwd_context.hash("depo123"),
+            "email": "depo.mudur@firma.com",
+            "full_name": "Mehmet Çelik",
+            "role": "warehouse_manager",
+            "is_active": True,
+            "created_at": datetime.now()
+        },
+        {
+            "id": str(uuid.uuid4()),
             "username": "depo_sorumlu",
             "password_hash": pwd_context.hash("depo123"),
             "email": "depo@firma.com",
