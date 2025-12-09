@@ -65,8 +65,10 @@ const DashboardRouter = () => {
       return <ProductionOperatorDashboard />;
     case 'quality_control':
       return <QualityControlDashboard />;
+    case 'warehouse_manager':
+      return <WarehouseSupervisorDashboard />; // Depo Müdürü - Tüm yetkiler
     case 'warehouse_supervisor':
-      return <WarehouseManagerDashboard />; // Can use warehouse dashboard
+      return <WarehouseSupervisorDashboard />; // Depo Sorumlusu
     case 'rnd_engineer':
       return <ProductionManagerDashboard />; // Can use production dashboard
     case 'maintenance_technician':
