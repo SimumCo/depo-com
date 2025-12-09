@@ -17,7 +17,12 @@ from models.production import (
     OperatorNote, OperatorNoteCreate,
     NonConformanceReport, NonConformanceReportCreate, NonConformanceType, NonConformanceSeverity,
     QualityTest, QualityTestCreate, TestType,
-    HACCPRecord, HACCPRecordCreate
+    HACCPRecord, HACCPRecordCreate,
+    WarehouseTransaction, WarehouseTransactionCreate, TransactionType,
+    StockLocation, StockLocationCreate,
+    StockItem, StockItemUpdate,
+    StockCount, StockCountCreate,
+    StockBlock, StockBlockCreate
 )
 from models.user import UserRole
 from middleware.auth import get_current_user, require_role
