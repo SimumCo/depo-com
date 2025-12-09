@@ -610,6 +610,7 @@ async def calculate_raw_materials(
     current_user: dict = Depends(require_role([
         UserRole.PRODUCTION_MANAGER,
         UserRole.WAREHOUSE_SUPERVISOR,
+        UserRole.WAREHOUSE_MANAGER,
         UserRole.ADMIN
     ]))
 ):
@@ -1665,6 +1666,7 @@ async def get_qc_trend_analysis(
 async def get_warehouse_dashboard_stats(
     current_user: dict = Depends(require_role([
         UserRole.WAREHOUSE_SUPERVISOR,
+        UserRole.WAREHOUSE_MANAGER,
         UserRole.PRODUCTION_MANAGER,
         UserRole.ADMIN
     ]))
@@ -1749,6 +1751,7 @@ async def create_raw_material_out(
     transaction_data: WarehouseTransactionCreate,
     current_user: dict = Depends(require_role([
         UserRole.WAREHOUSE_SUPERVISOR,
+        UserRole.WAREHOUSE_MANAGER,
         UserRole.PRODUCTION_MANAGER
     ]))
 ):
@@ -1798,6 +1801,7 @@ async def create_finished_good_in(
     transaction_data: WarehouseTransactionCreate,
     current_user: dict = Depends(require_role([
         UserRole.WAREHOUSE_SUPERVISOR,
+        UserRole.WAREHOUSE_MANAGER,
         UserRole.PRODUCTION_MANAGER
     ]))
 ):
@@ -1881,6 +1885,7 @@ async def create_stock_location(
     location_data: StockLocationCreate,
     current_user: dict = Depends(require_role([
         UserRole.WAREHOUSE_SUPERVISOR,
+        UserRole.WAREHOUSE_MANAGER,
         UserRole.ADMIN
     ]))
 ):
@@ -1947,6 +1952,7 @@ async def update_stock_item(
     update_data: StockItemUpdate,
     current_user: dict = Depends(require_role([
         UserRole.WAREHOUSE_SUPERVISOR,
+        UserRole.WAREHOUSE_MANAGER,
         UserRole.ADMIN
     ]))
 ):
@@ -1987,6 +1993,7 @@ async def create_stock_count(
     count_data: StockCountCreate,
     current_user: dict = Depends(require_role([
         UserRole.WAREHOUSE_SUPERVISOR,
+        UserRole.WAREHOUSE_MANAGER,
         UserRole.ADMIN
     ]))
 ):
@@ -2041,6 +2048,7 @@ async def create_stock_block(
     block_data: StockBlockCreate,
     current_user: dict = Depends(require_role([
         UserRole.WAREHOUSE_SUPERVISOR,
+        UserRole.WAREHOUSE_MANAGER,
         UserRole.QUALITY_CONTROL,
         UserRole.ADMIN
     ]))
@@ -2084,6 +2092,7 @@ async def release_stock_block(
     current_user: dict = Depends(require_role([
         UserRole.QUALITY_CONTROL,
         UserRole.WAREHOUSE_SUPERVISOR,
+        UserRole.WAREHOUSE_MANAGER,
         UserRole.ADMIN
     ]))
 ):
