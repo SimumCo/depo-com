@@ -11,7 +11,7 @@ from datetime import datetime
 import uuid
 
 # Configuration
-BASE_URL = "https://mfg-control-4.preview.emergentagent.com/api"
+BASE_URL = "https://production-panel.preview.emergentagent.com/api"
 
 # Test Users
 TEST_USERS = {
