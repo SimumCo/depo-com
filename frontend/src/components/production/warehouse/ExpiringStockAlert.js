@@ -11,6 +11,9 @@ const ExpiringStockAlert = () => {
   const [items, setItems] = useState([]);
   const [days, setDays] = useState(30);
 
+  const fetchData = React.useCallback(async () => { // moved
+  }, []);
+
   useEffect(() => {
     fetchExpiring();
   }, [days]);

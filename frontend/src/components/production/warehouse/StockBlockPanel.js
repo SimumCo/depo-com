@@ -24,6 +24,9 @@ const StockBlockPanel = ({ onRefresh }) => {
     reason: ''
   });
 
+  const fetchData = React.useCallback(async () => { // moved
+  }, []);
+
   useEffect(() => {
     fetchBlocks();
   }, []);

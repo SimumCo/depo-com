@@ -23,6 +23,9 @@ const StockLocationManager = () => {
     temperature_controlled: false
   });
 
+  const fetchData = React.useCallback(async () => { // moved
+  }, []);
+
   useEffect(() => {
     fetchLocations();
   }, []);

@@ -23,6 +23,9 @@ const FinishedGoodIn = ({ onRefresh }) => {
     notes: ''
   });
 
+  const fetchData = React.useCallback(async () => { // moved
+  }, []);
+
   useEffect(() => {
     fetchTransactions();
   }, []);

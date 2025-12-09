@@ -22,6 +22,9 @@ const StockCountPanel = ({ onRefresh }) => {
     notes: ''
   });
 
+  const fetchData = React.useCallback(async () => { // moved
+  }, []);
+
   useEffect(() => {
     fetchCounts();
   }, []);
