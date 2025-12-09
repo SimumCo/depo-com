@@ -20,9 +20,14 @@ const Layout = ({ children, title }) => {
     const roles = {
       admin: 'Yönetici',
       warehouse_manager: 'Depo Müdürü',
+      warehouse_supervisor: 'Depo Sorumlusu',
       warehouse_staff: 'Depo Personeli',
       sales_rep: 'Satış Temsilcisi',
       customer: 'Müşteri',
+      production_manager: 'Üretim Müdürü',
+      production_operator: 'Üretim Operatörü',
+      quality_control: 'Kalite Kontrol Uzmanı',
+      maintenance_technician: 'Bakım Teknisyeni',
     };
     return roles[role] || role;
   };
