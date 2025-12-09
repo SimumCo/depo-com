@@ -47,8 +47,6 @@ const DashboardRouter = () => {
   switch (user.role) {
     case 'admin':
       return <AdminDashboard />;
-    case 'warehouse_manager':
-      return <WarehouseManagerDashboard />;
     case 'warehouse_staff':
       return <WarehouseStaffDashboard />;
     case 'sales_rep':
