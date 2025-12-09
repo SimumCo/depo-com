@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import * as productionApi from '../services/productionApi';
+import LogoutButton from '../components/ui/LogoutButton';
 
 // Import warehouse components
 import RawMaterialOut from '../components/production/warehouse/RawMaterialOut';
