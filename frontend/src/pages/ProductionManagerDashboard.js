@@ -161,8 +161,7 @@ const ProductionManagerDashboard = () => {
             <RawMaterialAnalysis />
           </TabsContent>
         </Tabs>
-      </div>
-    </div>
+    </Layout>
   );
 };
 
