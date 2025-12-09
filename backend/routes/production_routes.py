@@ -2122,3 +2122,300 @@ async def release_stock_block(
     
     return {"message": f"Blokaj {'kaldırıldı' if qc_status == 'approved' else 'reddedildi'}"}
 
+
+# ========== WAREHOUSE SUPERVISOR - NEW FEATURES ==========
+
+@router.get("/warehouse/daily-entries")
+async def get_daily_product_entries(
+    days: int = 1,
+    current_user: dict = Depends(require_role([UserRole.WAREHOUSE_SUPERVISOR, UserRole.WAREHOUSE_MANAGER]))
+):
+    """Günlük ürün giriş listesi (fabrikadan)"""
+    from datetime import timedelta
+    
+    start_date = datetime.now() - timedelta(days=days)
+    
+    entries = await db.warehouse_transactions.find({
+        "type": "finished_good_in",
+        "transaction_date": {"$gte": start_date},
+        "source": "factory"
+    }, {"_id": 0}).sort("transaction_date", -1).to_list(1000)
+    
+    return {
+        "entries": entries,
+        "total_items": len(entries),
+        "period_days": days
+    }
+
+
+@router.get("/warehouse/pending-sales-rep-orders")
+async def get_pending_sales_rep_orders(
+    current_user: dict = Depends(require_role([UserRole.WAREHOUSE_SUPERVISOR, UserRole.WAREHOUSE_MANAGER]))
+):
+    """Bekleyen plasiyer siparişleri"""
+    
+    orders = await db.sales_rep_orders.find({
+        "status": "pending_warehouse_approval",
+        "is_active": True
+    }, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    
+    return {
+        "pending_orders": orders,
+        "total_count": len(orders)
+    }
+
+
+@router.post("/warehouse/approve-sales-rep-order/{order_id}")
+async def approve_sales_rep_order(
+    order_id: str,
+    current_user: dict = Depends(require_role([UserRole.WAREHOUSE_SUPERVISOR, UserRole.WAREHOUSE_MANAGER]))
+):
+    """Plasiyer siparişini onayla"""
+    
+    order = await db.sales_rep_orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Sipariş bulunamadı")
+    
+    # Stok kontrolü
+    for item in order.get("items", []):
+        stock = await db.stock_items.find_one({
+            "product_id": item["product_id"],
+            "status": "available"
+        }, {"_id": 0})
+        
+        if not stock or stock.get("quantity", 0) < item["quantity"]:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Yetersiz stok: {item['product_name']}"
+            )
+    
+    # Siparişi onayla
+    await db.sales_rep_orders.update_one(
+        {"id": order_id},
+        {
+            "$set": {
+                "status": "approved",
+                "approved_by": current_user.id,
+                "approved_at": datetime.now()
+            }
+        }
+    )
+    
+    # Stokları düş
+    for item in order.get("items", []):
+        await db.stock_items.update_one(
+            {"product_id": item["product_id"]},
+            {"$inc": {"quantity": -item["quantity"]}}
+        )
+    
+    return {"message": "Sipariş onaylandı ve stoklar güncellendi"}
+
+
+@router.get("/warehouse/pending-logistics-loading")
+async def get_pending_logistics_loading(
+    current_user: dict = Depends(require_role([UserRole.WAREHOUSE_SUPERVISOR, UserRole.WAREHOUSE_MANAGER]))
+):
+    """Bekleyen lojistik yükleme talepleri"""
+    
+    loadings = await db.logistics_loading_requests.find({
+        "status": "pending",
+        "is_active": True
+    }, {"_id": 0}).sort("scheduled_date", 1).to_list(1000)
+    
+    return {
+        "pending_loadings": loadings,
+        "total_count": len(loadings)
+    }
+
+
+@router.post("/warehouse/approve-logistics-loading/{loading_id}")
+async def approve_logistics_loading(
+    loading_id: str,
+    vehicle_plate: str,
+    driver_name: str,
+    current_user: dict = Depends(require_role([UserRole.WAREHOUSE_SUPERVISOR, UserRole.WAREHOUSE_MANAGER]))
+):
+    """Lojistik yükleme onayı"""
+    
+    loading = await db.logistics_loading_requests.find_one({"id": loading_id}, {"_id": 0})
+    if not loading:
+        raise HTTPException(status_code=404, detail="Yükleme talebi bulunamadı")
+    
+    await db.logistics_loading_requests.update_one(
+        {"id": loading_id},
+        {
+            "$set": {
+                "status": "approved",
+                "approved_by": current_user.id,
+                "approved_at": datetime.now(),
+                "vehicle_plate": vehicle_plate,
+                "driver_name": driver_name
+            }
+        }
+    )
+    
+    return {"message": "Yükleme onaylandı"}
+
+
+@router.get("/warehouse/critical-stock-levels")
+async def get_critical_stock_levels(
+    critical_days: int = 4,
+    current_user: dict = Depends(require_role([UserRole.WAREHOUSE_SUPERVISOR, UserRole.WAREHOUSE_MANAGER]))
+):
+    """Kritik seviye altı ürünler (4 günden az stok)"""
+    
+    # Basit mantık: günlük ortalama satışa göre 4 günden az stok
+    products = await db.products.find({"is_active": True}, {"_id": 0}).to_list(1000)
+    
+    critical_items = []
+    for product in products:
+        stock_item = await db.stock_items.find_one(
+            {"product_id": product["id"], "status": "available"}, 
+            {"_id": 0}
+        )
+        
+        if stock_item:
+            # Günlük ortalama satış hesapla (basit)
+            daily_avg = product.get("daily_average_sales", 10)
+            current_stock = stock_item.get("quantity", 0)
+            days_remaining = current_stock / daily_avg if daily_avg > 0 else 999
+            
+            if days_remaining < critical_days:
+                critical_items.append({
+                    "product_id": product["id"],
+                    "product_name": product["name"],
+                    "current_stock": current_stock,
+                    "daily_average": daily_avg,
+                    "days_remaining": round(days_remaining, 1),
+                    "status": "critical" if days_remaining < 2 else "warning"
+                })
+    
+    return {
+        "critical_items": critical_items,
+        "total_count": len(critical_items)
+    }
+
+
+@router.get("/warehouse/stock-report")
+async def get_warehouse_stock_report(
+    current_user: dict = Depends(require_role([UserRole.WAREHOUSE_SUPERVISOR, UserRole.WAREHOUSE_MANAGER]))
+):
+    """Mevcut depo stok raporu"""
+    
+    stock_items = await db.stock_items.find(
+        {"status": "available"}, 
+        {"_id": 0}
+    ).to_list(10000)
+    
+    # Kategorilere göre grupla
+    by_category = {}
+    total_value = 0
+    total_items = 0
+    
+    for item in stock_items:
+        product = await db.products.find_one({"id": item["product_id"]}, {"_id": 0})
+        if product:
+            category = product.get("category", "Diğer")
+            if category not in by_category:
+                by_category[category] = {
+                    "items": [],
+                    "total_quantity": 0,
+                    "total_value": 0
+                }
+            
+            item_value = item.get("quantity", 0) * product.get("unit_price", 0)
+            by_category[category]["items"].append({
+                "product_name": product["name"],
+                "quantity": item.get("quantity", 0),
+                "unit": product.get("unit", "adet"),
+                "value": item_value
+            })
+            by_category[category]["total_quantity"] += item.get("quantity", 0)
+            by_category[category]["total_value"] += item_value
+            total_value += item_value
+            total_items += item.get("quantity", 0)
+    
+    return {
+        "by_category": by_category,
+        "summary": {
+            "total_items": total_items,
+            "total_value": round(total_value, 2),
+            "category_count": len(by_category)
+        }
+    }
+
+
+@router.get("/warehouse/search-products")
+async def search_warehouse_products(
+    q: str,
+    current_user: dict = Depends(require_role([UserRole.WAREHOUSE_SUPERVISOR, UserRole.WAREHOUSE_MANAGER]))
+):
+    """Hızlı ürün arama"""
+    
+    if len(q) < 2:
+        return {"products": []}
+    
+    # Ürün adı veya kodu ile ara
+    products = await db.products.find({
+        "$or": [
+            {"name": {"$regex": q, "$options": "i"}},
+            {"code": {"$regex": q, "$options": "i"}},
+            {"barcode": {"$regex": q, "$options": "i"}}
+        ],
+        "is_active": True
+    }, {"_id": 0}).limit(20).to_list(20)
+    
+    # Her ürün için stok bilgisi ekle
+    for product in products:
+        stock = await db.stock_items.find_one(
+            {"product_id": product["id"], "status": "available"},
+            {"_id": 0}
+        )
+        product["current_stock"] = stock.get("quantity", 0) if stock else 0
+        product["location"] = stock.get("location_code", "-") if stock else "-"
+    
+    return {"products": products}
+
+
+@router.get("/warehouse/stock-count-variance")
+async def get_stock_count_variance(
+    days: int = 30,
+    current_user: dict = Depends(require_role([UserRole.WAREHOUSE_SUPERVISOR, UserRole.WAREHOUSE_MANAGER]))
+):
+    """Stok sayımı fark raporu"""
+    from datetime import timedelta
+    
+    start_date = datetime.now() - timedelta(days=days)
+    
+    counts = await db.stock_counts.find({
+        "count_date": {"$gte": start_date}
+    }, {"_id": 0}).sort("count_date", -1).to_list(1000)
+    
+    # Farkları hesapla
+    total_variance = 0
+    variance_items = []
+    
+    for count in counts:
+        diff = count.get("counted_quantity", 0) - count.get("system_quantity", 0)
+        if diff != 0:
+            total_variance += abs(diff)
+            variance_items.append({
+                "count_number": count.get("count_number"),
+                "product_name": count.get("product_name"),
+                "system_qty": count.get("system_quantity"),
+                "counted_qty": count.get("counted_quantity"),
+                "difference": diff,
+                "count_date": count.get("count_date"),
+                "counted_by": count.get("counted_by_name")
+            })
+    
+    return {
+        "variance_items": variance_items,
+        "summary": {
+            "total_counts": len(counts),
+            "items_with_variance": len(variance_items),
+            "total_variance": total_variance,
+            "period_days": days
+        }
+    }
+
