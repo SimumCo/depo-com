@@ -93,11 +93,41 @@ const Login = () => {
         </form>
         <div className="px-6 pb-6">
           <div className="text-center text-sm text-gray-600">
-            <p className="font-medium mb-2">Giriş Hesapları:</p>
-            <div className="space-y-1 text-xs bg-gray-50 p-3 rounded-md">
-              <p><strong>👤 Admin:</strong> admin / admin123</p>
-              <p><strong>💼 Muhasebe:</strong> muhasebe / muhasebe123</p>
-              <p className="text-blue-600 font-medium pt-2">💡 Fatura yükleyince müşteri hesapları otomatik oluşur</p>
+            <p className="font-semibold mb-3 text-base">Demo Hesapları:</p>
+            <div className="space-y-1.5 text-xs bg-gradient-to-br from-gray-50 to-blue-50 p-4 rounded-lg border border-gray-200">
+              <div className="grid grid-cols-1 gap-1.5">
+                <p className="flex items-center justify-between">
+                  <span className="font-semibold text-gray-700">👤 Admin:</span>
+                  <span className="font-mono text-blue-600">admin / admin123</span>
+                </p>
+                <p className="flex items-center justify-between">
+                  <span className="font-semibold text-gray-700">🏭 Üretim Müdürü:</span>
+                  <span className="font-mono text-blue-600">uretim_muduru / uretim123</span>
+                </p>
+                <p className="flex items-center justify-between">
+                  <span className="font-semibold text-gray-700">👷 Üretim Operatörü:</span>
+                  <span className="font-mono text-blue-600">operator1 / operator123</span>
+                </p>
+                <p className="flex items-center justify-between">
+                  <span className="font-semibold text-gray-700">🔬 Kalite Kontrol:</span>
+                  <span className="font-mono text-blue-600">kalite_kontrol / kalite123</span>
+                </p>
+                <p className="flex items-center justify-between">
+                  <span className="font-semibold text-gray-700">📦 Depo Sorumlusu:</span>
+                  <span className="font-mono text-blue-600">depo_sorumlu / depo123</span>
+                </p>
+                <p className="flex items-center justify-between">
+                  <span className="font-semibold text-gray-700">🏢 Depo Müdürü:</span>
+                  <span className="font-mono text-blue-600">depo_muduru / depo123</span>
+                </p>
+                <p className="flex items-center justify-between">
+                  <span className="font-semibold text-gray-700">💼 Muhasebe:</span>
+                  <span className="font-mono text-blue-600">muhasebe / muhasebe123</span>
+                </p>
+              </div>
+              <p className="text-blue-600 font-medium pt-2 border-t border-gray-300 mt-2">
+                💡 Her rol farklı dashboard ve yetkiler içerir
+              </p>
             </div>
           </div>
         </div>
