@@ -393,7 +393,7 @@ export const getQCTrendAnalysis = async (productId = null, days = 30) => {
   if (productId) params.product_id = productId;
   const response = await api.get('/api/production/qc/trend-analysis', { params });
   return response.data;
-
+};
 
 // ========== WAREHOUSE SUPERVISOR ENDPOINTS ==========
 
