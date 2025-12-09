@@ -55,11 +55,16 @@ const ProductionOperatorDashboard = () => {
       {/* Header */}
       <div className="bg-gradient-to-r from-green-600 to-green-800 text-white py-6">
         <div className="container mx-auto px-4">
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Package className="h-8 w-8" />
-            Üretim Operatörü Paneli
-          </h1>
-          <p className="text-green-100 mt-1">Atanmış üretim emirlerini yönetin ve takip edin</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold flex items-center gap-3">
+                <Package className="h-8 w-8" />
+                Üretim Operatörü Paneli
+              </h1>
+              <p className="text-green-100 mt-1">Atanmış üretim emirlerini yönetin ve takip edin</p>
+            </div>
+            <LogoutButton />
+          </div>
         </div>
       </div>
 
