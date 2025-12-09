@@ -14,6 +14,7 @@ import PlasiyerDashboard from './pages/PlasiyerDashboard';
 import ProductionManagerDashboard from './pages/ProductionManagerDashboard';
 import ProductionOperatorDashboard from './pages/ProductionOperatorDashboard';
 import QualityControlDashboard from './pages/QualityControlDashboard';
+import WarehouseSupervisorDashboard from './pages/WarehouseSupervisorDashboard';
 import './App.css';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
