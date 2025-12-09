@@ -393,6 +393,92 @@ export const getQCTrendAnalysis = async (productId = null, days = 30) => {
   if (productId) params.product_id = productId;
   const response = await api.get('/api/production/qc/trend-analysis', { params });
   return response.data;
+
+
+// ========== WAREHOUSE SUPERVISOR ENDPOINTS ==========
+
+export const getWarehouseDashboardStats = async () => {
+  const response = await api.get('/api/production/warehouse/dashboard/stats');
+  return response.data;
+};
+
+export const getWarehouseTransactions = async (transactionType = null, days = 30) => {
+  const params = { days };
+  if (transactionType) params.transaction_type = transactionType;
+  const response = await api.get('/api/production/warehouse/transactions', { params });
+  return response.data;
+};
+
+export const createRawMaterialOut = async (transactionData) => {
+  const response = await api.post('/api/production/warehouse/transactions/raw-material-out', transactionData);
+  return response.data;
+};
+
+export const createFinishedGoodIn = async (transactionData) => {
+  const response = await api.post('/api/production/warehouse/transactions/finished-good-in', transactionData);
+  return response.data;
+};
+
+export const getStockLocations = async (zone = null) => {
+  const params = {};
+  if (zone) params.zone = zone;
+  const response = await api.get('/api/production/warehouse/locations', { params });
+  return response.data;
+};
+
+export const createStockLocation = async (locationData) => {
+  const response = await api.post('/api/production/warehouse/locations', locationData);
+  return response.data;
+};
+
+export const getStockItems = async (locationCode = null, productId = null, status = null) => {
+  const params = {};
+  if (locationCode) params.location_code = locationCode;
+  if (productId) params.product_id = productId;
+  if (status) params.status = status;
+  const response = await api.get('/api/production/warehouse/stock-items', { params });
+  return response.data;
+};
+
+export const getExpiringStockItems = async (days = 30) => {
+  const response = await api.get('/api/production/warehouse/stock-items/expiring', { params: { days } });
+  return response.data;
+};
+
+export const updateStockItem = async (itemId, updateData) => {
+  const response = await api.patch(`/api/production/warehouse/stock-items/${itemId}`, updateData);
+  return response.data;
+};
+
+export const getStockCounts = async (days = 30) => {
+  const response = await api.get('/api/production/warehouse/stock-counts', { params: { days } });
+  return response.data;
+};
+
+export const createStockCount = async (countData) => {
+  const response = await api.post('/api/production/warehouse/stock-counts', countData);
+  return response.data;
+};
+
+export const getStockBlocks = async (qcStatus = null) => {
+  const params = {};
+  if (qcStatus) params.qc_status = qcStatus;
+  const response = await api.get('/api/production/warehouse/stock-blocks', { params });
+  return response.data;
+};
+
+export const createStockBlock = async (blockData) => {
+  const response = await api.post('/api/production/warehouse/stock-blocks', blockData);
+  return response.data;
+};
+
+export const releaseStockBlock = async (blockId, qcStatus) => {
+  const response = await api.patch(`/api/production/warehouse/stock-blocks/${blockId}/release`, null, {
+    params: { qc_status: qcStatus }
+  });
+  return response.data;
+};
+
 };
 
 
