@@ -151,55 +151,87 @@ const WarehouseSupervisorDashboard = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="raw-out" className="flex items-center gap-2">
-            <TruckIcon className="h-4 w-4" />
-            Hammadde Çıkışı
+        <TabsList className="grid w-full grid-cols-6 lg:grid-cols-10">
+          <TabsTrigger value="daily-entries" className="flex items-center gap-1 text-xs lg:text-sm">
+            <CalendarCheck className="h-4 w-4" />
+            <span className="hidden lg:inline">Günlük</span> Giriş
           </TabsTrigger>
-          <TabsTrigger value="finished-in" className="flex items-center gap-2">
-            <Package className="h-4 w-4" />
-            Mamul Girişi
-          </TabsTrigger>
-          <TabsTrigger value="locations" className="flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
-            Lokasyonlar
-          </TabsTrigger>
-          <TabsTrigger value="count" className="flex items-center gap-2">
+          <TabsTrigger value="sales-orders" className="flex items-center gap-1 text-xs lg:text-sm">
             <ClipboardList className="h-4 w-4" />
-            Stok Sayımı
+            <span className="hidden lg:inline">Plasiyer</span> Sipariş
           </TabsTrigger>
-          <TabsTrigger value="blocks" className="flex items-center gap-2">
-            <Lock className="h-4 w-4" />
-            Blokajlar
+          <TabsTrigger value="logistics" className="flex items-center gap-1 text-xs lg:text-sm">
+            <TruckIcon className="h-4 w-4" />
+            Yükleme
           </TabsTrigger>
-          <TabsTrigger value="expiring" className="flex items-center gap-2">
+          <TabsTrigger value="critical" className="flex items-center gap-1 text-xs lg:text-sm">
             <AlertTriangle className="h-4 w-4" />
-            SKT Uyarıları
+            Kritik Stok
+          </TabsTrigger>
+          <TabsTrigger value="search" className="flex items-center gap-1 text-xs lg:text-sm">
+            <Search className="h-4 w-4" />
+            Arama
+          </TabsTrigger>
+          <TabsTrigger value="stock-report" className="flex items-center gap-1 text-xs lg:text-sm">
+            <BarChart3 className="h-4 w-4" />
+            <span className="hidden lg:inline">Stok</span> Rapor
+          </TabsTrigger>
+          <TabsTrigger value="variance" className="flex items-center gap-1 text-xs lg:text-sm">
+            <FileText className="h-4 w-4" />
+            <span className="hidden lg:inline">Fark</span> Rapor
+          </TabsTrigger>
+          <TabsTrigger value="count" className="flex items-center gap-1 text-xs lg:text-sm">
+            <ClipboardList className="h-4 w-4" />
+            Sayım
+          </TabsTrigger>
+          <TabsTrigger value="expiring" className="flex items-center gap-1 text-xs lg:text-sm">
+            <AlertTriangle className="h-4 w-4" />
+            SKT
+          </TabsTrigger>
+          <TabsTrigger value="locations" className="flex items-center gap-1 text-xs lg:text-sm">
+            <MapPin className="h-4 w-4" />
+            Lokasyon
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="raw-out">
-          <RawMaterialOut onRefresh={fetchStats} />
+        <TabsContent value="daily-entries">
+          <DailyProductEntries />
         </TabsContent>
 
-        <TabsContent value="finished-in">
-          <FinishedGoodIn onRefresh={fetchStats} />
+        <TabsContent value="sales-orders">
+          <PendingSalesRepOrders onRefresh={fetchStats} />
         </TabsContent>
 
-        <TabsContent value="locations">
-          <StockLocationManager />
+        <TabsContent value="logistics">
+          <PendingLogisticsLoading onRefresh={fetchStats} />
+        </TabsContent>
+
+        <TabsContent value="critical">
+          <CriticalStockLevels />
+        </TabsContent>
+
+        <TabsContent value="search">
+          <QuickProductSearch />
+        </TabsContent>
+
+        <TabsContent value="stock-report">
+          <WarehouseStockReport />
+        </TabsContent>
+
+        <TabsContent value="variance">
+          <StockCountVariance />
         </TabsContent>
 
         <TabsContent value="count">
           <StockCountPanel onRefresh={fetchStats} />
         </TabsContent>
 
-        <TabsContent value="blocks">
-          <StockBlockPanel onRefresh={fetchStats} />
-        </TabsContent>
-
         <TabsContent value="expiring">
           <ExpiringStockAlert />
+        </TabsContent>
+
+        <TabsContent value="locations">
+          <StockLocationManager />
         </TabsContent>
       </Tabs>
     </Layout>
