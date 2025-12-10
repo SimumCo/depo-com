@@ -733,7 +733,7 @@ async def get_emergency_tasks(
                 task["assigned_to_name"] = technician.get("full_name")
     
     # Get broken equipment
-    broken_equipment = await db.equipment.find({"status": EquipmentStatus.BROKEN}))
+    broken_equipment = await db.equipment.find({"status": EquipmentStatus.BROKEN}).to_list(length=None)
     for eq in broken_equipment:
         eq["_id"] = str(eq["_id"])
     
