@@ -616,10 +616,10 @@ async def get_dashboard_stats(
     user_role = current_user.role
     
     # Equipment stats
-    total_equipment = await await db.equipment.count_documents({})
-    operational = await await db.equipment.count_documents({"status": EquipmentStatus.OPERATIONAL})
-    in_maintenance = await await db.equipment.count_documents({"status": EquipmentStatus.MAINTENANCE})
-    broken = await await db.equipment.count_documents({"status": EquipmentStatus.BROKEN})
+    total_equipment = await db.equipment.count_documents({})
+    operational = await db.equipment.count_documents({"status": EquipmentStatus.OPERATIONAL})
+    in_maintenance = await db.equipment.count_documents({"status": EquipmentStatus.MAINTENANCE})
+    broken = await db.equipment.count_documents({"status": EquipmentStatus.BROKEN})
     
     # Task stats
     if user_role == UserRole.MAINTENANCE_TECHNICIAN:
