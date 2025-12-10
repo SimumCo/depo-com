@@ -14,7 +14,7 @@ from models.maintenance import (
 )
 from models.user import UserRole
 from middleware.auth import get_current_user, require_role
-from config.database import Database
+from config.database import db
 
 router = APIRouter(prefix="/maintenance", tags=["maintenance"])
 
