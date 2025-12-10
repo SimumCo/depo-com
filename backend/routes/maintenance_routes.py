@@ -171,10 +171,10 @@ async def get_maintenance_tasks(
         query["priority"] = priority
     
     # If technician, show only assigned tasks (unless explicitly requesting all)
-    if current_user.get("role") == UserRole.MAINTENANCE_TECHNICIAN and not assigned_to_me:
-        query["assigned_to"] = current_user.get("id")
+    if current_user.role == UserRole.MAINTENANCE_TECHNICIAN and not assigned_to_me:
+        query["assigned_to"] = current_user.id
     elif assigned_to_me:
-        query["assigned_to"] = current_user.get("id")
+        query["assigned_to"] = current_user.id
     
     tasks = list(db.maintenance_tasks.find(query).sort("priority", -1).sort("scheduled_date", 1))
     
@@ -245,7 +245,7 @@ async def create_maintenance_task(
         raise HTTPException(status_code=404, detail="Ekipman bulunamadı")
     
     task = MaintenanceTask(**task_data.model_dump())
-    task.assigned_by = current_user.get("id")
+    task.assigned_by = current_user.id
     
     db.maintenance_tasks.insert_one(task.model_dump())
     
@@ -268,8 +268,8 @@ async def update_maintenance_task(
         raise HTTPException(status_code=404, detail="Görev bulunamadı")
     
     # Technicians can only update their own tasks
-    if current_user.get("role") == UserRole.MAINTENANCE_TECHNICIAN:
-        if task.get("assigned_to") != current_user.get("id"):
+    if current_user.role == UserRole.MAINTENANCE_TECHNICIAN:
+        if task.get("assigned_to") != current_user.id:
             raise HTTPException(status_code=403, detail="Bu görevi güncelleme yetkiniz yok")
     
     update_data = {k: v for k, v in task_data.model_dump().items() if v is not None}
@@ -306,7 +306,7 @@ async def start_task(
     if not task:
         raise HTTPException(status_code=404, detail="Görev bulunamadı")
     
-    if task.get("assigned_to") != current_user.get("id"):
+    if task.get("assigned_to") != current_user.id:
         raise HTTPException(status_code=403, detail="Bu görev size atanmamış")
     
     if task.get("status") != TaskStatus.PENDING:
@@ -339,7 +339,7 @@ async def complete_task(
     if not task:
         raise HTTPException(status_code=404, detail="Görev bulunamadı")
     
-    if task.get("assigned_to") != current_user.get("id"):
+    if task.get("assigned_to") != current_user.id:
         raise HTTPException(status_code=403, detail="Bu görev size atanmamış")
     
     completed_at = datetime.now(timezone.utc)
@@ -421,7 +421,7 @@ async def create_maintenance_schedule(
         raise HTTPException(status_code=404, detail="Ekipman bulunamadı")
     
     schedule = MaintenanceSchedule(**schedule_data.model_dump())
-    schedule.created_by = current_user.get("id")
+    schedule.created_by = current_user.id
     
     db.maintenance_schedules.insert_one(schedule.model_dump())
     
@@ -468,8 +468,8 @@ async def get_spare_parts_requests(
     if status:
         query["status"] = status
     
-    if my_requests or current_user.get("role") == UserRole.MAINTENANCE_TECHNICIAN:
-        query["requested_by"] = current_user.get("id")
+    if my_requests or current_user.role == UserRole.MAINTENANCE_TECHNICIAN:
+        query["requested_by"] = current_user.id
     
     requests = list(db.spare_parts_requests.find(query).sort("created_at", -1))
     
@@ -511,7 +511,7 @@ async def create_spare_parts_request(
         raise HTTPException(status_code=404, detail="Ekipman bulunamadı")
     
     spare_request = SparePartsRequest(**request_data.model_dump())
-    spare_request.requested_by = current_user.get("id")
+    spare_request.requested_by = current_user.id
     
     db.spare_parts_requests.insert_one(spare_request.model_dump())
     
@@ -538,10 +538,10 @@ async def update_spare_parts_request(
     
     # If status changed to approved/rejected, record who did it
     if update_data.get("status") in [RequestStatus.APPROVED, RequestStatus.REJECTED]:
-        if current_user.get("role") not in [UserRole.ADMIN, UserRole.WAREHOUSE_SUPERVISOR, UserRole.PRODUCTION_MANAGER]:
+        if current_user.role not in [UserRole.ADMIN, UserRole.WAREHOUSE_SUPERVISOR, UserRole.PRODUCTION_MANAGER]:
             raise HTTPException(status_code=403, detail="Talepleri onaylama/reddetme yetkiniz yok")
         
-        update_data["approved_by"] = current_user.get("id")
+        update_data["approved_by"] = current_user.id
         update_data["approved_at"] = datetime.now(timezone.utc)
     
     if update_data.get("status") == RequestStatus.FULFILLED:
@@ -613,8 +613,8 @@ async def get_dashboard_stats(
     check_maintenance_access(current_user)
     
     db = Database.get_database()
-    user_id = current_user.get("id")
-    user_role = current_user.get("role")
+    user_id = current_user.id
+    user_role = current_user.role
     
     # Equipment stats
     total_equipment = db.equipment.count_documents({})
