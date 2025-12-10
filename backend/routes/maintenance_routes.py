@@ -20,7 +20,7 @@ router = APIRouter(prefix="/maintenance", tags=["maintenance"])
 
 
 # Helper function to check maintenance access
-def check_maintenance_access(user: dict):
+def check_maintenance_access(user):
     """Check if user has maintenance management access"""
     allowed_roles = [
         UserRole.ADMIN,
@@ -28,7 +28,9 @@ def check_maintenance_access(user: dict):
         UserRole.MAINTENANCE_TECHNICIAN,
         UserRole.WAREHOUSE_SUPERVISOR
     ]
-    if user.get("role") not in allowed_roles:
+    # Handle both dict and Pydantic model
+    user_role = user.role if hasattr(user, 'role') else user.get("role")
+    if user_role not in allowed_roles:
         raise HTTPException(status_code=403, detail="Yetkisiz erişim")
 
 
