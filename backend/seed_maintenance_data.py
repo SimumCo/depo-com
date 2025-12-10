@@ -7,7 +7,8 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from datetime import datetime, timezone, timedelta
-from config.database import get_database
+from pymongo import MongoClient
+import os
 from models.maintenance import (
     Equipment, EquipmentType, EquipmentStatus,
     MaintenanceTask, TaskType, TaskPriority, TaskStatus,
