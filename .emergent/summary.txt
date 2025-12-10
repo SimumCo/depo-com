@@ -114,7 +114,7 @@ declare -x base_url="https://demobackend.emergentagent.com"
 declare -x code_server_password="e207e466"
 declare -x integration_proxy_url="https://integrations.emergentagent.com"
 declare -x monitor_polling_interval="1"
-declare -x preview_endpoint="https://production-panel.preview.emergentagent.com"
+declare -x preview_endpoint="https://bakim-teknisyen.preview.emergentagent.com"
 declare -x run_id="529cf50a-7d15-40ff-b282-6e0d1138fc03" statements.
     - Fixed numerous linting errors (missing imports, incorrect syntax, undefined variables) across all newly created frontend components.
 
