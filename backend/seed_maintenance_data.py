@@ -494,6 +494,48 @@ def create_spare_parts_requests(equipment_ids, technician_id):
     return request_ids
 
 
+def create_admin_if_not_exists():
+    """Admin kullanıcısı yoksa oluştur"""
+    db = get_database()
+    admin = db.users.find_one({"role": UserRole.ADMIN})
+    
+    if not admin:
+        admin_user = User(
+            username="admin",
+            password_hash=pwd_context.hash("admin123"),
+            email="admin@example.com",
+            full_name="System Admin",
+            role=UserRole.ADMIN,
+            is_active=True
+        )
+        db.users.insert_one(admin_user.model_dump())
+        print(f"✓ Admin kullanıcısı oluşturuldu: admin / admin123")
+        return admin_user.id
+    else:
+        print(f"✓ Admin kullanıcısı zaten mevcut")
+        return admin["id"]
+
+def create_production_manager_if_not_exists():
+    """Production manager kullanıcısı yoksa oluştur"""
+    db = get_database()
+    manager = db.users.find_one({"role": UserRole.PRODUCTION_MANAGER})
+    
+    if not manager:
+        manager_user = User(
+            username="uretim_muduru",
+            password_hash=pwd_context.hash("uretim123"),
+            email="uretim@example.com",
+            full_name="Mehmet Demir",
+            role=UserRole.PRODUCTION_MANAGER,
+            is_active=True
+        )
+        db.users.insert_one(manager_user.model_dump())
+        print(f"✓ Üretim müdürü kullanıcısı oluşturuldu: uretim_muduru / uretim123")
+        return manager_user.id
+    else:
+        print(f"✓ Üretim müdürü kullanıcısı zaten mevcut")
+        return manager["id"]
+
 def main():
     """Ana seed fonksiyonu"""
     print("\n" + "="*60)
@@ -503,17 +545,9 @@ def main():
     db = get_database()
     
     # Get or create users
+    admin_id = create_admin_if_not_exists()
+    manager_id = create_production_manager_if_not_exists()
     technician_id = create_maintenance_technician_user()
-    
-    # Get admin and production manager IDs
-    admin = db.users.find_one({"role": UserRole.ADMIN})
-    manager = db.users.find_one({"role": UserRole.PRODUCTION_MANAGER})
-    
-    if not admin:
-        print("⚠ Admin kullanıcısı bulunamadı!")
-        return
-    
-    manager_id = manager["id"] if manager else admin["id"]
     
     # Create data
     equipment_ids = create_equipment()
