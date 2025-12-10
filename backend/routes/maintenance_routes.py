@@ -580,7 +580,7 @@ async def get_maintenance_history(
         else:
             query["completed_at"] = {"$lte": datetime.fromisoformat(end_date)}
     
-    history = await db.maintenance_tasks.find(query).sort("completed_at", -1).limit(100).to_list(length=None))
+    history = await db.maintenance_tasks.find(query).sort("completed_at", -1).limit(100).to_list(length=None)
     
     # Enrich with info
     for record in history:
