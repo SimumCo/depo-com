@@ -55,7 +55,7 @@ async def get_equipment_list(
     if type:
         query["type"] = type
     
-    equipment_list = await db.equipment.find(query).sort("name", 1))
+    equipment_list = await db.equipment.find(query).sort("name", 1).to_list(length=None)
     
     # Convert MongoDB _id to string
     for eq in equipment_list:
