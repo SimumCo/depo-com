@@ -189,13 +189,13 @@ async def get_maintenance_tasks(
         
         # Get assigned technician name
         if task.get("assigned_to"):
-            technician = db.users.find_one({"id": task["assigned_to"]})
+            technician = await db.users.find_one({"id": task["assigned_to"]})
             if technician:
                 task["assigned_to_name"] = technician.get("full_name")
         
         # Get assigned by name
         if task.get("assigned_by"):
-            assigner = db.users.find_one({"id": task["assigned_by"]})
+            assigner = await db.users.find_one({"id": task["assigned_by"]})
             if assigner:
                 task["assigned_by_name"] = assigner.get("full_name")
     
@@ -484,13 +484,13 @@ async def get_spare_parts_requests(
             req["equipment_code"] = equipment.get("code")
         
         # Requester name
-        requester = db.users.find_one({"id": req.get("requested_by")})
+        requester = await db.users.find_one({"id": req.get("requested_by")})
         if requester:
             req["requested_by_name"] = requester.get("full_name")
         
         # Approver name
         if req.get("approved_by"):
-            approver = db.users.find_one({"id": req["approved_by"]})
+            approver = await db.users.find_one({"id": req["approved_by"]})
             if approver:
                 req["approved_by_name"] = approver.get("full_name")
     
@@ -594,7 +594,7 @@ async def get_maintenance_history(
         
         # Technician name
         if record.get("assigned_to"):
-            technician = db.users.find_one({"id": record["assigned_to"]})
+            technician = await db.users.find_one({"id": record["assigned_to"]})
             if technician:
                 record["performed_by_name"] = technician.get("full_name")
     
@@ -728,7 +728,7 @@ async def get_emergency_tasks(
         
         # Technician info
         if task.get("assigned_to"):
-            technician = db.users.find_one({"id": task["assigned_to"]})
+            technician = await db.users.find_one({"id": task["assigned_to"]})
             if technician:
                 task["assigned_to_name"] = technician.get("full_name")
     
