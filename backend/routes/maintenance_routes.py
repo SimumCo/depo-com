@@ -45,7 +45,7 @@ async def get_equipment_list(
     """Ekipman listesini getir"""
     check_maintenance_access(current_user)
     
-    db = get_database()
+    db = Database.get_database()
     query = {}
     
     if status:
@@ -70,7 +70,7 @@ async def get_equipment_detail(
     """Ekipman detayını getir"""
     check_maintenance_access(current_user)
     
-    db = get_database()
+    db = Database.get_database()
     equipment = db.equipment.find_one({"id": equipment_id})
     
     if not equipment:
@@ -97,7 +97,7 @@ async def create_equipment(
     current_user: dict = Depends(require_role([UserRole.ADMIN, UserRole.PRODUCTION_MANAGER]))
 ):
     """Yeni ekipman oluştur"""
-    db = get_database()
+    db = Database.get_database()
     
     # Check if code already exists
     existing = db.equipment.find_one({"code": equipment_data.code})
@@ -117,7 +117,7 @@ async def update_equipment(
     current_user: dict = Depends(require_role([UserRole.ADMIN, UserRole.PRODUCTION_MANAGER, UserRole.MAINTENANCE_TECHNICIAN]))
 ):
     """Ekipman güncelle"""
-    db = get_database()
+    db = Database.get_database()
     
     equipment = db.equipment.find_one({"id": equipment_id})
     if not equipment:
@@ -137,7 +137,7 @@ async def delete_equipment(
     current_user: dict = Depends(require_role([UserRole.ADMIN]))
 ):
     """Ekipman sil"""
-    db = get_database()
+    db = Database.get_database()
     
     result = db.equipment.delete_one({"id": equipment_id})
     if result.deleted_count == 0:
@@ -160,7 +160,7 @@ async def get_maintenance_tasks(
     """Bakım görevlerini getir"""
     check_maintenance_access(current_user)
     
-    db = get_database()
+    db = Database.get_database()
     query = {}
     
     if status:
@@ -208,7 +208,7 @@ async def get_task_detail(
     """Görev detayını getir"""
     check_maintenance_access(current_user)
     
-    db = get_database()
+    db = Database.get_database()
     task = db.maintenance_tasks.find_one({"id": task_id})
     
     if not task:
@@ -235,7 +235,7 @@ async def create_maintenance_task(
     current_user: dict = Depends(require_role([UserRole.ADMIN, UserRole.PRODUCTION_MANAGER]))
 ):
     """Yeni bakım görevi oluştur"""
-    db = get_database()
+    db = Database.get_database()
     
     # Verify equipment exists
     equipment = db.equipment.find_one({"id": task_data.equipment_id})
@@ -259,7 +259,7 @@ async def update_maintenance_task(
     """Bakım görevini güncelle"""
     check_maintenance_access(current_user)
     
-    db = get_database()
+    db = Database.get_database()
     
     task = db.maintenance_tasks.find_one({"id": task_id})
     if not task:
@@ -298,7 +298,7 @@ async def start_task(
     current_user: dict = Depends(require_role([UserRole.MAINTENANCE_TECHNICIAN]))
 ):
     """Göreve başla"""
-    db = get_database()
+    db = Database.get_database()
     
     task = db.maintenance_tasks.find_one({"id": task_id})
     if not task:
@@ -331,7 +331,7 @@ async def complete_task(
     current_user: dict = Depends(require_role([UserRole.MAINTENANCE_TECHNICIAN]))
 ):
     """Görevi tamamla"""
-    db = get_database()
+    db = Database.get_database()
     
     task = db.maintenance_tasks.find_one({"id": task_id})
     if not task:
@@ -379,7 +379,7 @@ async def get_maintenance_schedule(
     """Bakım takvimini getir"""
     check_maintenance_access(current_user)
     
-    db = get_database()
+    db = Database.get_database()
     query = {"is_active": True}
     
     if equipment_id:
@@ -411,7 +411,7 @@ async def create_maintenance_schedule(
     current_user: dict = Depends(require_role([UserRole.ADMIN, UserRole.PRODUCTION_MANAGER]))
 ):
     """Yeni bakım planı oluştur"""
-    db = get_database()
+    db = Database.get_database()
     
     # Verify equipment exists
     equipment = db.equipment.find_one({"id": schedule_data.equipment_id})
@@ -433,7 +433,7 @@ async def update_maintenance_schedule(
     current_user: dict = Depends(require_role([UserRole.ADMIN, UserRole.PRODUCTION_MANAGER]))
 ):
     """Bakım planını güncelle"""
-    db = get_database()
+    db = Database.get_database()
     
     schedule = db.maintenance_schedules.find_one({"id": schedule_id})
     if not schedule:
@@ -460,7 +460,7 @@ async def get_spare_parts_requests(
     """Yedek parça taleplerini getir"""
     check_maintenance_access(current_user)
     
-    db = get_database()
+    db = Database.get_database()
     query = {}
     
     if status:
@@ -501,7 +501,7 @@ async def create_spare_parts_request(
     current_user: dict = Depends(require_role([UserRole.MAINTENANCE_TECHNICIAN]))
 ):
     """Yeni yedek parça talebi oluştur"""
-    db = get_database()
+    db = Database.get_database()
     
     # Verify equipment exists
     equipment = db.equipment.find_one({"id": request_data.equipment_id})
@@ -525,7 +525,7 @@ async def update_spare_parts_request(
     """Yedek parça talebini güncelle"""
     check_maintenance_access(current_user)
     
-    db = get_database()
+    db = Database.get_database()
     
     spare_request = db.spare_parts_requests.find_one({"id": request_id})
     if not spare_request:
@@ -564,7 +564,7 @@ async def get_maintenance_history(
     """Bakım geçmişini getir"""
     check_maintenance_access(current_user)
     
-    db = get_database()
+    db = Database.get_database()
     query = {"status": TaskStatus.COMPLETED}
     
     if equipment_id:
@@ -610,7 +610,7 @@ async def get_dashboard_stats(
     """Bakım teknisyeni dashboard istatistikleri"""
     check_maintenance_access(current_user)
     
-    db = get_database()
+    db = Database.get_database()
     user_id = current_user.get("id")
     user_role = current_user.get("role")
     
@@ -704,7 +704,7 @@ async def get_emergency_tasks(
     """Acil müdahale görevlerini getir"""
     check_maintenance_access(current_user)
     
-    db = get_database()
+    db = Database.get_database()
     
     # Get urgent tasks
     query = {
