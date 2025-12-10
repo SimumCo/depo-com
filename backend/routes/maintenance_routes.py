@@ -83,7 +83,7 @@ async def get_equipment_detail(
     # Get recent maintenance history
     recent_tasks = await db.maintenance_tasks.find(
         {"equipment_id": equipment_id, "status": TaskStatus.COMPLETED}
-    ).sort("completed_at", -1).limit(5))
+    ).sort("completed_at", -1).limit(5).to_list(length=None))
     
     for task in recent_tasks:
         task["_id"] = str(task["_id"])
@@ -390,7 +390,7 @@ async def get_maintenance_schedule(
     if overdue:
         query["next_due_date"] = {"$lt": datetime.now(timezone.utc)}
     
-    schedules = await db.maintenance_schedules.find(query).sort("next_due_date", 1))
+    schedules = await db.maintenance_schedules.find(query).sort("next_due_date", 1).to_list(length=None)
     
     # Enrich with equipment info
     for schedule in schedules:
@@ -471,7 +471,7 @@ async def get_spare_parts_requests(
     if my_requests or current_user.role == UserRole.MAINTENANCE_TECHNICIAN:
         query["requested_by"] = current_user.id
     
-    requests = await db.spare_parts_requests.find(query).sort("created_at", -1))
+    requests = await db.spare_parts_requests.find(query).sort("created_at", -1).to_list(length=None)
     
     # Enrich with info
     for req in requests:
@@ -580,7 +580,7 @@ async def get_maintenance_history(
         else:
             query["completed_at"] = {"$lte": datetime.fromisoformat(end_date)}
     
-    history = await db.maintenance_tasks.find(query).sort("completed_at", -1).limit(100))
+    history = await db.maintenance_tasks.find(query).sort("completed_at", -1).limit(100).to_list(length=None))
     
     # Enrich with info
     for record in history:
@@ -713,7 +713,7 @@ async def get_emergency_tasks(
         "status": {"$in": [TaskStatus.PENDING, TaskStatus.IN_PROGRESS]}
     }
     
-    emergency_tasks = await db.maintenance_tasks.find(query).sort("created_at", -1))
+    emergency_tasks = await db.maintenance_tasks.find(query).sort("created_at", -1).to_list(length=None)
     
     # Enrich with info
     for task in emergency_tasks:
