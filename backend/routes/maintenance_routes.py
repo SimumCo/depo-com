@@ -81,7 +81,7 @@ async def get_equipment_detail(
     equipment["_id"] = str(equipment["_id"])
     
     # Get recent maintenance history
-    recent_tasks = list(db.maintenance_tasks.find(
+    recent_tasks = list(await db.maintenance_tasks.find(
         {"equipment_id": equipment_id, "status": TaskStatus.COMPLETED}
     ).sort("completed_at", -1).limit(5))
     
@@ -176,7 +176,7 @@ async def get_maintenance_tasks(
     elif assigned_to_me:
         query["assigned_to"] = current_user.id
     
-    tasks = list(db.maintenance_tasks.find(query).sort("priority", -1).sort("scheduled_date", 1))
+    tasks = list(await db.maintenance_tasks.find(query).sort("priority", -1).sort("scheduled_date", 1))
     
     # Enrich with equipment info
     for task in tasks:
@@ -211,7 +211,7 @@ async def get_task_detail(
     check_maintenance_access(current_user)
     
     
-    task = db.maintenance_tasks.find_one({"id": task_id})
+    task = await db.maintenance_tasks.find_one({"id": task_id})
     
     if not task:
         raise HTTPException(status_code=404, detail="Görev bulunamadı")
@@ -247,7 +247,7 @@ async def create_maintenance_task(
     task = MaintenanceTask(**task_data.model_dump())
     task.assigned_by = current_user.id
     
-    db.maintenance_tasks.insert_one(task.model_dump())
+    await db.maintenance_tasks.insert_one(task.model_dump())
     
     return {"message": "Bakım görevi başarıyla oluşturuldu", "task_id": task.id}
 
@@ -263,7 +263,7 @@ async def update_maintenance_task(
     
     
     
-    task = db.maintenance_tasks.find_one({"id": task_id})
+    task = await db.maintenance_tasks.find_one({"id": task_id})
     if not task:
         raise HTTPException(status_code=404, detail="Görev bulunamadı")
     
@@ -289,7 +289,7 @@ async def update_maintenance_task(
             }}
         )
     
-    db.maintenance_tasks.update_one({"id": task_id}, {"$set": update_data})
+    await db.maintenance_tasks.update_one({"id": task_id}, {"$set": update_data})
     
     return {"message": "Görev başarıyla güncellendi"}
 
@@ -302,7 +302,7 @@ async def start_task(
     """Göreve başla"""
     
     
-    task = db.maintenance_tasks.find_one({"id": task_id})
+    task = await db.maintenance_tasks.find_one({"id": task_id})
     if not task:
         raise HTTPException(status_code=404, detail="Görev bulunamadı")
     
@@ -312,7 +312,7 @@ async def start_task(
     if task.get("status") != TaskStatus.PENDING:
         raise HTTPException(status_code=400, detail="Bu görev zaten başlatılmış")
     
-    db.maintenance_tasks.update_one(
+    await db.maintenance_tasks.update_one(
         {"id": task_id},
         {"$set": {
             "status": TaskStatus.IN_PROGRESS,
@@ -335,7 +335,7 @@ async def complete_task(
     """Görevi tamamla"""
     
     
-    task = db.maintenance_tasks.find_one({"id": task_id})
+    task = await db.maintenance_tasks.find_one({"id": task_id})
     if not task:
         raise HTTPException(status_code=404, detail="Görev bulunamadı")
     
@@ -344,7 +344,7 @@ async def complete_task(
     
     completed_at = datetime.now(timezone.utc)
     
-    db.maintenance_tasks.update_one(
+    await db.maintenance_tasks.update_one(
         {"id": task_id},
         {"$set": {
             "status": TaskStatus.COMPLETED,
@@ -580,7 +580,7 @@ async def get_maintenance_history(
         else:
             query["completed_at"] = {"$lte": datetime.fromisoformat(end_date)}
     
-    history = list(db.maintenance_tasks.find(query).sort("completed_at", -1).limit(100))
+    history = list(await db.maintenance_tasks.find(query).sort("completed_at", -1).limit(100))
     
     # Enrich with info
     for record in history:
@@ -624,32 +624,32 @@ async def get_dashboard_stats(
     # Task stats
     if user_role == UserRole.MAINTENANCE_TECHNICIAN:
         # Technician sees only their tasks
-        my_tasks = db.maintenance_tasks.count_documents({"assigned_to": user_id})
-        pending_tasks = db.maintenance_tasks.count_documents({
+        my_tasks = await db.maintenance_tasks.count_documents({"assigned_to": user_id})
+        pending_tasks = await db.maintenance_tasks.count_documents({
             "assigned_to": user_id,
             "status": TaskStatus.PENDING
         })
-        in_progress_tasks = db.maintenance_tasks.count_documents({
+        in_progress_tasks = await db.maintenance_tasks.count_documents({
             "assigned_to": user_id,
             "status": TaskStatus.IN_PROGRESS
         })
-        completed_today = db.maintenance_tasks.count_documents({
+        completed_today = await db.maintenance_tasks.count_documents({
             "assigned_to": user_id,
             "status": TaskStatus.COMPLETED,
             "completed_at": {"$gte": datetime.now(timezone.utc).replace(hour=0, minute=0, second=0)}
         })
     else:
         # Managers see all tasks
-        my_tasks = db.maintenance_tasks.count_documents({})
-        pending_tasks = db.maintenance_tasks.count_documents({"status": TaskStatus.PENDING})
-        in_progress_tasks = db.maintenance_tasks.count_documents({"status": TaskStatus.IN_PROGRESS})
-        completed_today = db.maintenance_tasks.count_documents({
+        my_tasks = await db.maintenance_tasks.count_documents({})
+        pending_tasks = await db.maintenance_tasks.count_documents({"status": TaskStatus.PENDING})
+        in_progress_tasks = await db.maintenance_tasks.count_documents({"status": TaskStatus.IN_PROGRESS})
+        completed_today = await db.maintenance_tasks.count_documents({
             "status": TaskStatus.COMPLETED,
             "completed_at": {"$gte": datetime.now(timezone.utc).replace(hour=0, minute=0, second=0)}
         })
     
     # Emergency tasks
-    urgent_tasks = db.maintenance_tasks.count_documents({
+    urgent_tasks = await db.maintenance_tasks.count_documents({
         "priority": TaskPriority.URGENT,
         "status": {"$in": [TaskStatus.PENDING, TaskStatus.IN_PROGRESS]}
     })
@@ -713,7 +713,7 @@ async def get_emergency_tasks(
         "status": {"$in": [TaskStatus.PENDING, TaskStatus.IN_PROGRESS]}
     }
     
-    emergency_tasks = list(db.maintenance_tasks.find(query).sort("created_at", -1))
+    emergency_tasks = list(await db.maintenance_tasks.find(query).sort("created_at", -1))
     
     # Enrich with info
     for task in emergency_tasks:
