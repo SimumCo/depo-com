@@ -607,20 +607,19 @@ async def get_maintenance_history(
 
 @router.get("/dashboard/stats")
 async def get_dashboard_stats(
-    current_user: dict = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """Bakım teknisyeni dashboard istatistikleri"""
     check_maintenance_access(current_user)
     
-    db = Database.get_database()
     user_id = current_user.id
     user_role = current_user.role
     
     # Equipment stats
-    total_equipment = db.equipment.count_documents({})
-    operational = db.equipment.count_documents({"status": EquipmentStatus.OPERATIONAL})
-    in_maintenance = db.equipment.count_documents({"status": EquipmentStatus.MAINTENANCE})
-    broken = db.equipment.count_documents({"status": EquipmentStatus.BROKEN})
+    total_equipment = await db.equipment.count_documents({})
+    operational = await db.equipment.count_documents({"status": EquipmentStatus.OPERATIONAL})
+    in_maintenance = await db.equipment.count_documents({"status": EquipmentStatus.MAINTENANCE})
+    broken = await db.equipment.count_documents({"status": EquipmentStatus.BROKEN})
     
     # Task stats
     if user_role == UserRole.MAINTENANCE_TECHNICIAN:
