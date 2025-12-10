@@ -562,8 +562,9 @@ def main():
     print(f"  • {len(schedule_ids)} Bakım Planı")
     print(f"  • {len(request_ids)} Yedek Parça Talebi")
     print("\nKULLANICI BİLGİLERİ:")
-    print("  • Username: bakim_teknisyeni")
-    print("  • Password: bakim123")
+    print("  • Admin: admin / admin123")
+    print("  • Üretim Müdürü: uretim_muduru / uretim123")
+    print("  • Bakım Teknisyeni: bakim_teknisyeni / bakim123")
     print("="*60 + "\n")
 
 
