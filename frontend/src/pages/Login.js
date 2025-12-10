@@ -93,40 +93,98 @@ const Login = () => {
         </form>
         <div className="px-6 pb-6">
           <div className="text-center text-sm text-gray-600">
-            <p className="font-semibold mb-3 text-base">Demo Hesapları:</p>
-            <div className="space-y-1.5 text-xs bg-gradient-to-br from-gray-50 to-blue-50 p-4 rounded-lg border border-gray-200">
-              <div className="grid grid-cols-1 gap-1.5">
-                <p className="flex items-center justify-between">
-                  <span className="font-semibold text-gray-700">👤 Admin:</span>
-                  <span className="font-mono text-blue-600">admin / admin123</span>
-                </p>
-                <p className="flex items-center justify-between">
-                  <span className="font-semibold text-gray-700">🏭 Üretim Müdürü:</span>
-                  <span className="font-mono text-blue-600">uretim_muduru / uretim123</span>
-                </p>
-                <p className="flex items-center justify-between">
-                  <span className="font-semibold text-gray-700">👷 Üretim Operatörü:</span>
-                  <span className="font-mono text-blue-600">operator1 / operator123</span>
-                </p>
-                <p className="flex items-center justify-between">
-                  <span className="font-semibold text-gray-700">🔬 Kalite Kontrol:</span>
-                  <span className="font-mono text-blue-600">kalite_kontrol / kalite123</span>
-                </p>
-                <p className="flex items-center justify-between">
-                  <span className="font-semibold text-gray-700">📦 Depo Sorumlusu:</span>
-                  <span className="font-mono text-blue-600">depo_sorumlu / depo123</span>
-                </p>
-                <p className="flex items-center justify-between">
-                  <span className="font-semibold text-gray-700">🏢 Depo Müdürü:</span>
-                  <span className="font-mono text-blue-600">depo_muduru / depo123</span>
-                </p>
-                <p className="flex items-center justify-between">
-                  <span className="font-semibold text-gray-700">💼 Muhasebe:</span>
-                  <span className="font-mono text-blue-600">muhasebe / muhasebe123</span>
-                </p>
+            <p className="font-semibold mb-3 text-base">🎭 Demo Hesapları</p>
+            <div className="space-y-1 text-xs bg-gradient-to-br from-gray-50 to-blue-50 p-4 rounded-lg border border-gray-200 max-h-80 overflow-y-auto">
+              <div className="grid grid-cols-1 gap-1">
+                {/* Yönetim */}
+                <div className="bg-white rounded p-2 border-l-4 border-purple-500">
+                  <p className="font-bold text-purple-700 mb-1">👑 Yönetim</p>
+                  <p className="flex items-center justify-between">
+                    <span className="text-gray-600">Admin:</span>
+                    <span className="font-mono text-blue-600">admin / admin123</span>
+                  </p>
+                </div>
+
+                {/* Üretim */}
+                <div className="bg-white rounded p-2 border-l-4 border-blue-500">
+                  <p className="font-bold text-blue-700 mb-1">🏭 Üretim</p>
+                  <p className="flex items-center justify-between">
+                    <span className="text-gray-600">Üretim Müdürü:</span>
+                    <span className="font-mono text-blue-600">uretim_muduru / uretim123</span>
+                  </p>
+                  <p className="flex items-center justify-between">
+                    <span className="text-gray-600">Operatör:</span>
+                    <span className="font-mono text-blue-600">operator1 / operator123</span>
+                  </p>
+                  <p className="flex items-center justify-between">
+                    <span className="text-gray-600">Kalite Kontrol:</span>
+                    <span className="font-mono text-blue-600">kalite_kontrol / kalite123</span>
+                  </p>
+                  <p className="flex items-center justify-between">
+                    <span className="text-gray-600">AR-GE:</span>
+                    <span className="font-mono text-blue-600">arge_muhendis / arge123</span>
+                  </p>
+                </div>
+
+                {/* Bakım */}
+                <div className="bg-white rounded p-2 border-l-4 border-orange-500">
+                  <p className="font-bold text-orange-700 mb-1">🔧 Bakım</p>
+                  <p className="flex items-center justify-between">
+                    <span className="text-gray-600">Teknisyen:</span>
+                    <span className="font-mono text-blue-600">bakim_teknisyeni / bakim123</span>
+                  </p>
+                </div>
+
+                {/* Depo */}
+                <div className="bg-white rounded p-2 border-l-4 border-green-500">
+                  <p className="font-bold text-green-700 mb-1">📦 Depo</p>
+                  <p className="flex items-center justify-between">
+                    <span className="text-gray-600">Depo Müdürü:</span>
+                    <span className="font-mono text-blue-600">depo_muduru / depo123</span>
+                  </p>
+                  <p className="flex items-center justify-between">
+                    <span className="text-gray-600">Depo Sorumlusu:</span>
+                    <span className="font-mono text-blue-600">depo_sorumlu / depo123</span>
+                  </p>
+                  <p className="flex items-center justify-between">
+                    <span className="text-gray-600">Depo Personeli:</span>
+                    <span className="font-mono text-blue-600">depo_personel / depo123</span>
+                  </p>
+                </div>
+
+                {/* Satış */}
+                <div className="bg-white rounded p-2 border-l-4 border-yellow-500">
+                  <p className="font-bold text-yellow-700 mb-1">💼 Satış</p>
+                  <p className="flex items-center justify-between">
+                    <span className="text-gray-600">Satış Temsilcisi:</span>
+                    <span className="font-mono text-blue-600">satis_temsilci / satis123</span>
+                  </p>
+                  <p className="flex items-center justify-between">
+                    <span className="text-gray-600">Plasiyer:</span>
+                    <span className="font-mono text-blue-600">plasiyer1 / plasiyer123</span>
+                  </p>
+                </div>
+
+                {/* Muhasebe */}
+                <div className="bg-white rounded p-2 border-l-4 border-red-500">
+                  <p className="font-bold text-red-700 mb-1">💰 Muhasebe</p>
+                  <p className="flex items-center justify-between">
+                    <span className="text-gray-600">Muhasebe:</span>
+                    <span className="font-mono text-blue-600">muhasebe / muhasebe123</span>
+                  </p>
+                </div>
+
+                {/* Müşteri */}
+                <div className="bg-white rounded p-2 border-l-4 border-pink-500">
+                  <p className="font-bold text-pink-700 mb-1">👥 Müşteri</p>
+                  <p className="flex items-center justify-between">
+                    <span className="text-gray-600">Müşteri:</span>
+                    <span className="font-mono text-blue-600">musteri1 / musteri123</span>
+                  </p>
+                </div>
               </div>
               <p className="text-blue-600 font-medium pt-2 border-t border-gray-300 mt-2">
-                💡 Her rol farklı dashboard ve yetkiler içerir
+                💡 13 farklı rol ve panel • Her rol farklı yetkiler
               </p>
             </div>
           </div>
