@@ -55,7 +55,7 @@ async def get_equipment_list(
     if type:
         query["type"] = type
     
-    equipment_list = list(await db.equipment.find(query).sort("name", 1))
+    equipment_list = await db.equipment.find(query).sort("name", 1))
     
     # Convert MongoDB _id to string
     for eq in equipment_list:
@@ -81,7 +81,7 @@ async def get_equipment_detail(
     equipment["_id"] = str(equipment["_id"])
     
     # Get recent maintenance history
-    recent_tasks = list(await db.maintenance_tasks.find(
+    recent_tasks = await db.maintenance_tasks.find(
         {"equipment_id": equipment_id, "status": TaskStatus.COMPLETED}
     ).sort("completed_at", -1).limit(5))
     
@@ -176,7 +176,7 @@ async def get_maintenance_tasks(
     elif assigned_to_me:
         query["assigned_to"] = current_user.id
     
-    tasks = list(await db.maintenance_tasks.find(query).sort("priority", -1).sort("scheduled_date", 1))
+    tasks = await db.maintenance_tasks.find(query).sort("priority", -1).sort("scheduled_date", 1))
     
     # Enrich with equipment info
     for task in tasks:
@@ -390,7 +390,7 @@ async def get_maintenance_schedule(
     if overdue:
         query["next_due_date"] = {"$lt": datetime.now(timezone.utc)}
     
-    schedules = list(await db.maintenance_schedules.find(query).sort("next_due_date", 1))
+    schedules = await db.maintenance_schedules.find(query).sort("next_due_date", 1))
     
     # Enrich with equipment info
     for schedule in schedules:
@@ -471,7 +471,7 @@ async def get_spare_parts_requests(
     if my_requests or current_user.role == UserRole.MAINTENANCE_TECHNICIAN:
         query["requested_by"] = current_user.id
     
-    requests = list(await db.spare_parts_requests.find(query).sort("created_at", -1))
+    requests = await db.spare_parts_requests.find(query).sort("created_at", -1))
     
     # Enrich with info
     for req in requests:
@@ -580,7 +580,7 @@ async def get_maintenance_history(
         else:
             query["completed_at"] = {"$lte": datetime.fromisoformat(end_date)}
     
-    history = list(await db.maintenance_tasks.find(query).sort("completed_at", -1).limit(100))
+    history = await db.maintenance_tasks.find(query).sort("completed_at", -1).limit(100))
     
     # Enrich with info
     for record in history:
@@ -713,7 +713,7 @@ async def get_emergency_tasks(
         "status": {"$in": [TaskStatus.PENDING, TaskStatus.IN_PROGRESS]}
     }
     
-    emergency_tasks = list(await db.maintenance_tasks.find(query).sort("created_at", -1))
+    emergency_tasks = await db.maintenance_tasks.find(query).sort("created_at", -1))
     
     # Enrich with info
     for task in emergency_tasks:
@@ -733,7 +733,7 @@ async def get_emergency_tasks(
                 task["assigned_to_name"] = technician.get("full_name")
     
     # Get broken equipment
-    broken_equipment = list(await db.equipment.find({"status": EquipmentStatus.BROKEN}))
+    broken_equipment = await db.equipment.find({"status": EquipmentStatus.BROKEN}))
     for eq in broken_equipment:
         eq["_id"] = str(eq["_id"])
     
