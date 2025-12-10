@@ -83,7 +83,7 @@ async def get_equipment_detail(
     # Get recent maintenance history
     recent_tasks = await db.maintenance_tasks.find(
         {"equipment_id": equipment_id, "status": TaskStatus.COMPLETED}
-    ).sort("completed_at", -1).limit(5).to_list(length=None))
+    ).sort("completed_at", -1).limit(5).to_list(length=None)
     
     for task in recent_tasks:
         task["_id"] = str(task["_id"])
