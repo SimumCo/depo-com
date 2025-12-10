@@ -47,7 +47,7 @@ async def get_equipment_list(
     """Ekipman listesini getir"""
     check_maintenance_access(current_user)
     
-    db = Database.get_database()
+    
     query = {}
     
     if status:
@@ -55,7 +55,7 @@ async def get_equipment_list(
     if type:
         query["type"] = type
     
-    equipment_list = list(db.equipment.find(query).sort("name", 1))
+    equipment_list = list(await db.equipment.find(query).sort("name", 1))
     
     # Convert MongoDB _id to string
     for eq in equipment_list:
@@ -72,8 +72,8 @@ async def get_equipment_detail(
     """Ekipman detayını getir"""
     check_maintenance_access(current_user)
     
-    db = Database.get_database()
-    equipment = db.equipment.find_one({"id": equipment_id})
+    
+    equipment = await db.equipment.find_one({"id": equipment_id})
     
     if not equipment:
         raise HTTPException(status_code=404, detail="Ekipman bulunamadı")
@@ -99,15 +99,15 @@ async def create_equipment(
     current_user: dict = Depends(require_role([UserRole.ADMIN, UserRole.PRODUCTION_MANAGER]))
 ):
     """Yeni ekipman oluştur"""
-    db = Database.get_database()
+    
     
     # Check if code already exists
-    existing = db.equipment.find_one({"code": equipment_data.code})
+    existing = await db.equipment.find_one({"code": equipment_data.code})
     if existing:
         raise HTTPException(status_code=400, detail="Bu ekipman kodu zaten kullanılıyor")
     
     equipment = Equipment(**equipment_data.model_dump())
-    db.equipment.insert_one(equipment.model_dump())
+    await db.equipment.insert_one(equipment.model_dump())
     
     return {"message": "Ekipman başarıyla oluşturuldu", "equipment_id": equipment.id}
 
@@ -119,16 +119,16 @@ async def update_equipment(
     current_user: dict = Depends(require_role([UserRole.ADMIN, UserRole.PRODUCTION_MANAGER, UserRole.MAINTENANCE_TECHNICIAN]))
 ):
     """Ekipman güncelle"""
-    db = Database.get_database()
     
-    equipment = db.equipment.find_one({"id": equipment_id})
+    
+    equipment = await db.equipment.find_one({"id": equipment_id})
     if not equipment:
         raise HTTPException(status_code=404, detail="Ekipman bulunamadı")
     
     update_data = {k: v for k, v in equipment_data.model_dump().items() if v is not None}
     update_data["updated_at"] = datetime.now(timezone.utc)
     
-    db.equipment.update_one({"id": equipment_id}, {"$set": update_data})
+    await db.equipment.update_one({"id": equipment_id}, {"$set": update_data})
     
     return {"message": "Ekipman başarıyla güncellendi"}
 
@@ -139,9 +139,9 @@ async def delete_equipment(
     current_user: dict = Depends(require_role([UserRole.ADMIN]))
 ):
     """Ekipman sil"""
-    db = Database.get_database()
     
-    result = db.equipment.delete_one({"id": equipment_id})
+    
+    result = await db.equipment.delete_one({"id": equipment_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Ekipman bulunamadı")
     
@@ -162,7 +162,7 @@ async def get_maintenance_tasks(
     """Bakım görevlerini getir"""
     check_maintenance_access(current_user)
     
-    db = Database.get_database()
+    
     query = {}
     
     if status:
@@ -181,7 +181,7 @@ async def get_maintenance_tasks(
     # Enrich with equipment info
     for task in tasks:
         task["_id"] = str(task["_id"])
-        equipment = db.equipment.find_one({"id": task.get("equipment_id")})
+        equipment = await db.equipment.find_one({"id": task.get("equipment_id")})
         if equipment:
             task["equipment_name"] = equipment.get("name")
             task["equipment_code"] = equipment.get("code")
@@ -210,7 +210,7 @@ async def get_task_detail(
     """Görev detayını getir"""
     check_maintenance_access(current_user)
     
-    db = Database.get_database()
+    
     task = db.maintenance_tasks.find_one({"id": task_id})
     
     if not task:
@@ -219,7 +219,7 @@ async def get_task_detail(
     task["_id"] = str(task["_id"])
     
     # Enrich with equipment info
-    equipment = db.equipment.find_one({"id": task.get("equipment_id")})
+    equipment = await db.equipment.find_one({"id": task.get("equipment_id")})
     if equipment:
         task["equipment"] = {
             "name": equipment.get("name"),
@@ -237,10 +237,10 @@ async def create_maintenance_task(
     current_user: dict = Depends(require_role([UserRole.ADMIN, UserRole.PRODUCTION_MANAGER]))
 ):
     """Yeni bakım görevi oluştur"""
-    db = Database.get_database()
+    
     
     # Verify equipment exists
-    equipment = db.equipment.find_one({"id": task_data.equipment_id})
+    equipment = await db.equipment.find_one({"id": task_data.equipment_id})
     if not equipment:
         raise HTTPException(status_code=404, detail="Ekipman bulunamadı")
     
@@ -261,7 +261,7 @@ async def update_maintenance_task(
     """Bakım görevini güncelle"""
     check_maintenance_access(current_user)
     
-    db = Database.get_database()
+    
     
     task = db.maintenance_tasks.find_one({"id": task_id})
     if not task:
@@ -281,7 +281,7 @@ async def update_maintenance_task(
             update_data["completed_at"] = datetime.now(timezone.utc)
         
         # Update equipment
-        db.equipment.update_one(
+        await db.equipment.update_one(
             {"id": task.get("equipment_id")},
             {"$set": {
                 "last_maintenance_date": update_data["completed_at"],
@@ -300,7 +300,7 @@ async def start_task(
     current_user: dict = Depends(require_role([UserRole.MAINTENANCE_TECHNICIAN]))
 ):
     """Göreve başla"""
-    db = Database.get_database()
+    
     
     task = db.maintenance_tasks.find_one({"id": task_id})
     if not task:
@@ -333,7 +333,7 @@ async def complete_task(
     current_user: dict = Depends(require_role([UserRole.MAINTENANCE_TECHNICIAN]))
 ):
     """Görevi tamamla"""
-    db = Database.get_database()
+    
     
     task = db.maintenance_tasks.find_one({"id": task_id})
     if not task:
@@ -357,7 +357,7 @@ async def complete_task(
     )
     
     # Update equipment
-    db.equipment.update_one(
+    await db.equipment.update_one(
         {"id": task.get("equipment_id")},
         {"$set": {
             "last_maintenance_date": completed_at,
@@ -381,7 +381,7 @@ async def get_maintenance_schedule(
     """Bakım takvimini getir"""
     check_maintenance_access(current_user)
     
-    db = Database.get_database()
+    
     query = {"is_active": True}
     
     if equipment_id:
@@ -395,7 +395,7 @@ async def get_maintenance_schedule(
     # Enrich with equipment info
     for schedule in schedules:
         schedule["_id"] = str(schedule["_id"])
-        equipment = db.equipment.find_one({"id": schedule.get("equipment_id")})
+        equipment = await db.equipment.find_one({"id": schedule.get("equipment_id")})
         if equipment:
             schedule["equipment_name"] = equipment.get("name")
             schedule["equipment_code"] = equipment.get("code")
@@ -413,10 +413,10 @@ async def create_maintenance_schedule(
     current_user: dict = Depends(require_role([UserRole.ADMIN, UserRole.PRODUCTION_MANAGER]))
 ):
     """Yeni bakım planı oluştur"""
-    db = Database.get_database()
+    
     
     # Verify equipment exists
-    equipment = db.equipment.find_one({"id": schedule_data.equipment_id})
+    equipment = await db.equipment.find_one({"id": schedule_data.equipment_id})
     if not equipment:
         raise HTTPException(status_code=404, detail="Ekipman bulunamadı")
     
@@ -435,7 +435,7 @@ async def update_maintenance_schedule(
     current_user: dict = Depends(require_role([UserRole.ADMIN, UserRole.PRODUCTION_MANAGER]))
 ):
     """Bakım planını güncelle"""
-    db = Database.get_database()
+    
     
     schedule = db.maintenance_schedules.find_one({"id": schedule_id})
     if not schedule:
@@ -462,7 +462,7 @@ async def get_spare_parts_requests(
     """Yedek parça taleplerini getir"""
     check_maintenance_access(current_user)
     
-    db = Database.get_database()
+    
     query = {}
     
     if status:
@@ -478,7 +478,7 @@ async def get_spare_parts_requests(
         req["_id"] = str(req["_id"])
         
         # Equipment info
-        equipment = db.equipment.find_one({"id": req.get("equipment_id")})
+        equipment = await db.equipment.find_one({"id": req.get("equipment_id")})
         if equipment:
             req["equipment_name"] = equipment.get("name")
             req["equipment_code"] = equipment.get("code")
@@ -503,10 +503,10 @@ async def create_spare_parts_request(
     current_user: dict = Depends(require_role([UserRole.MAINTENANCE_TECHNICIAN]))
 ):
     """Yeni yedek parça talebi oluştur"""
-    db = Database.get_database()
+    
     
     # Verify equipment exists
-    equipment = db.equipment.find_one({"id": request_data.equipment_id})
+    equipment = await db.equipment.find_one({"id": request_data.equipment_id})
     if not equipment:
         raise HTTPException(status_code=404, detail="Ekipman bulunamadı")
     
@@ -527,7 +527,7 @@ async def update_spare_parts_request(
     """Yedek parça talebini güncelle"""
     check_maintenance_access(current_user)
     
-    db = Database.get_database()
+    
     
     spare_request = db.spare_parts_requests.find_one({"id": request_id})
     if not spare_request:
@@ -566,7 +566,7 @@ async def get_maintenance_history(
     """Bakım geçmişini getir"""
     check_maintenance_access(current_user)
     
-    db = Database.get_database()
+    
     query = {"status": TaskStatus.COMPLETED}
     
     if equipment_id:
@@ -587,7 +587,7 @@ async def get_maintenance_history(
         record["_id"] = str(record["_id"])
         
         # Equipment info
-        equipment = db.equipment.find_one({"id": record.get("equipment_id")})
+        equipment = await db.equipment.find_one({"id": record.get("equipment_id")})
         if equipment:
             record["equipment_name"] = equipment.get("name")
             record["equipment_code"] = equipment.get("code")
@@ -616,10 +616,10 @@ async def get_dashboard_stats(
     user_role = current_user.role
     
     # Equipment stats
-    total_equipment = await db.equipment.count_documents({})
-    operational = await db.equipment.count_documents({"status": EquipmentStatus.OPERATIONAL})
-    in_maintenance = await db.equipment.count_documents({"status": EquipmentStatus.MAINTENANCE})
-    broken = await db.equipment.count_documents({"status": EquipmentStatus.BROKEN})
+    total_equipment = await await db.equipment.count_documents({})
+    operational = await await db.equipment.count_documents({"status": EquipmentStatus.OPERATIONAL})
+    in_maintenance = await await db.equipment.count_documents({"status": EquipmentStatus.MAINTENANCE})
+    broken = await await db.equipment.count_documents({"status": EquipmentStatus.BROKEN})
     
     # Task stats
     if user_role == UserRole.MAINTENANCE_TECHNICIAN:
@@ -705,7 +705,7 @@ async def get_emergency_tasks(
     """Acil müdahale görevlerini getir"""
     check_maintenance_access(current_user)
     
-    db = Database.get_database()
+    
     
     # Get urgent tasks
     query = {
@@ -720,7 +720,7 @@ async def get_emergency_tasks(
         task["_id"] = str(task["_id"])
         
         # Equipment info
-        equipment = db.equipment.find_one({"id": task.get("equipment_id")})
+        equipment = await db.equipment.find_one({"id": task.get("equipment_id")})
         if equipment:
             task["equipment_name"] = equipment.get("name")
             task["equipment_code"] = equipment.get("code")
@@ -733,7 +733,7 @@ async def get_emergency_tasks(
                 task["assigned_to_name"] = technician.get("full_name")
     
     # Get broken equipment
-    broken_equipment = list(db.equipment.find({"status": EquipmentStatus.BROKEN}))
+    broken_equipment = list(await db.equipment.find({"status": EquipmentStatus.BROKEN}))
     for eq in broken_equipment:
         eq["_id"] = str(eq["_id"])
     
