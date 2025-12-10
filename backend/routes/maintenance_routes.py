@@ -16,7 +16,7 @@ from models.user import UserRole
 from middleware.auth import get_current_user, require_role
 from config.database import Database
 
-router = APIRouter(prefix="/api/maintenance", tags=["maintenance"])
+router = APIRouter(prefix="/maintenance", tags=["maintenance"])
 
 
 # Helper function to check maintenance access
