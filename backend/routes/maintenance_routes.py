@@ -471,7 +471,7 @@ async def get_spare_parts_requests(
     if my_requests or current_user.role == UserRole.MAINTENANCE_TECHNICIAN:
         query["requested_by"] = current_user.id
     
-    requests = list(db.spare_parts_requests.find(query).sort("created_at", -1))
+    requests = list(await db.spare_parts_requests.find(query).sort("created_at", -1))
     
     # Enrich with info
     for req in requests:
@@ -513,7 +513,7 @@ async def create_spare_parts_request(
     spare_request = SparePartsRequest(**request_data.model_dump())
     spare_request.requested_by = current_user.id
     
-    db.spare_parts_requests.insert_one(spare_request.model_dump())
+    await db.spare_parts_requests.insert_one(spare_request.model_dump())
     
     return {"message": "Yedek parça talebi başarıyla oluşturuldu", "request_id": spare_request.id}
 
@@ -529,7 +529,7 @@ async def update_spare_parts_request(
     
     
     
-    spare_request = db.spare_parts_requests.find_one({"id": request_id})
+    spare_request = await db.spare_parts_requests.find_one({"id": request_id})
     if not spare_request:
         raise HTTPException(status_code=404, detail="Talep bulunamadı")
     
@@ -547,7 +547,7 @@ async def update_spare_parts_request(
     if update_data.get("status") == RequestStatus.FULFILLED:
         update_data["fulfilled_at"] = datetime.now(timezone.utc)
     
-    db.spare_parts_requests.update_one({"id": request_id}, {"$set": update_data})
+    await db.spare_parts_requests.update_one({"id": request_id}, {"$set": update_data})
     
     return {"message": "Talep başarıyla güncellendi"}
 
@@ -662,12 +662,12 @@ async def get_dashboard_stats(
     
     # Spare parts requests
     if user_role == UserRole.MAINTENANCE_TECHNICIAN:
-        pending_spare_parts = db.spare_parts_requests.count_documents({
+        pending_spare_parts = await db.spare_parts_requests.count_documents({
             "requested_by": user_id,
             "status": RequestStatus.PENDING
         })
     else:
-        pending_spare_parts = db.spare_parts_requests.count_documents({
+        pending_spare_parts = await db.spare_parts_requests.count_documents({
             "status": RequestStatus.PENDING
         })
     
