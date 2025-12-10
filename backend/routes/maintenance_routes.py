@@ -176,7 +176,7 @@ async def get_maintenance_tasks(
     elif assigned_to_me:
         query["assigned_to"] = current_user.id
     
-    tasks = await db.maintenance_tasks.find(query).sort("priority", -1).sort("scheduled_date", 1))
+    tasks = await db.maintenance_tasks.find(query).sort("priority", -1).sort("scheduled_date", 1).to_list(length=None)
     
     # Enrich with equipment info
     for task in tasks:
