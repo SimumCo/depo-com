@@ -5,16 +5,16 @@ Bakım Yönetimi API Rotaları
 from fastapi import APIRouter, HTTPException, Depends
 from typing import List, Optional
 from datetime import datetime, timezone, timedelta
-from ..models.maintenance import (
+from models.maintenance import (
     Equipment, EquipmentCreate, EquipmentUpdate,
     MaintenanceTask, MaintenanceTaskCreate, MaintenanceTaskUpdate,
     MaintenanceSchedule, MaintenanceScheduleCreate, MaintenanceScheduleUpdate,
     SparePartsRequest, SparePartsRequestCreate, SparePartsRequestUpdate,
     EquipmentStatus, TaskStatus, TaskPriority, RequestStatus
 )
-from ..models.user import UserRole
-from ..middleware.auth import get_current_user, require_role
-from ..config.database import get_database
+from models.user import UserRole
+from middleware.auth import get_current_user, require_role
+from config.database import Database
 
 router = APIRouter(prefix="/api/maintenance", tags=["maintenance"])
 
