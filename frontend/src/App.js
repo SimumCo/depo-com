@@ -71,7 +71,7 @@ const DashboardRouter = () => {
     case 'rnd_engineer':
       return <ProductionManagerDashboard />; // Can use production dashboard
     case 'maintenance_technician':
-      return <ProductionManagerDashboard />; // Can use production dashboard
+      return <MaintenanceTechnicianDashboard />;
     default:
       return <Navigate to="/login" replace />;
   }
