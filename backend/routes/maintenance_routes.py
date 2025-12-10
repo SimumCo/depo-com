@@ -390,7 +390,7 @@ async def get_maintenance_schedule(
     if overdue:
         query["next_due_date"] = {"$lt": datetime.now(timezone.utc)}
     
-    schedules = list(db.maintenance_schedules.find(query).sort("next_due_date", 1))
+    schedules = list(await db.maintenance_schedules.find(query).sort("next_due_date", 1))
     
     # Enrich with equipment info
     for schedule in schedules:
@@ -423,7 +423,7 @@ async def create_maintenance_schedule(
     schedule = MaintenanceSchedule(**schedule_data.model_dump())
     schedule.created_by = current_user.id
     
-    db.maintenance_schedules.insert_one(schedule.model_dump())
+    await db.maintenance_schedules.insert_one(schedule.model_dump())
     
     return {"message": "Bakım planı başarıyla oluşturuldu", "schedule_id": schedule.id}
 
@@ -437,14 +437,14 @@ async def update_maintenance_schedule(
     """Bakım planını güncelle"""
     
     
-    schedule = db.maintenance_schedules.find_one({"id": schedule_id})
+    schedule = await db.maintenance_schedules.find_one({"id": schedule_id})
     if not schedule:
         raise HTTPException(status_code=404, detail="Bakım planı bulunamadı")
     
     update_data = {k: v for k, v in schedule_data.model_dump().items() if v is not None}
     update_data["updated_at"] = datetime.now(timezone.utc)
     
-    db.maintenance_schedules.update_one({"id": schedule_id}, {"$set": update_data})
+    await db.maintenance_schedules.update_one({"id": schedule_id}, {"$set": update_data})
     
     return {"message": "Bakım planı başarıyla güncellendi"}
 
@@ -655,7 +655,7 @@ async def get_dashboard_stats(
     })
     
     # Overdue schedules
-    overdue_schedules = db.maintenance_schedules.count_documents({
+    overdue_schedules = await db.maintenance_schedules.count_documents({
         "is_active": True,
         "next_due_date": {"$lt": datetime.now(timezone.utc)}
     })
