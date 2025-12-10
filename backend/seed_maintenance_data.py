@@ -21,6 +21,12 @@ import uuid
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+def get_database():
+    """Get MongoDB database connection"""
+    mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
+    client = MongoClient(mongo_url)
+    return client['distribution_db']
+
 def create_maintenance_technician_user():
     """Bakım teknisyeni kullanıcısı oluştur"""
     db = get_database()
