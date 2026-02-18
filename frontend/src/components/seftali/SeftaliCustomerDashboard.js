@@ -81,7 +81,7 @@ const SeftaliCustomerDashboard = () => {
         return <StockDeclarationForm />;
       case 'variance':
         return <VarianceList />;
-      case 'history':
+      case 'history_legacy':
         return <HistoricalRecords />;
       case 'consumption':
         return <ConsumptionAnalytics />;
