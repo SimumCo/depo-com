@@ -14,6 +14,7 @@ import DeliveryApproval from './DeliveryApproval';
 import StockDeclarationForm from './StockDeclarationForm';
 import VarianceList from './VarianceList';
 import DeliveryHistory from './DeliveryHistory';
+import ProductsPage from './ProductsPage';
 import OrderManagement from '../customer/OrderManagement';
 import FavoritesModule from '../customer/FavoritesModule';
 import ConsumptionAnalytics from '../customer/ConsumptionAnalytics';
