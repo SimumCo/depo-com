@@ -16,6 +16,7 @@ export const sfCustomerAPI = {
   getPendingVariance: () => api.get('/seftali/customer/variance/pending'),
   applyReasonBulk: (data) => api.post('/seftali/customer/variance/apply-reason-bulk', data),
   dismissBulk: (data) => api.post('/seftali/customer/variance/dismiss-bulk', data),
+  getDeliveryHistory: () => api.get('/seftali/customer/deliveries/history'),
 };
 
 // ŞEFTALİ Sales API
