@@ -54,7 +54,7 @@ class DraftService:
                 est_finish = now + timedelta(days=999)
 
             risk = nrd - d2z
-            suggested = round(avg_eff * nrd) if avg_eff > EPSILON else 0
+            suggested = round(avg_eff * supply_days) if avg_eff > EPSILON else 0
 
             product = await db[COL_PRODUCTS].find_one({"id": pid}, {"_id": 0})
             skt_risk = False
