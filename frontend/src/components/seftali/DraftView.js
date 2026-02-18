@@ -118,17 +118,29 @@ const DraftView = ({ onStartEdit }) => {
         <p className="text-xs text-slate-500">
           Rota gunleri: <span className="font-semibold text-slate-700">{routeLabel || '—'}</span>
         </p>
-        {/* Countdown */}
+        {/* Order deadline countdown */}
         {countdown && (
-          <div className="flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2 mt-1" data-testid="order-countdown">
-            <Clock className="w-4 h-4 text-orange-500 flex-shrink-0" />
+          <div className={`flex items-center gap-2 rounded-lg px-3 py-2 mt-1 ${
+            isExpired ? 'bg-red-50 border border-red-200' :
+            isUrgent ? 'bg-red-50 border border-red-300' :
+            'bg-orange-50 border border-orange-200'
+          }`} data-testid="order-countdown">
+            <Clock className={`w-4 h-4 flex-shrink-0 ${isExpired ? 'text-red-500' : isUrgent ? 'text-red-500' : 'text-orange-500'}`} />
             <div>
-              <p className="text-xs text-orange-700">
-                Sonraki siparis icin: <span className="font-bold text-orange-900">{countdown}</span>
+              <p className={`text-xs ${isExpired ? 'text-red-700' : isUrgent ? 'text-red-700' : 'text-orange-700'}`}>
+                {isExpired ? (
+                  <span className="font-bold text-red-900">Siparis suresi doldu!</span>
+                ) : (
+                  <>
+                    Siparis son teslim: <span className={`font-bold ${isUrgent ? 'text-red-900' : 'text-orange-900'}`}>{countdown}</span>
+                  </>
+                )}
               </p>
-              {daysDiff && daysDiff <= 2 && (
-                <p className="text-[10px] text-orange-500 mt-0.5">Siparisinizi simdi hazirlayin!</p>
-              )}
+              <p className="text-[10px] text-slate-500 mt-0.5">
+                {isExpired ? 'Bir sonraki rota gununu bekleyiniz' :
+                 isUrgent ? 'Acele edin, sure doluyor!' :
+                 'Rota gununden 1 gun once, en gec saat 16:30'}
+              </p>
             </div>
           </div>
         )}
