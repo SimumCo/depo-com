@@ -194,3 +194,10 @@ async def list_customers(current_user=Depends(require_role(SALES_ROLES))):
     cursor = db[COL_CUSTOMERS].find({"is_active": True}, {"_id": 0})
     items = await cursor.to_list(length=500)
     return std_resp(True, items)
+
+
+@router.get("/products")
+async def list_products(current_user=Depends(require_role(SALES_ROLES))):
+    cursor = db[COL_PRODUCTS].find({}, {"_id": 0})
+    items = await cursor.to_list(length=500)
+    return std_resp(True, items)

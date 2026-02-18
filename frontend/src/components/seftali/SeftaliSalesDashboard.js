@@ -40,12 +40,9 @@ const SeftaliSalesDashboard = () => {
 
   const fetchProducts = useCallback(async () => {
     try {
-      // Use a customer endpoint to get products (sales can also access)
-      const res = await sfSalesAPI.getCustomers();
-      // Products from sales endpoint not available, use direct API
       const API_BASE = process.env.REACT_APP_BACKEND_URL;
       const token = localStorage.getItem('token');
-      const resp = await fetch(`${API_BASE}/api/seftali/customer/products`, {
+      const resp = await fetch(`${API_BASE}/api/seftali/sales/products`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (resp.ok) {
