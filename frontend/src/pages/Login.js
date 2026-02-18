@@ -176,10 +176,31 @@ const Login = () => {
 
                 {/* Müşteri */}
                 <div className="bg-white rounded p-2 border-l-4 border-pink-500">
-                  <p className="font-bold text-pink-700 mb-1">👥 Müşteri</p>
+                  <p className="font-bold text-pink-700 mb-1">Musteri</p>
                   <p className="flex items-center justify-between">
                     <span className="text-gray-600">Müşteri:</span>
                     <span className="font-mono text-blue-600">musteri1 / musteri123</span>
+                  </p>
+                </div>
+
+                {/* Seftali */}
+                <div className="bg-white rounded p-2 border-l-4 border-teal-500">
+                  <p className="font-bold text-teal-700 mb-1">Seftali (Yeni)</p>
+                  <p className="flex items-center justify-between">
+                    <span className="text-gray-600">Musteri A:</span>
+                    <span className="font-mono text-blue-600">sf_musteri / musteri123</span>
+                  </p>
+                  <p className="flex items-center justify-between">
+                    <span className="text-gray-600">Musteri B:</span>
+                    <span className="font-mono text-blue-600">sf_musteri2 / musteri123</span>
+                  </p>
+                  <p className="flex items-center justify-between">
+                    <span className="text-gray-600">Satici:</span>
+                    <span className="font-mono text-blue-600">sf_satici / satici123</span>
+                  </p>
+                  <p className="flex items-center justify-between">
+                    <span className="text-gray-600">Plasiyer:</span>
+                    <span className="font-mono text-blue-600">sf_plasiyer / plasiyer123</span>
                   </p>
                 </div>
               </div>
