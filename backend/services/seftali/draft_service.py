@@ -1,7 +1,8 @@
 from config.database import db
 from .utils import (
     EPSILON, SPIKE_RECENCY_DAYS, now_utc, to_iso, parse_iso,
-    days_to_next_route, COL_CUSTOMERS, COL_PRODUCTS,
+    days_to_next_route, days_between_consecutive_routes,
+    COL_CUSTOMERS, COL_PRODUCTS,
     COL_CONSUMPTION_STATS, COL_SYSTEM_DRAFTS
 )
 from datetime import timedelta
