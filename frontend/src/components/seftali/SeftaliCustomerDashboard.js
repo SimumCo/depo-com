@@ -2,12 +2,18 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { sfCustomerAPI } from '../../services/seftaliApi';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'sonner';
-import { ClipboardList, Truck, TrendingUp, Package, Calendar } from 'lucide-react';
+import { ClipboardList, Truck, TrendingUp, Package, Calendar, MoreHorizontal, FileText, BarChart3, Tag, AlertTriangle, Heart, ArrowLeft } from 'lucide-react';
 import DraftView from './DraftView';
 import WorkingCopyPage from './WorkingCopyPage';
 import DeliveryApproval from './DeliveryApproval';
 import StockDeclarationForm from './StockDeclarationForm';
 import VarianceList from './VarianceList';
+import OrderManagement from '../customer/OrderManagement';
+import FavoritesModule from '../customer/FavoritesModule';
+import ConsumptionAnalytics from '../customer/ConsumptionAnalytics';
+import CampaignsModule from '../customer/CampaignsModule';
+import FaultReportModule from '../customer/FaultReportModule';
+import HistoricalRecords from '../customer/HistoricalRecords';
 
 const SeftaliCustomerDashboard = () => {
   const { user, logout } = useAuth();
@@ -42,11 +48,23 @@ const SeftaliCustomerDashboard = () => {
 
   const tabs = [
     { id: 'dashboard', label: 'Ana Sayfa', icon: Package },
-    { id: 'draft', label: 'Siparis Taslagi', icon: ClipboardList },
-    { id: 'deliveries', label: 'Teslimat Onayi', icon: Truck, badge: stats.pendingDeliveries },
-    { id: 'stock', label: 'Stok Bildirimi', icon: Package },
-    { id: 'variance', label: 'Sapmalar', icon: TrendingUp, badge: stats.openVariance },
+    { id: 'draft', label: 'Taslak', icon: ClipboardList },
+    { id: 'deliveries', label: 'Teslimat', icon: Truck, badge: stats.pendingDeliveries },
+    { id: 'stock', label: 'Stok', icon: Package },
+    { id: 'more', label: 'Daha Fazla', icon: MoreHorizontal },
   ];
+
+  const extraModules = [
+    { id: 'variance', name: 'Tuketim Sapmalari', icon: TrendingUp, color: 'text-amber-600 bg-amber-50', badge: stats.openVariance },
+    { id: 'history', name: 'Gecmis Kayitlar', icon: FileText, color: 'text-purple-600 bg-purple-50' },
+    { id: 'consumption', name: 'Tuketim Analizi', icon: BarChart3, color: 'text-green-600 bg-green-50' },
+    { id: 'campaigns', name: 'Kampanyalar', icon: Tag, color: 'text-orange-600 bg-orange-50' },
+    { id: 'fault', name: 'Ariza Bildirimleri', icon: AlertTriangle, color: 'text-red-600 bg-red-50' },
+    { id: 'favorites', name: 'Favorilerim', icon: Heart, color: 'text-pink-600 bg-pink-50' },
+    { id: 'orders_legacy', name: 'Siparis Yonetimi', icon: ClipboardList, color: 'text-blue-600 bg-blue-50' },
+  ];
+
+  const isExtraTab = ['variance', 'history', 'consumption', 'campaigns', 'fault', 'favorites', 'orders_legacy'].includes(activeTab);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -60,10 +78,51 @@ const SeftaliCustomerDashboard = () => {
         return <StockDeclarationForm />;
       case 'variance':
         return <VarianceList />;
+      case 'history':
+        return <HistoricalRecords />;
+      case 'consumption':
+        return <ConsumptionAnalytics />;
+      case 'campaigns':
+        return <CampaignsModule />;
+      case 'fault':
+        return <FaultReportModule />;
+      case 'favorites':
+        return <FavoritesModule />;
+      case 'orders_legacy':
+        return <OrderManagement />;
+      case 'more':
+        return renderMoreMenu();
       default:
         return renderDashboard();
     }
   };
+
+  const renderMoreMenu = () => (
+    <div data-testid="more-menu">
+      <p className="text-sm font-medium text-slate-600 mb-3">Ek Moduller</p>
+      <div className="grid grid-cols-2 gap-3">
+        {extraModules.map(mod => {
+          const Icon = mod.icon;
+          return (
+            <button
+              key={mod.id}
+              onClick={() => setActiveTab(mod.id)}
+              className="bg-white border border-slate-200 rounded-lg p-4 text-left hover:border-sky-300 hover:shadow-sm transition-all relative"
+              data-testid={`more-${mod.id}`}
+            >
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${mod.color}`}>
+                <Icon className="w-4 h-4" />
+              </div>
+              <p className="text-sm font-semibold text-slate-800">{mod.name}</p>
+              {mod.badge > 0 && (
+                <span className="absolute top-3 right-3 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">{mod.badge}</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 
   const renderDashboard = () => (
     <div className="space-y-4" data-testid="seftali-home">
