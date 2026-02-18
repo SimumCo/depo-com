@@ -51,7 +51,7 @@ const SeftaliCustomerDashboard = () => {
     { id: 'dashboard', label: 'Ana Sayfa', icon: Package },
     { id: 'draft', label: 'Taslak', icon: ClipboardList },
     { id: 'deliveries', label: 'Teslimat', icon: Truck, badge: stats.pendingDeliveries },
-    { id: 'stock', label: 'Stok', icon: Package },
+    { id: 'history', label: 'Faturalar', icon: FileText },
     { id: 'more', label: 'Daha Fazla', icon: MoreHorizontal },
   ];
 
