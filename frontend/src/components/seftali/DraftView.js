@@ -70,14 +70,8 @@ function useCountdown(deadline) {
     tick();
     const iv = setInterval(tick, 1000);
     return () => clearInterval(iv);
-      if (d > 0) setRemaining(`${d} gun ${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
-      else setRemaining(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
-    };
-    tick();
-    const iv = setInterval(tick, 1000);
-    return () => clearInterval(iv);
-  }, [targetDate]);
-  return remaining;
+  }, [deadline]);
+  return { remaining, isUrgent, isExpired };
 }
 
 const DraftView = ({ onStartEdit }) => {
