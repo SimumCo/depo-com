@@ -215,7 +215,7 @@ const SeftaliCustomerDashboard = () => {
         <div className="max-w-lg mx-auto flex">
           {tabs.map(tab => {
             const Icon = tab.icon;
-            const isActive = activeTab === tab.id || (activeTab === 'working-copy' && tab.id === 'draft');
+            const isActive = activeTab === tab.id || (activeTab === 'working-copy' && tab.id === 'draft') || (isExtraTab && tab.id === 'more');
             return (
               <button
                 key={tab.id}
