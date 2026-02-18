@@ -26,6 +26,7 @@ from routes.favorites_routes import router as favorites_router
 from routes.fault_reports_routes import router as fault_reports_router
 from routes.production_routes import router as production_router
 from routes.maintenance_routes import router as maintenance_router
+from routes.seftali import router as seftali_router
 
 # Old server import removed - all routes modular now
 
@@ -72,6 +73,7 @@ api_router.include_router(favorites_router)
 api_router.include_router(fault_reports_router)
 api_router.include_router(production_router)
 api_router.include_router(maintenance_router)
+api_router.include_router(seftali_router)
 
 # Include old routes temporarily
 # TODO: Refactor these into separate modules
