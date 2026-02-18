@@ -126,6 +126,7 @@ const SeftaliCustomerDashboard = () => {
   ];
 
   const extraModules = [
+    { id: 'history', name: 'Faturalar', icon: FileText, color: 'text-sky-600 bg-sky-50' },
     { id: 'stock', name: 'Stok Bildirimi', icon: Package, color: 'text-teal-600 bg-teal-50' },
     { id: 'variance', name: 'Tuketim Sapmalari', icon: TrendingUp, color: 'text-amber-600 bg-amber-50', badge: stats.openVariance },
     { id: 'consumption', name: 'Tuketim Analizi', icon: BarChart3, color: 'text-green-600 bg-green-50' },
@@ -135,7 +136,7 @@ const SeftaliCustomerDashboard = () => {
     { id: 'orders_legacy', name: 'Siparis Yonetimi', icon: ClipboardList, color: 'text-blue-600 bg-blue-50' },
   ];
 
-  const isExtraTab = ['stock', 'variance', 'consumption', 'campaigns', 'fault', 'favorites', 'orders_legacy'].includes(activeTab);
+  const isExtraTab = ['history', 'stock', 'variance', 'consumption', 'campaigns', 'fault', 'favorites', 'orders_legacy'].includes(activeTab);
 
   const renderContent = () => {
     switch (activeTab) {
