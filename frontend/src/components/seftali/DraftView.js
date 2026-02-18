@@ -1,8 +1,47 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { sfCustomerAPI } from '../../services/seftaliApi';
 import MiniTimeline from './MiniTimeline';
-import { AlertTriangle, Package, ChevronRight } from 'lucide-react';
+import { AlertTriangle, Package, ChevronRight, Clock } from 'lucide-react';
 import { toast } from 'sonner';
+
+const DAY_TR = { MON: 'Pazartesi', TUE: 'Sali', WED: 'Carsamba', THU: 'Persembe', FRI: 'Cuma', SAT: 'Cumartesi', SUN: 'Pazar' };
+const DAY_NUM = { MON: 1, TUE: 2, WED: 3, THU: 4, FRI: 5, SAT: 6, SUN: 0 };
+
+function getNextRouteInfo(routeDays) {
+  if (!routeDays?.length) return { label: null, date: null, diff: null };
+  const now = new Date();
+  let minDiff = 8;
+  for (const d of routeDays) {
+    const target = DAY_NUM[d] ?? 0;
+    let diff = (target - now.getDay() + 7) % 7;
+    if (diff === 0) diff = 7;
+    if (diff < minDiff) minDiff = diff;
+  }
+  const nextDate = new Date(now.getTime() + minDiff * 86400000);
+  nextDate.setHours(23, 59, 59, 0);
+  return { label: routeDays.map(d => DAY_TR[d] || d).join(', '), date: nextDate, diff: minDiff };
+}
+
+function useCountdown(targetDate) {
+  const [remaining, setRemaining] = useState('');
+  useEffect(() => {
+    if (!targetDate) return;
+    const tick = () => {
+      const diff = targetDate.getTime() - Date.now();
+      if (diff <= 0) { setRemaining('Bugun!'); return; }
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      if (d > 0) setRemaining(`${d} gun ${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
+      else setRemaining(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
+    };
+    tick();
+    const iv = setInterval(tick, 1000);
+    return () => clearInterval(iv);
+  }, [targetDate]);
+  return remaining;
+}
 
 const DraftView = ({ onStartEdit }) => {
   const [draft, setDraft] = useState(null);
@@ -27,38 +66,41 @@ const DraftView = ({ onStartEdit }) => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  const routeDays = profile?.route_plan?.days || [];
+  const { label: routeLabel, date: nextRoute, diff: daysDiff } = getNextRouteInfo(routeDays);
+  const countdown = useCountdown(nextRoute);
+
   if (loading) {
     return <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-600" /></div>;
   }
 
   const items = draft?.items || [];
-  const routeDays = profile?.route_plan?.days || [];
-  const routeLabel = routeDays.join(', ') || '-';
   const hasItems = items.length > 0;
-
-  // compute next route date for timeline
-  const dayMap = { MON: 1, TUE: 2, WED: 3, THU: 4, FRI: 5, SAT: 6, SUN: 0 };
-  const today = new Date();
-  let nextRoute = null;
-  if (routeDays.length) {
-    let minDiff = 8;
-    for (const d of routeDays) {
-      const target = dayMap[d] ?? 0;
-      let diff = (target - today.getDay() + 7) % 7;
-      if (diff === 0) diff = 7;
-      if (diff < minDiff) minDiff = diff;
-    }
-    nextRoute = new Date(today.getTime() + minDiff * 86400000);
-  }
 
   return (
     <div data-testid="draft-view">
-      {/* header info */}
-      <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-4">
+      {/* Header info */}
+      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-4 space-y-2">
         <p className="text-sm text-slate-600">
-          Bu liste, gecmis teslimatlariniza gore hazirlanmis bir siparis onerisidir.
+          Gecmis teslimatlariniza gore hazirlanmis siparis onerisi.
         </p>
-        <p className="text-xs text-slate-500 mt-1">Rota gunleri: <span className="font-medium text-slate-700">{routeLabel}</span></p>
+        <p className="text-xs text-slate-500">
+          Rota gunleri: <span className="font-semibold text-slate-700">{routeLabel || '—'}</span>
+        </p>
+        {/* Countdown */}
+        {countdown && (
+          <div className="flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2 mt-1" data-testid="order-countdown">
+            <Clock className="w-4 h-4 text-orange-500 flex-shrink-0" />
+            <div>
+              <p className="text-xs text-orange-700">
+                Sonraki siparis icin: <span className="font-bold text-orange-900">{countdown}</span>
+              </p>
+              {daysDiff && daysDiff <= 2 && (
+                <p className="text-[10px] text-orange-500 mt-0.5">Siparisinizi simdi hazirlayin!</p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {!hasItems ? (
@@ -71,7 +113,7 @@ const DraftView = ({ onStartEdit }) => {
         <>
           <div className="space-y-3">
             {items.map((item, idx) => (
-              <div key={item.product_id || idx} className="bg-white border border-slate-200 rounded-lg p-4" data-testid={`draft-item-${idx}`}>
+              <div key={item.product_id || idx} className="bg-white border border-slate-200 rounded-xl p-4" data-testid={`draft-item-${idx}`}>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
@@ -100,11 +142,9 @@ const DraftView = ({ onStartEdit }) => {
             Son teslimat ve tuketim hiziniza gore hesaplandi.
           </p>
 
-          <button
-            onClick={onStartEdit}
-            className="mt-4 w-full flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-700 text-white py-3 px-4 rounded-lg font-medium transition-colors"
-            data-testid="start-edit-btn"
-          >
+          <button onClick={onStartEdit}
+            className="mt-4 w-full flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-700 text-white py-3 px-4 rounded-xl font-medium transition-colors"
+            data-testid="start-edit-btn">
             Siparis Duzenle <ChevronRight className="w-4 h-4" />
           </button>
         </>
