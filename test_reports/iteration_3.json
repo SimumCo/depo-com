@@ -1,0 +1,218 @@
+{
+  "summary": "42/42 passed",
+  "passed": 42,
+  "failed": 0,
+  "total": 42,
+  "tests": [
+    {
+      "test": "T1a: base.daily_avg == 0",
+      "status": "PASS",
+      "detail": "got 0"
+    },
+    {
+      "test": "T1b: last_delivery.qty == 100",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "T1c: prev_delivery is None",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "T1d: spike is None",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "T1e: draft created",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "T1f: draft.generated_from == delivery_accept",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "T2a: MODEL B avg = prev_qty/days",
+      "status": "PASS",
+      "detail": "expected 20.0, got 20.0"
+    },
+    {
+      "test": "T2b: R6 new qty not in calc",
+      "status": "PASS",
+      "detail": "expected 20.0, got 20.0"
+    },
+    {
+      "test": "T2c: last_delivery.qty == 9999",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "T2d: R13 spike reset on accept",
+      "status": "PASS",
+      "detail": "got None"
+    },
+    {
+      "test": "T3a: no spike events",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "T3b: R8 base unchanged",
+      "status": "PASS",
+      "detail": "was 20.0, now 20.0"
+    },
+    {
+      "test": "T3c: spike is None",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "T3d: stock.last_decl.qty == 200",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "T3e: R15 draft from stock_decl",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "T4a: base_avg == 10",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "T4b: spike detected",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "T4c: spike.active",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "T4d: spike.ratio >= 3",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "T4e: R8 base still 10",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "T4f: R11 variance created",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "T4g: variance status=needs_reason",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "T4h: R25 idempotent variance",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "T4i: R25 no duplicate",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "T5a: R22 WC deleted_by_delivery",
+      "status": "PASS",
+      "detail": "got deleted_by_delivery"
+    },
+    {
+      "test": "T5b: R20 single active WC",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "T6a: delivery is accepted",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "T6b: R4 no double write",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "T7a: R23 base unchanged after order",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "T7b: R23 spike unchanged after order",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "T8a: R24 bulk recorded",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "R1a: pending no change",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "R3a: rejected no change",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "R8a: base unchanged through 3 stock decls",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "R16a: avg_effective_used == spike",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "R17a: stock_effective == declared 25",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "R17b: fallback to last_delivery 77",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "R19a: sorted by risk",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "R19b: priority_rank sequential",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "R21a: qty=0 rejected",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "R21b: qty<0 rejected",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "R21c: qty=null accepted",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}
