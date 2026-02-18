@@ -30,6 +30,10 @@ const CustomerDashboard = () => {
     switch (activeModule) {
       case 'orders':
         return <OrderManagement />;
+      case 'deliveries':
+        return <PendingDeliveries />;
+      case 'stock':
+        return <StockDeclaration />;
       case 'history':
         return <HistoricalRecords />;
       case 'consumption':
