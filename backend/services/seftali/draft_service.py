@@ -72,7 +72,7 @@ class DraftService:
                 "flags": {"skt_risk": skt_risk},
             })
 
-        items.sort(key=lambda x: x["risk_score"])
+        items.sort(key=lambda x: (x["risk_score"], x["estimated_finish_at"], x["product_id"]))
         for i, it in enumerate(items):
             it["priority_rank"] = i + 1
 

@@ -2,7 +2,7 @@ import math
 import uuid
 from datetime import datetime, timezone, timedelta
 
-EPSILON = 0.001
+EPSILON = 1e-6
 SPIKE_RATIO_THRESHOLD = 3.0
 SPIKE_RECENCY_DAYS = 7
 

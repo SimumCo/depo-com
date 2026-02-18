@@ -100,7 +100,7 @@ class ConsumptionService:
             last_del = stats["base"].get("last_delivery")
             base_avg = stats["base"].get("daily_avg", 0)
 
-            if last_del and base_avg > 0:
+            if last_del:
                 dt = days_between(last_del["at"], declared_at)
                 observed_consumed = max(last_del["qty"] - dqty, 0)
                 observed_daily = observed_consumed / dt
