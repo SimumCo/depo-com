@@ -201,7 +201,12 @@ const SeftaliCustomerDashboard = () => {
       </header>
 
       {/* Content */}
-      <main className="max-w-lg mx-auto px-4 py-4">
+      <main className={`mx-auto px-4 py-4 ${isExtraTab ? 'max-w-4xl' : 'max-w-lg'}`}>
+        {isExtraTab && (
+          <button onClick={() => setActiveTab('more')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 mb-4" data-testid="back-to-more">
+            <ArrowLeft className="w-4 h-4" /> Daha Fazla
+          </button>
+        )}
         {renderContent()}
       </main>
 
