@@ -16,6 +16,9 @@ import ProductionOperatorDashboard from './pages/ProductionOperatorDashboard';
 import QualityControlDashboard from './pages/QualityControlDashboard';
 import WarehouseSupervisorDashboard from './pages/WarehouseSupervisorDashboard';
 import MaintenanceTechnicianDashboard from './pages/MaintenanceTechnicianDashboard';
+import SeftaliCustomerDashboard from './components/seftali/SeftaliCustomerDashboard';
+import SeftaliSalesDashboard from './components/seftali/SeftaliSalesDashboard';
+import SeftaliAdminDashboard from './components/seftali/SeftaliAdminDashboard';
 import './App.css';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -47,17 +50,17 @@ const DashboardRouter = () => {
 
   switch (user.role) {
     case 'admin':
-      return <AdminDashboard />;
+      return <SeftaliAdminDashboard />;
     case 'warehouse_staff':
       return <WarehouseStaffDashboard />;
     case 'sales_rep':
-      return <SalesRepDashboard />;
+      return <SeftaliSalesDashboard />;
     case 'customer':
-      return <CustomerDashboard />;
+      return <SeftaliCustomerDashboard />;
     case 'accounting':
       return <AccountingDashboard />;
     case 'sales_agent':
-      return <PlasiyerDashboard />;
+      return <SeftaliSalesDashboard />;
     case 'production_manager':
       return <ProductionManagerDashboard />;
     case 'production_operator':
