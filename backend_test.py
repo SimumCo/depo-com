@@ -11,7 +11,7 @@ from datetime import datetime
 import uuid
 
 # Configuration
-BASE_URL = "https://fault-management-hub.preview.emergentagent.com/api"
+BASE_URL = "https://seftali-excel-import.preview.emergentagent.com/api"
 
 # Test Users
 TEST_USERS = {
