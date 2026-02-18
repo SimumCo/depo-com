@@ -6,7 +6,7 @@ import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import {
   ShoppingCart, RotateCcw, FileText, ClipboardList, Truck, TrendingUp,
   Package, BarChart3, Tag, AlertTriangle, Heart, ArrowLeft, LogOut,
-  Home, MoreHorizontal, Clock
+  Home, MoreHorizontal, Clock, ShoppingBag
 } from 'lucide-react';
 import DraftView from './DraftView';
 import WorkingCopyPage from './WorkingCopyPage';
