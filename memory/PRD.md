@@ -1,0 +1,92 @@
+# ŞEFTALİ - Dagitim Yonetim Sistemi PRD
+
+## Proje Ozeti
+Yogurt/ayran dagitimı yapan bir firmada musterilerin tuketimini delivery bazli hesaplayan ve rota gunune gore siparis taslagi olusturan deterministik bir sistem.
+
+## Temel Felsefe
+- Sistem deterministiktir (AI yok, otomatik siparis yok)
+- Tuketim sadece delivery accepted ile guncellenir
+- Stock declaration base tuketimi degistirmez
+- Sistem sade kalmalidir
+
+## Tech Stack
+- **Backend:** FastAPI (Python), MongoDB (motor async driver)
+- **Frontend:** React, Tailwind CSS
+- **Auth:** JWT with role-based access
+- **DB:** MongoDB with sf_ prefixed collections
+
+## Roller
+1. **Customer** (mobil oncelikli) - siparis taslagi, teslimat onayi, stok bildirimi, sapma yonetimi
+2. **Salesperson** (sales_rep/sales_agent - tablet) - teslimat olusturma, siparis onaylama
+3. **Admin** (desktop, salt okunur) - metrikler, sapma listesi
+
+## Tuketim Modeli (MODEL B)
+```
+consumed = previous_delivery_qty
+daily_avg_base = previous_delivery_qty / days_between_deliveries
+```
+- Yeni delivery qty tuketim hesabina girmez, yeni referans olur
+- Delivery accepted -> tum hesap pipeline calisir
+- Delivery rejected -> yok sayilir
+
+## Spike Kurali
+- spike_ratio >= 3 ise major spike
+- Spike son 7 gun icinde ise draft'ta avg_effective=spike kullanilir
+- Base daily_avg degismez
+- Delivery accepted gelince spike resetlenir
+
+## DB Koleksiyonlari
+1. sf_customers - Musteri ve rota plani
+2. sf_products - Urun katalogu
+3. sf_deliveries - Teslimatlar (pending/accepted/rejected)
+4. sf_stock_declarations - Stok beyanlari
+5. sf_consumption_stats - Tuketim istatistikleri (musteri+urun bazinda tek kayit)
+6. sf_system_drafts - Otomatik taslaklar (musteri basina tek)
+7. sf_working_copies - Calisma kopyalari
+8. sf_orders - Siparisler
+9. sf_variance_events - Tuketim sapma olaylari
+10. sf_audit_events - Denetim olaylari
+
+## API Endpointleri
+### Customer (/api/seftali/customer/)
+- GET /draft, POST /working-copy/start, PATCH /working-copy/:id
+- POST /working-copy/:id/items, POST /working-copy/:id/submit
+- GET /deliveries/pending, POST /deliveries/:id/accept, POST /deliveries/:id/reject
+- POST /stock-declarations
+- GET /variance/pending, POST /variance/apply-reason-bulk, POST /variance/dismiss-bulk
+- GET /products, GET /profile
+
+### Sales (/api/seftali/sales/)
+- POST /deliveries, GET /deliveries, GET /orders
+- POST /orders/:id/approve, POST /orders/:id/request-edit
+- GET /customers, GET /products
+
+### Admin (/api/seftali/admin/)
+- GET /health/summary, GET /variance, GET /deliveries
+
+## Tamamlanan Ozellikler (18 Subat 2026)
+- [x] Backend servisleri (ConsumptionService, DraftService, VarianceService)
+- [x] 19 API endpoint (Customer: 14, Sales: 7, Admin: 3)
+- [x] Atomic pipeline'lar (delivery accept, stock declaration)
+- [x] Seed data (demo kullanicilar, urunler, teslimatlar)
+- [x] MongoDB indexleri
+- [x] Customer Dashboard (mobil-first, bottom nav, 5 sekme)
+- [x] Sales Dashboard (teslimat olusturma, siparis yonetimi)
+- [x] Admin Dashboard (metrikler, sapma tablosu)
+- [x] Edge-case validasyonlar (idempotency, qty kontrolleri)
+- [x] Turkce hata mesajlari
+- [x] %100 backend + frontend test basarisi
+
+## Demo Kullanicilar
+- Musteri: sf_musteri / musteri123
+- Musteri 2: sf_musteri2 / musteri123
+- Satici: sf_satici / satici123
+- Plasiyer: sf_plasiyer / plasiyer123
+- Admin: admin / admin123
+
+## Backlog / Gelecek Gorevler
+- [ ] P1: Bakim Teknisyeni Dashboard frontend (7 modul)
+- [ ] P2: README ve API dokumantasyonu
+- [ ] P2: Integration testleri (Jest/pytest)
+- [ ] P3: Refactoring: maintenance_routes.py dosyasini bolme
+- [ ] P3: Production notlari (replica set, transaction desteigi)
