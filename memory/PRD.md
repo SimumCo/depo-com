@@ -102,3 +102,21 @@ daily_avg_base = previous_delivery_qty / days_between_deliveries
 - [ ] P2: Integration testleri (Jest/pytest)
 - [ ] P3: Refactoring: maintenance_routes.py dosyasini bolme
 - [ ] P3: Production notlari (replica set, transaction desteigi)
+
+## Test Suite (18 Subat 2026)
+- Test dosyasi: backend/tests/test_seftali_rules.py
+- 42 test, tum kurallar R1-R25 dogrulanmistir
+- Calistirma: cd /app/backend && python tests/test_seftali_rules.py
+- T1: Ilk delivery accepted -> base.avg=0, draft olusur
+- T2: Ikinci delivery -> MODEL B (prev_qty/days)
+- T3: Stock S > D_last -> spike yok, base degismez
+- T4: Spike detection (ratio>=3) + variance
+- T5: Working copy deleted_by_delivery
+- T6: Idempotent accept (409)
+- T7: Order -> tuketim degismez
+- T8: Bulk variance reason -> recorded
+
+## Backend Kod Duzetmeleri (18 Subat 2026)
+- EPSILON: 0.001 -> 1e-6 (spec uyumu)
+- Spike hesabi: base_avg=0 iken de epsilon ile hesaplama (R10)
+- Draft siralama: risk -> estimated_finish_at -> product_id (R19)
