@@ -98,8 +98,8 @@ const DraftView = ({ onStartEdit }) => {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const routeDays = profile?.route_plan?.days || [];
-  const { label: routeLabel, date: nextRoute, diff: daysDiff } = getNextRouteInfo(routeDays);
-  const countdown = useCountdown(nextRoute);
+  const { label: routeLabel, deadline, diff: daysDiff } = getNextRouteInfo(routeDays);
+  const { remaining: countdown, isUrgent, isExpired } = useCountdown(deadline);
 
   if (loading) {
     return <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-600" /></div>;
