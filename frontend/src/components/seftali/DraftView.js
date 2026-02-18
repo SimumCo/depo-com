@@ -8,7 +8,7 @@ const DAY_TR = { MON: 'Pazartesi', TUE: 'Sali', WED: 'Carsamba', THU: 'Persembe'
 const DAY_NUM = { MON: 1, TUE: 2, WED: 3, THU: 4, FRI: 5, SAT: 6, SUN: 0 };
 
 function getNextRouteInfo(routeDays) {
-  if (!routeDays?.length) return { label: null, date: null, diff: null };
+  if (!routeDays?.length) return { label: null, routeDate: null, deadline: null, diff: null };
   const now = new Date();
   let minDiff = 8;
   for (const d of routeDays) {
@@ -17,22 +17,59 @@ function getNextRouteInfo(routeDays) {
     if (diff === 0) diff = 7;
     if (diff < minDiff) minDiff = diff;
   }
-  const nextDate = new Date(now.getTime() + minDiff * 86400000);
-  nextDate.setHours(23, 59, 59, 0);
-  return { label: routeDays.map(d => DAY_TR[d] || d).join(', '), date: nextDate, diff: minDiff };
+  const routeDate = new Date(now.getTime() + minDiff * 86400000);
+  routeDate.setHours(0, 0, 0, 0);
+
+  // Siparis son teslim: rota gunundan 1 gun once, saat 16:00
+  const deadline = new Date(routeDate.getTime() - 86400000);
+  deadline.setHours(16, 0, 0, 0);
+
+  // Eger deadline gecmisse ama rota gunu henuz gelmemisse, son saat 16:30 (tolerans)
+  const deadlineLate = new Date(deadline.getTime() + 30 * 60000); // 16:30
+
+  return {
+    label: routeDays.map(d => DAY_TR[d] || d).join(', '),
+    routeDate,
+    deadline: now > deadlineLate ? null : deadline,
+    deadlineLate,
+    diff: minDiff,
+  };
 }
 
-function useCountdown(targetDate) {
+function useCountdown(deadline) {
   const [remaining, setRemaining] = useState('');
+  const [isUrgent, setIsUrgent] = useState(false);
+  const [isExpired, setIsExpired] = useState(false);
   useEffect(() => {
-    if (!targetDate) return;
+    if (!deadline) return;
     const tick = () => {
-      const diff = targetDate.getTime() - Date.now();
-      if (diff <= 0) { setRemaining('Bugun!'); return; }
+      const diff = deadline.getTime() - Date.now();
+      if (diff <= 0) {
+        // Check if within 30 min tolerance (16:00-16:30)
+        const toleranceMs = 30 * 60000;
+        if (diff > -toleranceMs) {
+          setRemaining('Son 30 dakika!');
+          setIsUrgent(true);
+          setIsExpired(false);
+        } else {
+          setRemaining('Sure doldu');
+          setIsExpired(true);
+          setIsUrgent(false);
+        }
+        return;
+      }
       const d = Math.floor(diff / 86400000);
       const h = Math.floor((diff % 86400000) / 3600000);
       const m = Math.floor((diff % 3600000) / 60000);
       const s = Math.floor((diff % 60000) / 1000);
+      setIsUrgent(diff < 4 * 3600000); // 4 saatten az kaldiysa acil
+      setIsExpired(false);
+      if (d > 0) setRemaining(`${d} gun ${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
+      else setRemaining(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
+    };
+    tick();
+    const iv = setInterval(tick, 1000);
+    return () => clearInterval(iv);
       if (d > 0) setRemaining(`${d} gun ${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
       else setRemaining(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
     };
