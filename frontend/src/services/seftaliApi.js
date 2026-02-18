@@ -17,6 +17,8 @@ export const sfCustomerAPI = {
   applyReasonBulk: (data) => api.post('/seftali/customer/variance/apply-reason-bulk', data),
   dismissBulk: (data) => api.post('/seftali/customer/variance/dismiss-bulk', data),
   getDeliveryHistory: () => api.get('/seftali/customer/deliveries/history'),
+  getDailyConsumption: (params) => api.get('/seftali/customer/daily-consumption', { params }),
+  getConsumptionSummary: () => api.get('/seftali/customer/daily-consumption/summary'),
 };
 
 // ŞEFTALİ Sales API
