@@ -140,6 +140,7 @@ const SeftaliCustomerDashboard = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'draft': return <DraftView onStartEdit={() => setActiveTab('working-copy')} />;
+      case 'products': return <ProductsPage />;
       case 'working-copy': return <WorkingCopyPage onBack={() => setActiveTab('draft')} onSubmitted={() => { setActiveTab('dashboard'); fetchStats(); }} />;
       case 'deliveries': return <DeliveryApproval />;
       case 'history': return <DeliveryHistory />;
