@@ -168,7 +168,7 @@ const DraftView = ({ onStartEdit }) => {
                     <MiniTimeline
                       lastDeliveryDate={null}
                       estimatedFinishDate={item.estimated_finish_at}
-                      nextRouteDate={nextRoute?.toISOString()}
+                      nextRouteDate={deadline?.toISOString()}
                     />
                   </div>
                   <div className="text-right ml-4">
