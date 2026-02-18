@@ -76,6 +76,18 @@ daily_avg_base = previous_delivery_qty / days_between_deliveries
 - [x] Edge-case validasyonlar (idempotency, qty kontrolleri)
 - [x] Turkce hata mesajlari
 - [x] %100 backend + frontend test basarisi
+- [x] 7 PDF fatura isleme (AILEM MARKET)
+- [x] UI birlestirme (eski modulleri yeni arayuze ekleme)
+- [x] Gecmis faturalar sekmesi (Faturalar tab)
+- [x] Excel tuketim verisi aktarimi (208 teslimat, 9 urun, 2024-2025)
+
+## Excel Import Detaylari (18 Subat 2026)
+- Dosya: haftalik_tuketim_dataseti_urun_adli.xlsx
+- Musteri: AILEM MARKET (32032404952)
+- 208 benzersiz tarih (2024-01-01 - 2025-12-25)
+- 9 urun: 200 ML AYRAN, 1000 ml AYRAN, 2000 ml AYRAN, 180 ml KAKAOLU SUT 6LI, 180 ml CILEKLI SUT 6LI, 180 ml YAGLI SUT 6LI, 750 GR T.YAGLI YOGURT, 500 GR T.YAGLI YOGURT, 600 GR KASAR PEYNIRI
+- Script: backend/import_excel_consumption.py
+- Tuketim istatistikleri MODEL B ile hesaplandi
 
 ## Demo Kullanicilar
 - Musteri: sf_musteri / musteri123
