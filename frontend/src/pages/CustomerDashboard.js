@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import Layout from '../components/Layout';
-import { ShoppingCart, Package, MessageSquare, Calendar, TrendingUp, FileText, BarChart3, Heart, Tag, AlertTriangle } from 'lucide-react';
+import { ShoppingCart, Package, MessageSquare, Calendar, TrendingUp, FileText, BarChart3, Heart, Tag, AlertTriangle, Truck, PackageCheck } from 'lucide-react';
 import OrderManagement from '../components/customer/OrderManagement';
 import FavoritesModule from '../components/customer/FavoritesModule';
 import ConsumptionAnalytics from '../components/customer/ConsumptionAnalytics';
 import CampaignsModule from '../components/customer/CampaignsModule';
 import FaultReportModule from '../components/customer/FaultReportModule';
 import HistoricalRecords from '../components/customer/HistoricalRecords';
+import StockDeclaration from '../components/customer/StockDeclaration';
+import PendingDeliveries from '../components/customer/PendingDeliveries';
 import { useAuth } from '../context/AuthContext';
 
 const CustomerDashboard = () => {
