@@ -1,7 +1,25 @@
 # ŞEFTALİ - Dagitim Yonetim Sistemi PRD
 
+## Son Guncelleme: 18 Subat 2026
+
 ## Proje Ozeti
 Yogurt/ayran dagitimı yapan bir firmada musterilerin tuketimini delivery bazli hesaplayan ve rota gunune gore siparis taslagi olusturan deterministik bir sistem.
+
+## Tamamlanan Ozellikler
+- [x] Temel sistem yapisi (Backend + Frontend + DB)
+- [x] MODEL B tuketim hesaplama
+- [x] Gunluk tuketim hesaplama ve sf_daily_consumption koleksiyonu
+- [x] 25 maddelik PRD implementasyonu (42 test senaryosu %100 basarili)
+- [x] Musteri dashboard yeniden tasarimi
+- [x] Urunler sayfasi
+- [x] Taslak siralaması (tuketim miktarina gore)
+- [x] Onerilen miktar formulu duzeltmesi
+- [x] Siparis son teslim geri sayim sayaci
+- [x] **Siparis sayfasi yeniden tasarimi (18 Subat 2026)**
+  - "Taslak" sekme adi "Siparis" olarak degistirildi
+  - Yeni tasarim: Urun kartları + Siparis Ozeti paneli
+  - Filtre sekmeleri, arama, miktar kontrolleri
+  - Geri sayim sayaci entegrasyonu
 
 ## Temel Felsefe
 - Sistem deterministiktir (AI yok, otomatik siparis yok)
