@@ -56,8 +56,8 @@ const SeftaliCustomerDashboard = () => {
   ];
 
   const extraModules = [
+    { id: 'stock', name: 'Stok Bildirimi', icon: Package, color: 'text-teal-600 bg-teal-50' },
     { id: 'variance', name: 'Tuketim Sapmalari', icon: TrendingUp, color: 'text-amber-600 bg-amber-50', badge: stats.openVariance },
-    { id: 'history', name: 'Gecmis Kayitlar', icon: FileText, color: 'text-purple-600 bg-purple-50' },
     { id: 'consumption', name: 'Tuketim Analizi', icon: BarChart3, color: 'text-green-600 bg-green-50' },
     { id: 'campaigns', name: 'Kampanyalar', icon: Tag, color: 'text-orange-600 bg-orange-50' },
     { id: 'fault', name: 'Ariza Bildirimleri', icon: AlertTriangle, color: 'text-red-600 bg-red-50' },
@@ -65,7 +65,7 @@ const SeftaliCustomerDashboard = () => {
     { id: 'orders_legacy', name: 'Siparis Yonetimi', icon: ClipboardList, color: 'text-blue-600 bg-blue-50' },
   ];
 
-  const isExtraTab = ['variance', 'history', 'consumption', 'campaigns', 'fault', 'favorites', 'orders_legacy'].includes(activeTab);
+  const isExtraTab = ['stock', 'variance', 'consumption', 'campaigns', 'fault', 'favorites', 'orders_legacy'].includes(activeTab);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -75,6 +75,8 @@ const SeftaliCustomerDashboard = () => {
         return <WorkingCopyPage onBack={() => setActiveTab('draft')} onSubmitted={() => { setActiveTab('dashboard'); fetchStats(); }} />;
       case 'deliveries':
         return <DeliveryApproval />;
+      case 'history':
+        return <DeliveryHistory />;
       case 'stock':
         return <StockDeclarationForm />;
       case 'variance':
