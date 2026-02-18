@@ -65,6 +65,42 @@ def days_to_next_route(route_days):
     return min_days
 
 
+def days_between_consecutive_routes(route_days):
+    """
+    Sonraki teslimat ile ondan sonraki teslimat arasindaki gun sayisi.
+    Ornek: Rota Pazartesi/Cuma → sonraki Cuma ise, ondan sonraki Pazartesi = 3 gun
+    """
+    if not route_days:
+        return 7
+    today = now_utc().weekday()
+    route_weekdays = sorted(set(DAY_MAP.get(d, 0) for d in route_days))
+
+    if len(route_weekdays) < 2:
+        return 7
+
+    # Find next route day
+    next_rd = None
+    min_diff = 8
+    for rd in route_weekdays:
+        diff = (rd - today) % 7
+        if diff == 0:
+            diff = 7
+        if diff < min_diff:
+            min_diff = diff
+            next_rd = rd
+
+    # Find the route day AFTER next_rd
+    after_diff = 8
+    for rd in route_weekdays:
+        diff = (rd - next_rd) % 7
+        if diff == 0:
+            diff = 7
+        if diff < after_diff:
+            after_diff = diff
+
+    return after_diff
+
+
 def next_route_date(route_days):
     days = days_to_next_route(route_days)
     return now_utc() + timedelta(days=days)
