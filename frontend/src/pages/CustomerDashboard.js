@@ -17,6 +17,8 @@ const CustomerDashboard = () => {
 
   const modules = [
     { id: 'orders', name: 'Sipariş Yönetimi', icon: ShoppingCart, color: 'blue' },
+    { id: 'deliveries', name: 'Teslimat Onayı', icon: Truck, color: 'indigo' },
+    { id: 'stock', name: 'Stok Bildirimi', icon: PackageCheck, color: 'cyan' },
     { id: 'history', name: 'Geçmiş Kayıtlar', icon: FileText, color: 'purple' },
     { id: 'consumption', name: 'Tüketim Analizi', icon: BarChart3, color: 'green' },
     { id: 'campaigns', name: 'Kampanyalar', icon: Tag, color: 'orange' },
