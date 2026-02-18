@@ -468,3 +468,23 @@ async def list_products(current_user=Depends(require_role([UserRole.CUSTOMER])))
 async def get_profile(current_user=Depends(require_role([UserRole.CUSTOMER]))):
     cust = await _get_sf_customer(current_user)
     return std_resp(True, cust)
+
+
+
+# ===========================
+# EXTRA: GET /deliveries/history (all past deliveries)
+# ===========================
+@router.get("/deliveries/history")
+async def delivery_history(current_user=Depends(require_role([UserRole.CUSTOMER]))):
+    cust = await _get_sf_customer(current_user)
+    cursor = db[COL_DELIVERIES].find(
+        {"customer_id": cust["id"]}, {"_id": 0}
+    ).sort("delivered_at", -1)
+    items = await cursor.to_list(length=200)
+    for d in items:
+        for it in d.get("items", []):
+            p = await db[COL_PRODUCTS].find_one({"id": it["product_id"]}, {"_id": 0, "name": 1, "code": 1})
+            if p:
+                it["product_name"] = p.get("name", "")
+                it["product_code"] = p.get("code", "")
+    return std_resp(True, items)
