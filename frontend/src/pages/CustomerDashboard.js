@@ -67,6 +67,8 @@ const CustomerDashboard = () => {
             // Static color classes for Tailwind
             const colorClasses = {
               blue: { border: 'border-blue-500', bg: 'bg-blue-50', text: 'text-blue-600', textDark: 'text-blue-900' },
+              indigo: { border: 'border-indigo-500', bg: 'bg-indigo-50', text: 'text-indigo-600', textDark: 'text-indigo-900' },
+              cyan: { border: 'border-cyan-500', bg: 'bg-cyan-50', text: 'text-cyan-600', textDark: 'text-cyan-900' },
               purple: { border: 'border-purple-500', bg: 'bg-purple-50', text: 'text-purple-600', textDark: 'text-purple-900' },
               green: { border: 'border-green-500', bg: 'bg-green-50', text: 'text-green-600', textDark: 'text-green-900' },
               orange: { border: 'border-orange-500', bg: 'bg-orange-50', text: 'text-orange-600', textDark: 'text-orange-900' },
