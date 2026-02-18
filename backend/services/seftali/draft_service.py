@@ -18,6 +18,7 @@ class DraftService:
 
         route_days = customer.get("route_plan", {}).get("days", [])
         nrd = days_to_next_route(route_days)
+        supply_days = days_between_consecutive_routes(route_days)
         now = now_utc()
 
         cursor = db[COL_CONSUMPTION_STATS].find({"customer_id": customer_id}, {"_id": 0})
