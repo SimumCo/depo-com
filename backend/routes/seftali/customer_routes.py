@@ -488,3 +488,76 @@ async def delivery_history(current_user=Depends(require_role([UserRole.CUSTOMER]
                 it["product_name"] = p.get("name", "")
                 it["product_code"] = p.get("code", "")
     return std_resp(True, items)
+
+
+# ===========================
+# EXTRA: GET /daily-consumption (günlük tüketim kayıtları)
+# ===========================
+@router.get("/daily-consumption")
+async def daily_consumption(
+    product_id: str = None,
+    date_from: str = None,
+    date_to: str = None,
+    current_user=Depends(require_role([UserRole.CUSTOMER]))
+):
+    cust = await _get_sf_customer(current_user)
+    query = {"customer_id": cust["id"]}
+    if product_id:
+        query["product_id"] = product_id
+    if date_from or date_to:
+        date_q = {}
+        if date_from:
+            date_q["$gte"] = date_from
+        if date_to:
+            date_q["$lte"] = date_to
+        query["date"] = date_q
+
+    cursor = db["sf_daily_consumption"].find(query, {"_id": 0}).sort("date", 1)
+    items = await cursor.to_list(length=5000)
+
+    # Add product names
+    prod_cache = {}
+    for it in items:
+        pid = it["product_id"]
+        if pid not in prod_cache:
+            p = await db[COL_PRODUCTS].find_one({"id": pid}, {"_id": 0, "name": 1, "code": 1})
+            prod_cache[pid] = p
+        p = prod_cache.get(pid)
+        if p:
+            it["product_name"] = p.get("name", "")
+            it["product_code"] = p.get("code", "")
+
+    return std_resp(True, items)
+
+
+# ===========================
+# EXTRA: GET /daily-consumption/summary (ürün bazında özet)
+# ===========================
+@router.get("/daily-consumption/summary")
+async def daily_consumption_summary(current_user=Depends(require_role([UserRole.CUSTOMER]))):
+    cust = await _get_sf_customer(current_user)
+
+    pipeline = [
+        {"$match": {"customer_id": cust["id"]}},
+        {"$group": {
+            "_id": "$product_id",
+            "total_consumption": {"$sum": "$consumption"},
+            "avg_daily": {"$avg": "$consumption"},
+            "count": {"$sum": 1},
+            "min_date": {"$min": "$date"},
+            "max_date": {"$max": "$date"},
+        }},
+        {"$sort": {"avg_daily": -1}},
+    ]
+    results = await db["sf_daily_consumption"].aggregate(pipeline).to_list(50)
+
+    for r in results:
+        r["product_id"] = r.pop("_id")
+        p = await db[COL_PRODUCTS].find_one({"id": r["product_id"]}, {"_id": 0, "name": 1, "code": 1})
+        if p:
+            r["product_name"] = p.get("name", "")
+            r["product_code"] = p.get("code", "")
+        r["avg_daily"] = round(r["avg_daily"], 4)
+        r["total_consumption"] = round(r["total_consumption"], 2)
+
+    return std_resp(True, results)
