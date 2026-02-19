@@ -355,18 +355,41 @@ const SeftaliSalesDashboard = () => {
   );
 
   const renderRutPage = () => {
-    // Sample coordinates for Istanbul area (would come from customer data)
-    const defaultCenter = [41.0082, 28.9784]; // Istanbul
-    
-    // Generate mock coordinates for customers (in real app, these would come from DB)
+    // Use real coordinates from customer data, fallback to Istanbul center
     const customerLocations = todayCustomers.map((customer, idx) => ({
       ...customer,
-      lat: 41.0082 + (Math.random() - 0.5) * 0.1,
-      lng: 28.9784 + (Math.random() - 0.5) * 0.1,
+      lat: customer.location?.lat || 41.0082 + (idx * 0.01),
+      lng: customer.location?.lng || 28.9784 + (idx * 0.01),
+      district: customer.location?.district || '',
     }));
+
+    // Calculate center from customer locations
+    const defaultCenter = customerLocations.length > 0
+      ? [
+          customerLocations.reduce((sum, c) => sum + c.lat, 0) / customerLocations.length,
+          customerLocations.reduce((sum, c) => sum + c.lng, 0) / customerLocations.length
+        ]
+      : [41.0082, 28.9784]; // Istanbul default
 
     // Create route line coordinates
     const routeCoords = customerLocations.map(c => [c.lat, c.lng]);
+
+    // Open Google Maps navigation
+    const openNavigation = (lat, lng) => {
+      window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+    };
+
+    // Start full route navigation
+    const startFullNavigation = () => {
+      if (customerLocations.length === 0) return;
+      const waypoints = customerLocations.map(c => `${c.lat},${c.lng}`).join('|');
+      const destination = customerLocations[customerLocations.length - 1];
+      const origin = customerLocations[0];
+      window.open(
+        `https://www.google.com/maps/dir/?api=1&origin=${origin.lat},${origin.lng}&destination=${destination.lat},${destination.lng}&waypoints=${waypoints}`,
+        '_blank'
+      );
+    };
 
     return (
       <div className="space-y-4" data-testid="rut-page">
