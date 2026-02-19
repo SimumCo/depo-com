@@ -47,17 +47,17 @@ const DashboardRouter = () => {
 
   switch (user.role) {
     case 'admin':
-      return <SeftaliAdminDashboard />;
+      return <AdminDashboard />;
     case 'warehouse_staff':
       return <WarehouseStaffDashboard />;
     case 'sales_rep':
-      return <SeftaliSalesDashboard />;
+      return <PlasiyerDashboard />;
     case 'customer':
-      return <SeftaliCustomerDashboard />;
+      return <CustomerDashboard />;
     case 'accounting':
       return <AccountingDashboard />;
     case 'sales_agent':
-      return <SeftaliSalesDashboard />;
+      return <PlasiyerDashboard />;
     case 'production_manager':
       return <ProductionManagerDashboard />;
     case 'production_operator':
