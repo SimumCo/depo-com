@@ -246,13 +246,13 @@ async def get_warehouse_draft(current_user=Depends(require_role(SALES_ROLES))):
         }, {"_id": 0})
         
         if today_order:
-            # Müşteri sipariş göndermiş
+            # Müşteri sipariş göndermiş - siparişin tüm ürünlerini al
             items = today_order.get("items", [])
             source = "order"
             order_id = today_order.get("id")
         else:
-            # Sistem taslağını al
-            system_draft = await db["system_drafts"].find_one(
+            # Sistem taslağını al (sf_system_drafts)
+            system_draft = await db["sf_system_drafts"].find_one(
                 {"customer_id": cust_id},
                 {"_id": 0}
             )
