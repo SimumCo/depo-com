@@ -49,6 +49,17 @@ Yogurt/ayran dagitimı yapan bir firmada musterilerin tuketimini delivery bazli 
   - Sag panelde musteri listesi (harita gorunumunde)
   - "Navigasyonu Baslat" butonu
   - Rut cizgisi (kesikli turuncu hat)
+- [x] **Plasiyer Depo Siparis Taslagi ozeligi eklendi (19 Subat 2026)**
+  - Yarin rutu olan musteriler icin otomatik siparis taslagi
+  - Siparis gonderen musteriler: Gercek siparis verileri
+  - Siparis gondermeyen musteriler: Sistem taslagi (onerilen tuketim)
+  - Urun bazinda toplam hesaplama
+  - Istatistik kartlari: Toplam Musteri, Siparis Veren, Taslaktan, Toplam Adet
+  - Musteri kartlari genisletilebilir (urun detaylari)
+  - Sag panelde "Urun Toplami" ozeti
+  - "Depoya Gonder" butonu (saat 16:00-18:00 arasi aktif)
+  - Geri sayim sayaci (17:00'ye kalan sure)
+  - Backend: `/api/seftali/sales/warehouse-draft` ve `/api/seftali/sales/warehouse-draft/submit` endpointleri
 
 ## Temel Felsefe
 - Sistem deterministiktir (AI yok, otomatik siparis yok)
