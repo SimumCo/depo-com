@@ -534,17 +534,6 @@ const SeftaliSalesDashboard = () => {
       </div>
     );
   };
-                    <Navigation className="w-3.5 h-3.5" />
-                    Yol Tarifi
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
 
   const renderOrdersPage = () => (
     <div className="space-y-6" data-testid="orders-page">
