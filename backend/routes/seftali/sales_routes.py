@@ -201,3 +201,210 @@ async def list_products(current_user=Depends(require_role(SALES_ROLES))):
     cursor = db[COL_PRODUCTS].find({}, {"_id": 0})
     items = await cursor.to_list(length=500)
     return std_resp(True, items)
+
+
+
+# ===========================
+# 7. GET /warehouse-draft - Depo Sipariş Taslağı
+# ===========================
+@router.get("/warehouse-draft")
+async def get_warehouse_draft(current_user=Depends(require_role(SALES_ROLES))):
+    """
+    Yarın rutu olan müşteriler için depo sipariş taslağı:
+    - Bugün sipariş gönderenler: Gönderilen siparişler
+    - Sipariş göndermeyenler: Sistem taslağı (önerilen tüketim)
+    """
+    from datetime import datetime, timedelta
+    
+    # Yarının gün kodunu bul (MON, TUE, WED, THU, FRI, SAT, SUN)
+    tomorrow = datetime.utcnow() + timedelta(days=1)
+    day_codes = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
+    tomorrow_code = day_codes[tomorrow.weekday()]
+    
+    # Bugünün başlangıcı (sipariş kontrolü için)
+    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0).isoformat() + "Z"
+    
+    # Yarın rutu olan aktif müşterileri bul
+    cursor = db[COL_CUSTOMERS].find(
+        {"is_active": True, "route_plan.days": tomorrow_code},
+        {"_id": 0}
+    )
+    tomorrow_customers = await cursor.to_list(length=500)
+    
+    customer_drafts = []
+    product_totals = {}  # Ürün bazında toplam
+    
+    for cust in tomorrow_customers:
+        cust_id = cust["id"]
+        cust_name = cust.get("name", "Bilinmeyen")
+        
+        # Bugün gönderilmiş onaylı sipariş var mı?
+        today_order = await db[COL_ORDERS].find_one({
+            "customer_id": cust_id,
+            "status": {"$in": ["submitted", "approved"]},
+            "created_at": {"$gte": today_start}
+        }, {"_id": 0})
+        
+        if today_order:
+            # Müşteri sipariş göndermiş
+            items = today_order.get("items", [])
+            source = "order"
+            order_id = today_order.get("id")
+        else:
+            # Sistem taslağını al
+            system_draft = await db["system_drafts"].find_one(
+                {"customer_id": cust_id},
+                {"_id": 0}
+            )
+            items = system_draft.get("items", []) if system_draft else []
+            source = "draft"
+            order_id = None
+        
+        # Ürün isimlerini ekle ve toplamları hesapla
+        enriched_items = []
+        for it in items:
+            prod = await db[COL_PRODUCTS].find_one({"id": it.get("product_id")}, {"_id": 0, "name": 1, "code": 1})
+            qty = it.get("qty") or it.get("suggested_qty") or 0
+            
+            enriched_items.append({
+                "product_id": it.get("product_id"),
+                "product_name": prod.get("name") if prod else "Bilinmeyen",
+                "product_code": prod.get("code") if prod else "",
+                "qty": qty
+            })
+            
+            # Toplama ekle
+            pid = it.get("product_id")
+            if pid:
+                if pid not in product_totals:
+                    product_totals[pid] = {
+                        "product_id": pid,
+                        "product_name": prod.get("name") if prod else "Bilinmeyen",
+                        "product_code": prod.get("code") if prod else "",
+                        "total_qty": 0
+                    }
+                product_totals[pid]["total_qty"] += qty
+        
+        customer_drafts.append({
+            "customer_id": cust_id,
+            "customer_name": cust_name,
+            "source": source,  # "order" veya "draft"
+            "order_id": order_id,
+            "items": enriched_items,
+            "item_count": len(enriched_items),
+            "total_qty": sum(it["qty"] for it in enriched_items)
+        })
+    
+    # Özet istatistikler
+    order_count = sum(1 for c in customer_drafts if c["source"] == "order")
+    draft_count = sum(1 for c in customer_drafts if c["source"] == "draft")
+    
+    return std_resp(True, {
+        "route_day": tomorrow_code,
+        "route_day_label": {
+            "MON": "Pazartesi", "TUE": "Sali", "WED": "Carsamba",
+            "THU": "Persembe", "FRI": "Cuma", "SAT": "Cumartesi", "SUN": "Pazar"
+        }.get(tomorrow_code, tomorrow_code),
+        "customer_count": len(customer_drafts),
+        "order_count": order_count,
+        "draft_count": draft_count,
+        "customers": customer_drafts,
+        "product_totals": list(product_totals.values()),
+        "grand_total_qty": sum(pt["total_qty"] for pt in product_totals.values())
+    })
+
+
+# ===========================
+# 8. POST /warehouse-draft/submit - Depoya Gönder
+# ===========================
+class WarehouseSubmitBody(BaseModel):
+    note: str = ""
+
+
+@router.post("/warehouse-draft/submit")
+async def submit_warehouse_draft(body: WarehouseSubmitBody, current_user=Depends(require_role(SALES_ROLES))):
+    """
+    Depo sipariş taslağını depoya gönderir.
+    Saat 17:00 kontrolü frontend'de yapılır.
+    """
+    from datetime import datetime, timedelta
+    
+    # Yarının gün kodunu bul
+    tomorrow = datetime.utcnow() + timedelta(days=1)
+    day_codes = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
+    tomorrow_code = day_codes[tomorrow.weekday()]
+    
+    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0).isoformat() + "Z"
+    
+    # Yarın rutu olan müşterileri bul
+    cursor = db[COL_CUSTOMERS].find(
+        {"is_active": True, "route_plan.days": tomorrow_code},
+        {"_id": 0}
+    )
+    tomorrow_customers = await cursor.to_list(length=500)
+    
+    all_items = []
+    customer_details = []
+    
+    for cust in tomorrow_customers:
+        cust_id = cust["id"]
+        
+        # Bugün gönderilmiş sipariş var mı?
+        today_order = await db[COL_ORDERS].find_one({
+            "customer_id": cust_id,
+            "status": {"$in": ["submitted", "approved"]},
+            "created_at": {"$gte": today_start}
+        }, {"_id": 0})
+        
+        if today_order:
+            items = today_order.get("items", [])
+            source = "order"
+        else:
+            system_draft = await db["system_drafts"].find_one({"customer_id": cust_id}, {"_id": 0})
+            items = system_draft.get("items", []) if system_draft else []
+            source = "draft"
+        
+        for it in items:
+            qty = it.get("qty") or it.get("suggested_qty") or 0
+            if qty > 0:
+                all_items.append({
+                    "product_id": it.get("product_id"),
+                    "qty": qty,
+                    "customer_id": cust_id
+                })
+        
+        customer_details.append({
+            "customer_id": cust_id,
+            "customer_name": cust.get("name"),
+            "source": source
+        })
+    
+    # Ürün bazında topla
+    product_totals = {}
+    for it in all_items:
+        pid = it["product_id"]
+        if pid not in product_totals:
+            product_totals[pid] = 0
+        product_totals[pid] += it["qty"]
+    
+    # Depo siparişi oluştur
+    now = now_utc()
+    warehouse_order = {
+        "id": gen_id(),
+        "type": "warehouse_order",
+        "route_day": tomorrow_code,
+        "submitted_by": current_user.id,
+        "submitted_at": to_iso(now),
+        "note": body.note,
+        "status": "submitted",
+        "customer_count": len(tomorrow_customers),
+        "customer_details": customer_details,
+        "items": [{"product_id": pid, "qty": qty} for pid, qty in product_totals.items()],
+        "total_qty": sum(product_totals.values()),
+        "created_at": to_iso(now)
+    }
+    
+    await db["warehouse_orders"].insert_one(warehouse_order)
+    warehouse_order.pop("_id", None)
+    
+    return std_resp(True, warehouse_order, "Depo siparisi basariyla gonderildi")
