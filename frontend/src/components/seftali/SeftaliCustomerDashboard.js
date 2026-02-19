@@ -137,7 +137,6 @@ const SeftaliCustomerDashboard = () => {
   const sidebarItems = [
     { id: 'dashboard', label: 'Ana Sayfa', icon: Home },
     { id: 'draft', label: 'Siparis', icon: ShoppingCart },
-    { id: 'products', label: 'Urunler', icon: Package },
     { id: 'deliveries', label: 'Teslimat Onayi', icon: Truck, badge: stats.pendingDeliveries },
     { id: 'history', label: 'Faturalar', icon: FileText },
     { id: 'stock', label: 'Stok Bildirimi', icon: Box },
@@ -150,10 +149,10 @@ const SeftaliCustomerDashboard = () => {
   // Mobile bottom nav items
   const bottomNavItems = [
     { id: 'dashboard', label: 'Ana Sayfa', icon: Home },
-    { id: 'products', label: 'Urunler', icon: Package },
     { id: 'draft', label: 'Siparis', icon: ShoppingCart },
     { id: 'deliveries', label: 'Teslimat', icon: Truck, badge: stats.pendingDeliveries },
     { id: 'history', label: 'Faturalar', icon: FileText },
+    { id: 'consumption', label: 'Analiz', icon: BarChart3 },
   ];
 
   const renderContent = () => {
