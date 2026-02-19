@@ -15,7 +15,6 @@ import DeliveryApproval from './DeliveryApproval';
 import StockDeclarationForm from './StockDeclarationForm';
 import VarianceList from './VarianceList';
 import DeliveryHistory from './DeliveryHistory';
-import ProductsPage from './ProductsPage';
 import ConsumptionAnalytics from '../customer/ConsumptionAnalytics';
 import {
   SeftaliSidebar,
