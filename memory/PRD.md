@@ -1,53 +1,39 @@
-# ŞEFTALİ - Dagitim Yonetim Sistemi PRD
+# Dağıtım Yönetim Sistemi PRD
 
-## Son Guncelleme: 18 Subat 2026
+## Son Güncelleme: 19 Şubat 2026
 
-## Proje Ozeti
-Yogurt/ayran dagitimı yapan bir firmada musterilerin tuketimini delivery bazli hesaplayan ve rota gunune gore siparis taslagi olusturan deterministik bir sistem.
+## Proje Özeti
+Yoğurt/ayran dağıtımı yapan bir firmada müşterilerin tüketimini delivery bazlı hesaplayan ve rota gününe göre sipariş taslağı oluşturan deterministik bir sistem.
 
-## Tamamlanan Ozellikler
-- [x] Temel sistem yapisi (Backend + Frontend + DB)
-- [x] MODEL B tuketim hesaplama
-- [x] Gunluk tuketim hesaplama ve sf_daily_consumption koleksiyonu
-- [x] 25 maddelik PRD implementasyonu (42 test senaryosu %100 basarili)
-- [x] Musteri dashboard yeniden tasarimi
-- [x] Urunler sayfasi
-- [x] Taslak siralaması (tuketim miktarina gore)
-- [x] Onerilen miktar formulu duzeltmesi
-- [x] Siparis son teslim geri sayim sayaci
-- [x] **Siparis sayfasi yeniden tasarimi (18 Subat 2026)**
-  - "Taslak" sekme adi "Siparis" olarak degistirildi
-  - Yeni tasarim: Urun kartları + Siparis Ozeti paneli
-  - Filtre sekmeleri, arama, miktar kontrolleri
-  - Geri sayim sayaci entegrasyonu
-- [x] **Seftali Plasiyer paneline normal Plasiyer sekmeleri eklendi (19 Subat 2026)**
-  - Ana sayfada hem Seftali hem normal plasiyer istatistikleri
-  - "Daha Fazla" menusunde: Rotalarim, Musterilerim, Eski Siparisler, Urun Katalogu
-  - Quick access butonlari ana sayfada
-  - Musteri listesi Seftali ve Rota musterilerini birlikte gosteriyor
-- [x] **Seftali Plasiyer paneli tamamen yeniden tasarlandi (19 Subat 2026)**
-  - Mockup'a uygun sol sidebar navigasyon (Ana Sayfa, Musteriler, Rut, Siparisler, Teslimatlar, Teslimat Olustur, Analizler, Iade Talepleri)
-  - "Rota" yerine "Rut" terminolojisi kullanildi
-  - Ozet kartlari: Toplam Satislar, Bekleyen Siparisler, Onerilen Siparisler, Iade Talepleri
-  - Musteri kartlari: Firma adi, SFT kodu, kanal tipi, son siparis bilgisi, "Uyar" ve "Gorusme Baslat" butonlari
-  - **Rut sayfasi:** Sadece o gunun teslimat noktalari, numara siralı, "Ara" ve "Yol Tarifi" butonlari
-  - Seftali musteri arayuzuyle tutarli modern tasarim
-- [x] **Seftali Tasarim Sistemi olusturuldu (19 Subat 2026)**
-  - `SeftaliDesignSystem.js` ortak bilesen kutuphanesi
-  - Musteri ve Plasiyer arayuzleri ayni tasarim sablonuna gore guncellendi
-  - Ortak bilesenler: SeftaliSidebar, SeftaliHeader, SeftaliStatCard, SeftaliInfoCard, SeftaliButton, SeftaliEmptyState, SeftaliLoading, SeftaliBadge, SeftaliBottomNav
-  - Gradient paleti: blue, green, amber, orange, red, sky, purple
-  - Responsive tasarim: Desktop (sidebar) + Mobile (bottom nav)
-  - Tutarli tipografi, spacing ve renk kullanimi
-- [x] **Musteri panelinden "Urunler" sekmesi kaldirildi (19 Subat 2026)**
-  - "Siparis" sayfasi zaten urun secimi iceriyordu, tekrar eden sekme kaldirildi
-  - Mobil navigasyona "Analiz" sekmesi eklendi
-- [x] **Plasiyer Rut sayfasina harita entegrasyonu eklendi (19 Subat 2026)**
-  - Leaflet + OpenStreetMap entegrasyonu
-  - Numarali turuncu markerlar ile teslimat noktalari
-  - Harita/Liste gorunum toggle'i
-  - Sag panelde musteri listesi (harita gorunumunde)
-  - "Navigasyonu Baslat" butonu
+## Tamamlanan Özellikler
+- [x] Temel sistem yapısı (Backend + Frontend + DB)
+- [x] MODEL B tüketim hesaplama
+- [x] Günlük tüketim hesaplama ve sf_daily_consumption koleksiyonu
+- [x] 25 maddelik PRD implementasyonu (42 test senaryosu %100 başarılı)
+- [x] Müşteri dashboard yeniden tasarımı
+- [x] Ürünler sayfası
+- [x] Taslak sıralaması (tüketim miktarına göre)
+- [x] Önerilen miktar formülü düzeltmesi
+- [x] Sipariş son teslim geri sayım sayacı
+- [x] **Sipariş sayfası yeniden tasarımı**
+- [x] **Plasiyer paneline normal Plasiyer sekmeleri eklendi**
+- [x] **Plasiyer paneli tamamen yeniden tasarlandı**
+- [x] **Tasarım Sistemi oluşturuldu**
+- [x] **Müşteri panelinden "Ürünler" sekmesi kaldırıldı**
+- [x] **Plasiyer Rut sayfasına harita entegrasyonu eklendi**
+- [x] **Plasiyer Depo Sipariş Taslağı özelliği eklendi**
+- [x] **Admin paneli Depo Siparişleri sayfası eklendi**
+- [x] **Gerçek GPS koordinatları entegrasyonu**
+- [x] **Dosya Konsolidasyonu ve Şeftali Entegrasyonu (19 Şubat 2026)**
+  - Şeftali bileşenleri genel yapıya entegre edildi
+  - `SeftaliCustomerDashboard` → `CustomerDashboard.js`
+  - `SeftaliSalesDashboard` → `PlasiyerDashboard.js`
+  - `SeftaliAdminDashboard` → `AdminDashboard.js`
+  - `/seftali/` klasörü kaldırıldı
+  - Paylaşımlı bileşenler `/components/shared/` altına taşındı
+  - Tasarım sistemi `/components/ui/DesignSystem.js` olarak güncellendi
+  - App.js routing güncellemesi yapıldı
+  - "Şeftali" yerine "Dağıtım" terminolojisi kullanılmaya başlandı
   - Rut cizgisi (kesikli turuncu hat)
 - [x] **Plasiyer Depo Siparis Taslagi ozeligi eklendi (19 Subat 2026)**
   - Yarin rutu olan musteriler icin otomatik siparis taslagi
