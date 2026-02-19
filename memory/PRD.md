@@ -142,9 +142,19 @@ daily_avg_base = previous_delivery_qty / days_between_deliveries
 - [ ] P1: Bildirim sistemi ekle
 - [ ] P2: Admin raporlama modülü
 - [ ] P2: README ve API dokümantasyonu
-- [ ] P3: Refactoring: PlasiyerDashboard.js dosyasını parçala (850+ satır)
-- [ ] P3: Paylaşımlı Layout component oluştur
 - [ ] P3: Production notları (replica set, transaction desteği)
+
+## Tamamlanan Refactoring (19 Şubat 2026)
+- [x] Frontend PlasiyerDashboard: 1065 → 357 satır (%66 küçültme)
+- [x] Frontend CustomerDashboard: 423 → 375 satır
+- [x] Frontend AdminDashboard: 447 → 346 satır
+- [x] Backend maintenance_routes.py: 744 satır → 6 modüler dosya
+  - equipment_routes.py (111 satır)
+  - task_routes.py (228 satır)
+  - schedule_routes.py (88 satır)
+  - spare_parts_routes.py (111 satır)
+  - dashboard_routes.py (185 satır)
+  - utils.py (33 satır)
 
 ## Test Suite (18 Subat 2026)
 - Test dosyasi: backend/tests/test_seftali_rules.py
