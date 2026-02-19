@@ -20,6 +20,11 @@ Yogurt/ayran dagitimı yapan bir firmada musterilerin tuketimini delivery bazli 
   - Yeni tasarim: Urun kartları + Siparis Ozeti paneli
   - Filtre sekmeleri, arama, miktar kontrolleri
   - Geri sayim sayaci entegrasyonu
+- [x] **Seftali Plasiyer paneline normal Plasiyer sekmeleri eklendi (19 Subat 2026)**
+  - Ana sayfada hem Seftali hem normal plasiyer istatistikleri
+  - "Daha Fazla" menusunde: Rotalarim, Musterilerim, Eski Siparisler, Urun Katalogu
+  - Quick access butonlari ana sayfada
+  - Musteri listesi Seftali ve Rota musterilerini birlikte gosteriyor
 
 ## Temel Felsefe
 - Sistem deterministiktir (AI yok, otomatik siparis yok)
