@@ -352,75 +352,188 @@ const SeftaliSalesDashboard = () => {
     </div>
   );
 
-  const renderRutPage = () => (
-    <div className="space-y-6" data-testid="rut-page">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Bugunun Rutu</h1>
-          <p className="text-sm text-slate-500">
-            {new Date().toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' })} - {todayCustomers.length} nokta
-          </p>
-        </div>
-        <div className="flex items-center gap-2 px-4 py-2 bg-orange-50 rounded-xl">
-          <Navigation className="w-5 h-5 text-orange-600" />
-          <span className="text-sm font-medium text-orange-700">Navigasyonu Baslat</span>
-        </div>
-      </div>
+  const renderRutPage = () => {
+    // Sample coordinates for Istanbul area (would come from customer data)
+    const defaultCenter = [41.0082, 28.9784]; // Istanbul
+    
+    // Generate mock coordinates for customers (in real app, these would come from DB)
+    const customerLocations = todayCustomers.map((customer, idx) => ({
+      ...customer,
+      lat: 41.0082 + (Math.random() - 0.5) * 0.1,
+      lng: 28.9784 + (Math.random() - 0.5) * 0.1,
+    }));
 
-      {/* Today's Route Points */}
-      {todayCustomers.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-2xl border border-slate-200">
-          <MapPin className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <p className="text-slate-500 font-medium">Bugun icin planlanmis rut noktasi yok</p>
-          <p className="text-sm text-slate-400 mt-1">Rut gunleriniz: Pazartesi, Cuma</p>
+    // Create route line coordinates
+    const routeCoords = customerLocations.map(c => [c.lat, c.lng]);
+
+    return (
+      <div className="space-y-4" data-testid="rut-page">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Bugunun Rutu</h1>
+            <p className="text-sm text-slate-500">
+              {new Date().toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' })} - {todayCustomers.length} nokta
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {/* View Toggle */}
+            <div className="flex bg-slate-100 rounded-xl p-1">
+              <button 
+                onClick={() => setRutViewMode('map')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  rutViewMode === 'map' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'
+                }`}>
+                <Map className="w-4 h-4" />
+                Harita
+              </button>
+              <button 
+                onClick={() => setRutViewMode('list')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  rutViewMode === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'
+                }`}>
+                <List className="w-4 h-4" />
+                Liste
+              </button>
+            </div>
+            <button className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-xl text-sm font-medium hover:bg-orange-600 transition-colors">
+              <Navigation className="w-4 h-4" />
+              Navigasyonu Baslat
+            </button>
+          </div>
         </div>
-      ) : (
-        <div className="space-y-3">
-          {todayCustomers.map((customer, idx) => (
-            <div key={customer.id} className="bg-white border border-slate-200 rounded-2xl p-4 hover:shadow-md transition-all" data-testid={`rut-point-${idx}`}>
-              <div className="flex items-start gap-4">
-                {/* Route Number */}
-                <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center text-white font-bold flex-shrink-0">
-                  {idx + 1}
-                </div>
-                
-                {/* Customer Info */}
-                <div className="flex-1">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-bold text-slate-900">{customer.name}</h3>
-                      <p className="text-xs text-slate-500 mt-0.5">{customer.code || `SFT-${customer.id?.slice(0, 5)}`}</p>
+
+        {todayCustomers.length === 0 ? (
+          <div className="text-center py-12 bg-white rounded-2xl border border-slate-200">
+            <MapPin className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+            <p className="text-slate-500 font-medium">Bugun icin planlanmis rut noktasi yok</p>
+            <p className="text-sm text-slate-400 mt-1">Rut gunleriniz: Pazartesi, Cuma</p>
+          </div>
+        ) : rutViewMode === 'map' ? (
+          /* Map View */
+          <div className="grid grid-cols-3 gap-4">
+            {/* Map */}
+            <div className="col-span-2 bg-white border border-slate-200 rounded-2xl overflow-hidden" style={{ height: 500 }}>
+              <MapContainer 
+                center={defaultCenter} 
+                zoom={12} 
+                style={{ height: '100%', width: '100%' }}
+                scrollWheelZoom={true}
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                {/* Route Line */}
+                {routeCoords.length > 1 && (
+                  <Polyline 
+                    positions={routeCoords} 
+                    color="#f97316" 
+                    weight={3} 
+                    opacity={0.7}
+                    dashArray="10, 10"
+                  />
+                )}
+                {/* Markers */}
+                {customerLocations.map((customer, idx) => (
+                  <Marker 
+                    key={customer.id} 
+                    position={[customer.lat, customer.lng]}
+                    icon={createNumberedIcon(idx + 1)}
+                  >
+                    <Popup>
+                      <div className="p-1">
+                        <p className="font-bold text-slate-900">{customer.name}</p>
+                        <p className="text-xs text-slate-500">{customer.address || 'Adres yok'}</p>
+                        <div className="flex gap-2 mt-2">
+                          <button className="px-2 py-1 bg-emerald-500 text-white text-xs rounded hover:bg-emerald-600">
+                            Ara
+                          </button>
+                          <button className="px-2 py-1 bg-orange-500 text-white text-xs rounded hover:bg-orange-600">
+                            Yol Tarifi
+                          </button>
+                        </div>
+                      </div>
+                    </Popup>
+                  </Marker>
+                ))}
+              </MapContainer>
+            </div>
+
+            {/* Sidebar List */}
+            <div className="space-y-2 max-h-[500px] overflow-y-auto">
+              {customerLocations.map((customer, idx) => (
+                <div key={customer.id} 
+                  className="bg-white border border-slate-200 rounded-xl p-3 hover:border-orange-300 hover:shadow-sm transition-all cursor-pointer"
+                  data-testid={`rut-point-${idx}`}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                      {idx + 1}
                     </div>
-                    <span className="text-xs px-2 py-1 bg-slate-100 rounded-lg text-slate-600">
-                      {customer.channel || 'Perakende'}
-                    </span>
-                  </div>
-                  
-                  <p className="text-sm text-slate-600 mt-2 flex items-center gap-1">
-                    <MapPin className="w-4 h-4 text-slate-400" />
-                    {customer.address || 'Adres bilgisi yok'}
-                  </p>
-
-                  {/* Last Order Info */}
-                  <div className="flex items-center gap-4 mt-3 text-xs text-slate-500">
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" />
-                      Son Siparis: 3 gun once
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <ShoppingBag className="w-3.5 h-3.5" />
-                      Ort: 7 Gun
-                    </span>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-slate-900 text-sm truncate">{customer.name}</h3>
+                      <p className="text-xs text-slate-500 truncate">{customer.address || 'Adres yok'}</p>
+                    </div>
+                    <button className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100">
+                      <Phone className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
-
-                {/* Actions */}
-                <div className="flex flex-col gap-2">
-                  <button className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500 text-white rounded-xl text-xs font-medium hover:bg-emerald-600 transition-colors">
-                    <Phone className="w-3.5 h-3.5" />
-                    Ara
-                  </button>
-                  <button className="flex items-center gap-1.5 px-3 py-2 bg-orange-500 text-white rounded-xl text-xs font-medium hover:bg-orange-600 transition-colors">
+              ))}
+            </div>
+          </div>
+        ) : (
+          /* List View */
+          <div className="space-y-3">
+            {todayCustomers.map((customer, idx) => (
+              <div key={customer.id} className="bg-white border border-slate-200 rounded-2xl p-4 hover:shadow-md transition-all" data-testid={`rut-point-${idx}`}>
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center text-white font-bold flex-shrink-0">
+                    {idx + 1}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="font-bold text-slate-900">{customer.name}</h3>
+                        <p className="text-xs text-slate-500 mt-0.5">{customer.code || `SFT-${customer.id?.slice(0, 5)}`}</p>
+                      </div>
+                      <span className="text-xs px-2 py-1 bg-slate-100 rounded-lg text-slate-600">
+                        {customer.channel || 'Perakende'}
+                      </span>
+                    </div>
+                    <p className="text-sm text-slate-600 mt-2 flex items-center gap-1">
+                      <MapPin className="w-4 h-4 text-slate-400" />
+                      {customer.address || 'Adres bilgisi yok'}
+                    </p>
+                    <div className="flex items-center gap-4 mt-3 text-xs text-slate-500">
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" />
+                        Son Siparis: 3 gun once
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <ShoppingBag className="w-3.5 h-3.5" />
+                        Ort: 7 Gun
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <button className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500 text-white rounded-xl text-xs font-medium hover:bg-emerald-600 transition-colors">
+                      <Phone className="w-3.5 h-3.5" />
+                      Ara
+                    </button>
+                    <button className="flex items-center gap-1.5 px-3 py-2 bg-orange-500 text-white rounded-xl text-xs font-medium hover:bg-orange-600 transition-colors">
+                      <Navigation className="w-3.5 h-3.5" />
+                      Yol Tarifi
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
                     <Navigation className="w-3.5 h-3.5" />
                     Yol Tarifi
                   </button>
