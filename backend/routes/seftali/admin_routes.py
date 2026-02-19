@@ -102,3 +102,71 @@ async def list_deliveries(
         if c:
             d["customer_name"] = c["name"]
     return std_resp(True, items)
+
+
+
+# ===========================
+# 4. GET /warehouse-orders - Depo Siparişleri
+# ===========================
+@router.get("/warehouse-orders")
+async def list_warehouse_orders(
+    status: Optional[str] = None,
+    from_date: Optional[str] = Query(None, alias="from"),
+    to_date: Optional[str] = Query(None, alias="to"),
+    current_user=Depends(require_role([UserRole.ADMIN])),
+):
+    """
+    Plasiyerlerin gönderdiği depo siparişlerini listeler.
+    """
+    filt = {"type": "warehouse_order"}
+    if status:
+        filt["status"] = status
+    if from_date or to_date:
+        filt["submitted_at"] = {}
+        if from_date:
+            filt["submitted_at"]["$gte"] = from_date
+        if to_date:
+            filt["submitted_at"]["$lte"] = to_date
+
+    cursor = db["warehouse_orders"].find(filt, {"_id": 0}).sort("submitted_at", -1)
+    items = await cursor.to_list(length=100)
+    
+    # Enrich with product names
+    for order in items:
+        for it in order.get("items", []):
+            p = await db[COL_PRODUCTS].find_one({"id": it.get("product_id")}, {"_id": 0, "name": 1, "code": 1})
+            if p:
+                it["product_name"] = p.get("name", "")
+                it["product_code"] = p.get("code", "")
+    
+    return std_resp(True, items)
+
+
+# ===========================
+# 5. POST /warehouse-orders/{id}/process - Depo Siparişi İşle
+# ===========================
+@router.post("/warehouse-orders/{order_id}/process")
+async def process_warehouse_order(
+    order_id: str,
+    current_user=Depends(require_role([UserRole.ADMIN])),
+):
+    """
+    Depo siparişini işlendi olarak işaretle.
+    """
+    from services.seftali.utils import now_utc, to_iso
+    
+    order = await db["warehouse_orders"].find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        from fastapi import HTTPException
+        raise HTTPException(404, "Siparis bulunamadi")
+    
+    await db["warehouse_orders"].update_one(
+        {"id": order_id},
+        {"$set": {
+            "status": "processed",
+            "processed_at": to_iso(now_utc()),
+            "processed_by": current_user.id
+        }}
+    )
+    
+    return std_resp(True, {"id": order_id, "status": "processed"}, "Siparis islendi olarak isaretlendi")
