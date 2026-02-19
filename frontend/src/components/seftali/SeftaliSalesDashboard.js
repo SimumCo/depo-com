@@ -471,12 +471,14 @@ const SeftaliSalesDashboard = () => {
                     <Popup>
                       <div className="p-1">
                         <p className="font-bold text-slate-900">{customer.name}</p>
-                        <p className="text-xs text-slate-500">{customer.address || 'Adres yok'}</p>
+                        <p className="text-xs text-slate-500">{customer.district || customer.address || 'Adres yok'}</p>
                         <div className="flex gap-2 mt-2">
                           <button className="px-2 py-1 bg-emerald-500 text-white text-xs rounded hover:bg-emerald-600">
                             Ara
                           </button>
-                          <button className="px-2 py-1 bg-orange-500 text-white text-xs rounded hover:bg-orange-600">
+                          <button 
+                            onClick={() => openNavigation(customer.lat, customer.lng)}
+                            className="px-2 py-1 bg-orange-500 text-white text-xs rounded hover:bg-orange-600">
                             Yol Tarifi
                           </button>
                         </div>
@@ -499,10 +501,12 @@ const SeftaliSalesDashboard = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-slate-900 text-sm truncate">{customer.name}</h3>
-                      <p className="text-xs text-slate-500 truncate">{customer.address || 'Adres yok'}</p>
+                      <p className="text-xs text-slate-500 truncate">{customer.district || customer.address || 'Adres yok'}</p>
                     </div>
-                    <button className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100">
-                      <Phone className="w-4 h-4" />
+                    <button 
+                      onClick={() => openNavigation(customer.lat, customer.lng)}
+                      className="p-1.5 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100">
+                      <Navigation className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
