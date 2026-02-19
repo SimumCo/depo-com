@@ -211,9 +211,11 @@ const DraftView = ({ onStartEdit }) => {
       const wcRes = await sfCustomerAPI.startWorkingCopy();
       const wcId = wcRes.data?.data?.id;
       if (wcId) {
+        // Backend expects user_qty, not quantity
         await sfCustomerAPI.updateWorkingCopy(wcId, cartItems.map(i => ({
           product_id: i.product_id,
-          quantity: i.quantity,
+          user_qty: i.quantity,
+          removed: false,
         })));
         await sfCustomerAPI.submitWorkingCopy(wcId);
         toast.success('Siparisiniz basariyla gonderildi!');
