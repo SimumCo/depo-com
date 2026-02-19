@@ -205,6 +205,7 @@ const SeftaliSalesDashboard = () => {
     { id: 'dashboard', label: 'Ana Sayfa', icon: Home },
     { id: 'customers', label: 'Musteriler', icon: Users },
     { id: 'rut', label: 'Rut', icon: Navigation },
+    { id: 'warehouse', label: 'Depo Taslagi', icon: Package },
     { id: 'orders', label: 'Siparisler', icon: ShoppingBag },
     { id: 'deliveries', label: 'Teslimatlar', icon: Truck },
     { id: 'create', label: 'Teslimat Olustur', icon: Plus },
