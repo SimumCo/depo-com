@@ -38,4 +38,6 @@ export const sfAdminAPI = {
   getHealthSummary: () => api.get('/seftali/admin/health/summary'),
   getVariance: (params) => api.get('/seftali/admin/variance', { params }),
   getDeliveries: (params) => api.get('/seftali/admin/deliveries', { params }),
+  getWarehouseOrders: (params) => api.get('/seftali/admin/warehouse-orders', { params }),
+  processWarehouseOrder: (id) => api.post(`/seftali/admin/warehouse-orders/${id}/process`),
 };
