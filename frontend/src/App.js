@@ -16,9 +16,6 @@ import ProductionOperatorDashboard from './pages/ProductionOperatorDashboard';
 import QualityControlDashboard from './pages/QualityControlDashboard';
 import WarehouseSupervisorDashboard from './pages/WarehouseSupervisorDashboard';
 import MaintenanceTechnicianDashboard from './pages/MaintenanceTechnicianDashboard';
-import SeftaliCustomerDashboard from './components/seftali/SeftaliCustomerDashboard';
-import SeftaliSalesDashboard from './components/seftali/SeftaliSalesDashboard';
-import SeftaliAdminDashboard from './components/seftali/SeftaliAdminDashboard';
 import './App.css';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
