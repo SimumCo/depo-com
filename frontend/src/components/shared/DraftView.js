@@ -318,19 +318,23 @@ const DraftView = ({ onStartEdit }) => {
           <div className="grid grid-cols-2 gap-3">
             {filtered.map((product, idx) => {
               const { bg, emoji } = getProductImage(product.product_name);
-              const cartQty = cart[product.product_id]?.quantity || 0;
-              const inputQty = cartQty || product.suggested_qty || 1;
+              const inCart = cart[product.product_id];
+              const suggestedQty = product.suggested_qty || 0;
               
               return (
                 <div key={product.product_id}
-                  className="bg-white border border-slate-200 rounded-xl p-3 hover:shadow-md transition-all"
+                  className={`bg-white border rounded-xl p-3 hover:shadow-md transition-all ${
+                    inCart ? 'border-orange-300 bg-orange-50/30' : 'border-slate-200'
+                  }`}
                   data-testid={`product-card-${idx}`}>
                   
                   {/* Header: Name + Price */}
                   <div className="flex items-start justify-between mb-2">
                     <h3 className="text-sm font-bold text-slate-800 leading-tight flex-1">{product.product_name}</h3>
-                    {product.price > 0 && (
-                      <span className="text-sm font-semibold text-slate-700">{product.price} TL</span>
+                    {inCart && (
+                      <span className="text-xs bg-orange-500 text-white px-2 py-0.5 rounded-full font-medium">
+                        Sepette
+                      </span>
                     )}
                   </div>
 
@@ -340,18 +344,18 @@ const DraftView = ({ onStartEdit }) => {
                       {emoji}
                     </div>
                     <div className="flex-1 space-y-1">
-                      <p className="text-lg font-bold text-orange-600">{product.suggested_qty || 0} <span className="text-xs font-normal text-slate-500">Koli</span></p>
+                      <p className="text-xs text-slate-500">Tahmini Ihtiyac:</p>
+                      <p className="text-lg font-bold text-orange-600">{suggestedQty} <span className="text-xs font-normal text-slate-500">Koli</span></p>
                       <p className="text-xs text-slate-500">Son Alis: <span className="font-medium text-slate-700">{product.last_qty || 0} Koli</span></p>
-                      <p className="text-xs text-slate-500">Onerilen: <span className="font-medium text-orange-600">{product.suggested_qty || 0} Koli</span></p>
                     </div>
                   </div>
 
                   {/* Quantity Controls + Add Button */}
                   <div className="flex items-center gap-2">
-                    <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden flex-1">
+                    <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden flex-1 bg-white">
                       <button onClick={() => {
                         const input = document.getElementById(`qty-${product.product_id}`);
-                        const current = parseInt(input?.value) || 1;
+                        const current = parseInt(input?.value) || suggestedQty;
                         if (input) input.value = Math.max(1, current - 1);
                       }}
                         className="w-9 h-9 flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors border-r border-slate-200"
@@ -361,13 +365,14 @@ const DraftView = ({ onStartEdit }) => {
                       <input 
                         id={`qty-${product.product_id}`}
                         type="number" 
-                        defaultValue={inputQty}
-                        className="w-12 h-9 text-center text-sm font-bold text-slate-800 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        min="1"
+                        placeholder={suggestedQty > 0 ? String(suggestedQty) : '1'}
+                        className="w-12 h-9 text-center text-sm font-bold text-slate-800 focus:outline-none placeholder:text-orange-400 placeholder:font-normal [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         data-testid={`qty-input-${idx}`}
                       />
                       <button onClick={() => {
                         const input = document.getElementById(`qty-${product.product_id}`);
-                        const current = parseInt(input?.value) || 0;
+                        const current = parseInt(input?.value) || suggestedQty || 0;
                         if (input) input.value = current + 1;
                       }}
                         className="w-9 h-9 flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors border-l border-slate-200"
@@ -376,9 +381,13 @@ const DraftView = ({ onStartEdit }) => {
                       </button>
                     </div>
                     <button onClick={() => addToCart(product)}
-                      className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors whitespace-nowrap"
+                      className={`text-sm font-semibold px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
+                        inCart 
+                          ? 'bg-orange-100 text-orange-600 hover:bg-orange-200' 
+                          : 'bg-orange-500 hover:bg-orange-600 text-white'
+                      }`}
                       data-testid={`add-cart-${idx}`}>
-                      Sepete Ekle
+                      {inCart ? 'Guncelle' : 'Sepete Ekle'}
                     </button>
                   </div>
                 </div>
