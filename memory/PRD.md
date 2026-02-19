@@ -181,6 +181,20 @@ daily_avg_base = previous_delivery_qty / days_between_deliveries
 │   └── AdminDashboard.js       # Admin dashboard (346 satır)
 └── services/
     └── seftaliApi.js           # API çağrıları
+
+/app/backend/routes/
+├── maintenance/                 # Modüler bakım modülü (19 Şubat 2026)
+│   ├── __init__.py             # Router aggregator (22 satır)
+│   ├── utils.py                # Ortak yardımcı fonksiyonlar (33 satır)
+│   ├── equipment_routes.py     # Ekipman CRUD (111 satır)
+│   ├── task_routes.py          # Bakım görevleri (228 satır)
+│   ├── schedule_routes.py      # Bakım takvimi (88 satır)
+│   ├── spare_parts_routes.py   # Yedek parça talepleri (111 satır)
+│   └── dashboard_routes.py     # Dashboard & istatistikler (185 satır)
+└── seftali/
+    ├── customer_routes.py
+    ├── sales_routes.py
+    └── admin_routes.py
 ```
 
 ## Backend Kod Duzetmeleri (18 Subat 2026)
