@@ -60,6 +60,19 @@ Yogurt/ayran dagitimı yapan bir firmada musterilerin tuketimini delivery bazli 
   - "Depoya Gonder" butonu (saat 16:00-18:00 arasi aktif)
   - Geri sayim sayaci (17:00'ye kalan sure)
   - Backend: `/api/seftali/sales/warehouse-draft` ve `/api/seftali/sales/warehouse-draft/submit` endpointleri
+- [x] **Admin paneli Depo Siparisleri sayfasi eklendi (19 Subat 2026)**
+  - Plasiyer tasarimina uygun sol sidebar navigasyon
+  - Bekleyen/Islenen siparis listesi
+  - Siparis detaylari genisletilebilir (urun listesi)
+  - "Islem Yap" butonu ile siparis onaylama
+  - Backend: `/api/seftali/admin/warehouse-orders` ve `/api/seftali/admin/warehouse-orders/{id}/process` endpointleri
+- [x] **Gercek GPS koordinatlari entegrasyonu (19 Subat 2026)**
+  - Musterilere `location` alani eklendi (lat, lng, district, address)
+  - Istanbul ilcelerine gore ornek koordinatlar atandi (Kadikoy, Besiktas, Uskudar vb.)
+  - Harita otomatik olarak musteri lokasyonlarina gore merkezleniyor
+  - Google Maps navigasyon entegrasyonu:
+    - "Yol Tarifi" butonu tek musteri icin
+    - "Navigasyonu Baslat" butonu tum rut icin waypoint'li navigasyon
 
 ## Temel Felsefe
 - Sistem deterministiktir (AI yok, otomatik siparis yok)
