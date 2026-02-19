@@ -41,6 +41,7 @@ const SeftaliSalesDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('last_order');
+  const [rutViewMode, setRutViewMode] = useState('map'); // 'map' or 'list'
 
   // Normal plasiyer data
   const [routes, setRoutes] = useState([]);
