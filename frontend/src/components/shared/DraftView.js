@@ -116,19 +116,8 @@ const DraftView = ({ onStartEdit }) => {
 
       setProducts(merged);
 
-      // Initialize cart with suggested quantities
-      const initCart = {};
-      merged.forEach(p => {
-        if (p.suggested_qty > 0) {
-          initCart[p.product_id] = {
-            product_id: p.product_id,
-            product_name: p.product_name,
-            quantity: p.suggested_qty,
-            price: p.price || 0,
-          };
-        }
-      });
-      setCart(initCart);
+      // Start with empty cart - user will add products manually
+      setCart({});
     } catch {
       toast.error('Veriler yuklenemedi');
     } finally {
