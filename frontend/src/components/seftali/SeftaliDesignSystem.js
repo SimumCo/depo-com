@@ -1,5 +1,5 @@
-// Şeftali Tasarım Şablonu - Ortak Bileşenler ve Stiller
-// Bu dosya müşteri ve plasiyer arayüzleri için tutarlı tasarım sağlar
+// Dağıtım Yönetim Sistemi - Ortak Tasarım Bileşenleri
+// Müşteri, Plasiyer ve Admin arayüzleri için tutarlı tasarım sağlar
 
 import React from 'react';
 import { Search, LogOut, Bell, ChevronRight } from 'lucide-react';
@@ -17,7 +17,66 @@ export const colors = {
   info: 'sky',
 };
 
-// Sidebar Wrapper
+// Sidebar Wrapper - Genel kullanım için
+export const AppSidebar = ({ items, activeTab, setActiveTab, onLogout, userInitial, userName, title = 'Panel' }) => (
+  <aside className="w-56 bg-white border-r border-slate-200 flex flex-col fixed h-full z-30" data-testid="sidebar">
+    {/* Logo */}
+    <div className="p-4 border-b border-slate-200">
+      <div className="flex items-center gap-2">
+        <span className="text-2xl">🍑</span>
+        <div>
+          <span className="text-xl font-bold text-slate-900">Dağıtım</span>
+          <p className="text-[10px] text-slate-500">{title}</p>
+        </div>
+      </div>
+    </div>
+
+    {/* Navigation */}
+    <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+      {items.map(item => {
+        const Icon = item.icon;
+        const isActive = activeTab === item.id;
+        return (
+          <button key={item.id} onClick={() => setActiveTab(item.id)}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all relative ${
+              isActive 
+                ? 'bg-orange-500 text-white shadow-md' 
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
+            data-testid={`nav-${item.id}`}>
+            <Icon className="w-5 h-5" />
+            {item.label}
+            {item.badge > 0 && (
+              <span className={`absolute right-2 w-5 h-5 rounded-full text-xs flex items-center justify-center font-bold ${
+                isActive ? 'bg-white text-orange-500' : 'bg-red-500 text-white'
+              }`}>
+                {item.badge}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </nav>
+
+    {/* User & Logout */}
+    <div className="p-3 border-t border-slate-200">
+      <div className="flex items-center gap-3 px-3 py-2 mb-2">
+        <div className="w-9 h-9 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold">
+          {userInitial || 'U'}
+        </div>
+        <span className="text-sm font-medium text-slate-700 truncate">{userName || 'Kullanici'}</span>
+      </div>
+      <button onClick={onLogout} 
+        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600 transition-all"
+        data-testid="logout-btn">
+        <LogOut className="w-5 h-5" />
+        Cikis Yap
+      </button>
+    </div>
+  </aside>
+);
+
+// Eski isim için backward compatibility
 export const SeftaliSidebar = ({ items, activeTab, setActiveTab, onLogout, userInitial, userName }) => (
   <aside className="w-56 bg-white border-r border-slate-200 flex flex-col fixed h-full z-30" data-testid="sidebar">
     {/* Logo */}
