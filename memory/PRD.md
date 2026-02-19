@@ -25,6 +25,13 @@ Yogurt/ayran dagitimı yapan bir firmada musterilerin tuketimini delivery bazli 
   - "Daha Fazla" menusunde: Rotalarim, Musterilerim, Eski Siparisler, Urun Katalogu
   - Quick access butonlari ana sayfada
   - Musteri listesi Seftali ve Rota musterilerini birlikte gosteriyor
+- [x] **Seftali Plasiyer paneli tamamen yeniden tasarlandi (19 Subat 2026)**
+  - Mockup'a uygun sol sidebar navigasyon (Ana Sayfa, Musteriler, Rut, Siparisler, Teslimatlar, Teslimat Olustur, Analizler, Iade Talepleri)
+  - "Rota" yerine "Rut" terminolojisi kullanildi
+  - Ozet kartlari: Toplam Satislar, Bekleyen Siparisler, Onerilen Siparisler, Iade Talepleri
+  - Musteri kartlari: Firma adi, SFT kodu, kanal tipi, son siparis bilgisi, "Uyar" ve "Gorusme Baslat" butonlari
+  - **Rut sayfasi:** Sadece o gunun teslimat noktalari, numara siralı, "Ara" ve "Yol Tarifi" butonlari
+  - Seftali musteri arayuzuyle tutarli modern tasarim
 
 ## Temel Felsefe
 - Sistem deterministiktir (AI yok, otomatik siparis yok)
