@@ -83,7 +83,7 @@ export const SeftaliSidebar = ({ items, activeTab, setActiveTab, onLogout, userI
     <div className="p-4 border-b border-slate-200">
       <div className="flex items-center gap-2">
         <span className="text-2xl">🍑</span>
-        <span className="text-xl font-bold text-slate-900">Seftali</span>
+        <span className="text-xl font-bold text-slate-900">Dagitim</span>
       </div>
     </div>
 
