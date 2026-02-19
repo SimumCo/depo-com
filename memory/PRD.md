@@ -32,6 +32,13 @@ Yogurt/ayran dagitimı yapan bir firmada musterilerin tuketimini delivery bazli 
   - Musteri kartlari: Firma adi, SFT kodu, kanal tipi, son siparis bilgisi, "Uyar" ve "Gorusme Baslat" butonlari
   - **Rut sayfasi:** Sadece o gunun teslimat noktalari, numara siralı, "Ara" ve "Yol Tarifi" butonlari
   - Seftali musteri arayuzuyle tutarli modern tasarim
+- [x] **Seftali Tasarim Sistemi olusturuldu (19 Subat 2026)**
+  - `SeftaliDesignSystem.js` ortak bilesen kutuphanesi
+  - Musteri ve Plasiyer arayuzleri ayni tasarim sablonuna gore guncellendi
+  - Ortak bilesenler: SeftaliSidebar, SeftaliHeader, SeftaliStatCard, SeftaliInfoCard, SeftaliButton, SeftaliEmptyState, SeftaliLoading, SeftaliBadge, SeftaliBottomNav
+  - Gradient paleti: blue, green, amber, orange, red, sky, purple
+  - Responsive tasarim: Desktop (sidebar) + Mobile (bottom nav)
+  - Tutarli tipografi, spacing ve renk kullanimi
 
 ## Temel Felsefe
 - Sistem deterministiktir (AI yok, otomatik siparis yok)
