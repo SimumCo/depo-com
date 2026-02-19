@@ -1,12 +1,24 @@
+// Admin Dashboard - Ana Bileşen (Refactored)
 import React, { useState, useEffect, useCallback } from 'react';
 import { sfAdminAPI } from '../services/seftaliApi';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 import { 
   BarChart3, TrendingUp, Truck, Users, AlertTriangle, Package,
-  Home, LogOut, Search, Bell, ChevronRight, Clock, Check,
-  FileText, ShoppingBag, Calendar, CheckCircle
+  Home, Clock, Check, ChevronRight, CheckCircle
 } from 'lucide-react';
+
+// Import Layout Components
+import {
+  DashboardLayout, PageHeader, StatCard, InfoCard, EmptyState, Loading,
+  Badge, Button, gradients
+} from '../components/ui/DesignSystem';
+
+// Day translations
+const dayTranslations = {
+  MON: 'Pazartesi', TUE: 'Sali', WED: 'Carsamba',
+  THU: 'Persembe', FRI: 'Cuma', SAT: 'Cumartesi', SUN: 'Pazar'
+};
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
@@ -46,92 +58,109 @@ const AdminDashboard = () => {
     }
   };
 
-  const dayTranslations = {
-    MON: 'Pazartesi', TUE: 'Sali', WED: 'Carsamba',
-    THU: 'Persembe', FRI: 'Cuma', SAT: 'Cumartesi', SUN: 'Pazar'
-  };
+  // Pending counts for badges
+  const pendingOrdersCount = warehouseOrders.filter(o => o.status === 'submitted').length;
+  const pendingVarianceCount = variance.filter(v => v.status === 'needs_reason').length;
 
   // Sidebar items
   const sidebarItems = [
     { id: 'overview', label: 'Genel Bakis', icon: Home },
-    { id: 'warehouse', label: 'Depo Siparisleri', icon: Package, badge: warehouseOrders.filter(o => o.status === 'submitted').length },
-    { id: 'variance', label: 'Sapmalar', icon: TrendingUp, badge: variance.filter(v => v.status === 'needs_reason').length },
+    { id: 'warehouse', label: 'Depo Siparisleri', icon: Package, badge: pendingOrdersCount },
+    { id: 'variance', label: 'Sapmalar', icon: TrendingUp, badge: pendingVarianceCount },
     { id: 'deliveries', label: 'Teslimatlar', icon: Truck },
     { id: 'customers', label: 'Musteriler', icon: Users },
     { id: 'reports', label: 'Raporlar', icon: BarChart3 },
   ];
 
   const renderContent = () => {
+    if (loading) return <Loading />;
+
     switch (activeTab) {
-      case 'warehouse': return renderWarehouseOrders();
-      case 'variance': return renderVariance();
-      case 'deliveries': return renderDeliveries();
-      case 'customers': return renderCustomers();
-      case 'reports': return renderReports();
-      default: return renderOverview();
+      case 'warehouse':
+        return <WarehouseOrdersPage orders={warehouseOrders} onProcess={handleProcessOrder} />;
+      case 'variance':
+        return <VariancePage variance={variance} />;
+      case 'deliveries':
+        return <PlaceholderPage icon={Truck} title="Teslimatlar" subtitle="Teslimat listesi yakin zamanda eklenecek" />;
+      case 'customers':
+        return <PlaceholderPage icon={Users} title="Musteriler" subtitle="Musteri listesi yakin zamanda eklenecek" />;
+      case 'reports':
+        return <PlaceholderPage icon={BarChart3} title="Raporlar" subtitle="Raporlama modulu yakin zamanda eklenecek" />;
+      default:
+        return (
+          <OverviewPage 
+            summary={summary} 
+            warehouseOrders={warehouseOrders} 
+            onProcess={handleProcessOrder}
+            setActiveTab={setActiveTab}
+          />
+        );
     }
   };
 
-  const renderOverview = () => (
+  return (
+    <DashboardLayout
+      sidebarItems={sidebarItems}
+      activeTab={activeTab}
+      setActiveTab={setActiveTab}
+      onLogout={logout}
+      user={user}
+      title="Admin Panel"
+      notificationCount={pendingOrdersCount}
+    >
+      {renderContent()}
+    </DashboardLayout>
+  );
+};
+
+// ============================================
+// SAYFA BİLEŞENLERİ
+// ============================================
+
+// Overview Page
+const OverviewPage = ({ summary, warehouseOrders, onProcess, setActiveTab }) => {
+  const pendingOrders = warehouseOrders.filter(o => o.status === 'submitted');
+
+  return (
     <div className="space-y-6" data-testid="admin-overview">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Genel Bakis</h1>
-        <p className="text-sm text-slate-500">Ana Sayfa / Genel Bakis</p>
-      </div>
+      <PageHeader title="Genel Bakis" subtitle="Ana Sayfa / Genel Bakis" />
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-4 text-white">
-          <Truck className="w-5 h-5 opacity-80 mb-2" />
-          <p className="text-xs font-medium opacity-80">Toplam Teslimat</p>
-          <p className="text-2xl font-bold mt-1">{summary?.total_deliveries || 0}</p>
-        </div>
-        <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl p-4 text-white">
-          <Clock className="w-5 h-5 opacity-80 mb-2" />
-          <p className="text-xs font-medium opacity-80">Bekleyen Teslimat</p>
-          <p className="text-2xl font-bold mt-1">{summary?.pending_deliveries || 0}</p>
-        </div>
-        <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-2xl p-4 text-white">
-          <AlertTriangle className="w-5 h-5 opacity-80 mb-2" />
-          <p className="text-xs font-medium opacity-80">Aktif Spike</p>
-          <p className="text-2xl font-bold mt-1">{summary?.active_spikes || 0}</p>
-        </div>
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-4 text-white">
-          <TrendingUp className="w-5 h-5 opacity-80 mb-2" />
-          <p className="text-xs font-medium opacity-80">Acik Sapma</p>
-          <p className="text-2xl font-bold mt-1">{summary?.open_variance || 0}</p>
-        </div>
+        <StatCard icon={Truck} title="Toplam Teslimat" value={summary?.total_deliveries || 0} gradient={gradients.blue} />
+        <StatCard icon={Clock} title="Bekleyen Teslimat" value={summary?.pending_deliveries || 0} gradient={gradients.amber} />
+        <StatCard icon={AlertTriangle} title="Aktif Spike" value={summary?.active_spikes || 0} gradient={gradients.red} />
+        <StatCard icon={TrendingUp} title="Acik Sapma" value={summary?.open_variance || 0} gradient={gradients.purple} />
       </div>
 
+      {/* Content Grid */}
       <div className="grid grid-cols-2 gap-6">
-        {/* Pending Warehouse Orders */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-slate-900">Bekleyen Depo Siparisleri</h3>
+        {/* Pending Orders */}
+        <InfoCard title="Bekleyen Depo Siparisleri">
+          <div className="flex justify-between items-center mb-4">
+            <span></span>
             <button onClick={() => setActiveTab('warehouse')} className="text-sm text-orange-600 hover:text-orange-700 font-medium">
               Tumunu Gor →
             </button>
           </div>
-          {warehouseOrders.filter(o => o.status === 'submitted').slice(0, 3).map((order, idx) => (
+          {pendingOrders.slice(0, 3).map((order) => (
             <div key={order.id} className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
               <div>
                 <p className="text-sm font-medium text-slate-800">{dayTranslations[order.route_day] || order.route_day} Rutu</p>
                 <p className="text-xs text-slate-500">{order.customer_count} musteri · {order.total_qty} adet</p>
               </div>
-              <button onClick={() => handleProcessOrder(order.id)}
-                className="px-3 py-1.5 bg-emerald-500 text-white text-xs font-medium rounded-lg hover:bg-emerald-600">
+              <Button size="sm" variant="success" onClick={() => onProcess(order.id)}>
                 Islem Yap
-              </button>
+              </Button>
             </div>
           ))}
-          {warehouseOrders.filter(o => o.status === 'submitted').length === 0 && (
+          {pendingOrders.length === 0 && (
             <p className="text-sm text-slate-400 text-center py-4">Bekleyen siparis yok</p>
           )}
-        </div>
+        </InfoCard>
 
         {/* Top Spike Products */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-4">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">En Cok Spike Olan Urunler</h3>
+        <InfoCard title="En Cok Spike Olan Urunler">
           {(summary?.top_spike_products || []).length > 0 ? (
             <div className="space-y-3">
               {summary.top_spike_products.map((ts, idx) => (
@@ -149,234 +178,66 @@ const AdminDashboard = () => {
           ) : (
             <p className="text-sm text-slate-400 text-center py-4">Aktif spike yok</p>
           )}
-        </div>
+        </InfoCard>
       </div>
     </div>
   );
+};
 
-  const renderWarehouseOrders = () => {
-    const pendingOrders = warehouseOrders.filter(o => o.status === 'submitted');
-    const processedOrders = warehouseOrders.filter(o => o.status === 'processed');
-
-    return (
-      <div className="space-y-6" data-testid="warehouse-orders-page">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Depo Siparisleri</h1>
-          <p className="text-sm text-slate-500">Ana Sayfa / Depo Siparisleri</p>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 border-l-4 border-l-amber-500">
-            <p className="text-xs text-slate-500">Bekleyen</p>
-            <p className="text-2xl font-bold text-slate-900">{pendingOrders.length}</p>
-          </div>
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 border-l-4 border-l-emerald-500">
-            <p className="text-xs text-slate-500">Islenen</p>
-            <p className="text-2xl font-bold text-slate-900">{processedOrders.length}</p>
-          </div>
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 border-l-4 border-l-blue-500">
-            <p className="text-xs text-slate-500">Toplam</p>
-            <p className="text-2xl font-bold text-slate-900">{warehouseOrders.length}</p>
-          </div>
-        </div>
-
-        {/* Pending Orders */}
-        {pendingOrders.length > 0 && (
-          <div className="space-y-3">
-            <h2 className="text-lg font-semibold text-slate-900">Bekleyen Siparisler</h2>
-            {pendingOrders.map((order) => (
-              <WarehouseOrderCard key={order.id} order={order} onProcess={handleProcessOrder} dayTranslations={dayTranslations} />
-            ))}
-          </div>
-        )}
-
-        {/* Processed Orders */}
-        {processedOrders.length > 0 && (
-          <div className="space-y-3">
-            <h2 className="text-lg font-semibold text-slate-900">Islenen Siparisler</h2>
-            {processedOrders.slice(0, 5).map((order) => (
-              <WarehouseOrderCard key={order.id} order={order} onProcess={null} dayTranslations={dayTranslations} />
-            ))}
-          </div>
-        )}
-
-        {warehouseOrders.length === 0 && (
-          <div className="text-center py-12 bg-white rounded-2xl border border-slate-200">
-            <Package className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-500">Henuz depo siparisi yok</p>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const renderVariance = () => (
-    <div className="space-y-6" data-testid="variance-page">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Tuketim Sapmalari</h1>
-        <p className="text-sm text-slate-500">Ana Sayfa / Sapmalar</p>
-      </div>
-      
-      {variance.length > 0 ? (
-        <div className="space-y-3">
-          {variance.map((v, idx) => (
-            <div key={idx} className="bg-white border border-slate-200 rounded-2xl p-4">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-semibold text-slate-900">{v.customer_name || 'Musteri'}</h3>
-                  <p className="text-sm text-slate-600">{v.product_name || 'Urun'}</p>
-                  <p className="text-xs text-slate-400 mt-1">Sapma: {v.variance_pct?.toFixed(1)}%</p>
-                </div>
-                <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                  v.status === 'needs_reason' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'
-                }`}>
-                  {v.status === 'needs_reason' ? 'Aciklama Bekliyor' : v.status}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-12 bg-white rounded-2xl border border-slate-200">
-          <TrendingUp className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <p className="text-slate-500">Sapma kaydi yok</p>
-        </div>
-      )}
-    </div>
-  );
-
-  const renderDeliveries = () => (
-    <div className="space-y-6" data-testid="deliveries-page">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Teslimatlar</h1>
-        <p className="text-sm text-slate-500">Ana Sayfa / Teslimatlar</p>
-      </div>
-      <div className="text-center py-12 bg-white rounded-2xl border border-slate-200">
-        <Truck className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-        <p className="text-slate-500">Teslimat listesi yakin zamanda eklenecek</p>
-      </div>
-    </div>
-  );
-
-  const renderCustomers = () => (
-    <div className="space-y-6" data-testid="customers-page">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Musteriler</h1>
-        <p className="text-sm text-slate-500">Ana Sayfa / Musteriler</p>
-      </div>
-      <div className="text-center py-12 bg-white rounded-2xl border border-slate-200">
-        <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-        <p className="text-slate-500">Musteri listesi yakin zamanda eklenecek</p>
-      </div>
-    </div>
-  );
-
-  const renderReports = () => (
-    <div className="space-y-6" data-testid="reports-page">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Raporlar</h1>
-        <p className="text-sm text-slate-500">Ana Sayfa / Raporlar</p>
-      </div>
-      <div className="text-center py-12 bg-white rounded-2xl border border-slate-200">
-        <BarChart3 className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-        <p className="text-slate-500">Raporlama modulu yakin zamanda eklenecek</p>
-      </div>
-    </div>
-  );
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-orange-500" />
-      </div>
-    );
-  }
+// Warehouse Orders Page
+const WarehouseOrdersPage = ({ orders, onProcess }) => {
+  const pendingOrders = orders.filter(o => o.status === 'submitted');
+  const processedOrders = orders.filter(o => o.status === 'processed');
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      {/* Sidebar */}
-      <aside className="w-56 bg-white border-r border-slate-200 flex flex-col fixed h-full z-30" data-testid="sidebar">
-        <div className="p-4 border-b border-slate-200">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🍑</span>
-            <div>
-              <span className="text-xl font-bold text-slate-900">Dagitim</span>
-              <p className="text-[10px] text-slate-500">Admin Panel</p>
-            </div>
-          </div>
+    <div className="space-y-6" data-testid="warehouse-orders-page">
+      <PageHeader title="Depo Siparisleri" subtitle="Ana Sayfa / Depo Siparisleri" />
+
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 border-l-4 border-l-amber-500">
+          <p className="text-xs text-slate-500">Bekleyen</p>
+          <p className="text-2xl font-bold text-slate-900">{pendingOrders.length}</p>
         </div>
-
-        <nav className="flex-1 p-3 space-y-1">
-          {sidebarItems.map(item => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button key={item.id} onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all relative ${
-                  isActive ? 'bg-orange-500 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'
-                }`}
-                data-testid={`nav-${item.id}`}>
-                <Icon className="w-5 h-5" />
-                {item.label}
-                {item.badge > 0 && (
-                  <span className={`absolute right-2 w-5 h-5 rounded-full text-xs flex items-center justify-center font-bold ${
-                    isActive ? 'bg-white text-orange-500' : 'bg-red-500 text-white'
-                  }`}>
-                    {item.badge}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </nav>
-
-        <div className="p-3 border-t border-slate-200">
-          <div className="flex items-center gap-3 px-3 py-2 mb-2">
-            <div className="w-9 h-9 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold">
-              {user?.full_name?.charAt(0) || 'A'}
-            </div>
-            <span className="text-sm font-medium text-slate-700 truncate">{user?.full_name || 'Admin'}</span>
-          </div>
-          <button onClick={logout} 
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600 transition-all"
-            data-testid="logout-btn">
-            <LogOut className="w-5 h-5" />
-            Cikis Yap
-          </button>
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 border-l-4 border-l-emerald-500">
+          <p className="text-xs text-slate-500">Islenen</p>
+          <p className="text-2xl font-bold text-slate-900">{processedOrders.length}</p>
         </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 ml-56">
-        <header className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between sticky top-0 z-20">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input type="text" placeholder="Ara..." 
-              className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] text-white flex items-center justify-center font-bold">
-                {warehouseOrders.filter(o => o.status === 'submitted').length}
-              </span>
-              <button className="p-2 hover:bg-slate-100 rounded-full">
-                <Bell className="w-5 h-5 text-slate-600" />
-              </button>
-            </div>
-          </div>
-        </header>
-
-        <div className="p-6">
-          {renderContent()}
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 border-l-4 border-l-blue-500">
+          <p className="text-xs text-slate-500">Toplam</p>
+          <p className="text-2xl font-bold text-slate-900">{orders.length}</p>
         </div>
-      </main>
+      </div>
+
+      {/* Pending Orders */}
+      {pendingOrders.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold text-slate-900">Bekleyen Siparisler</h2>
+          {pendingOrders.map((order) => (
+            <WarehouseOrderCard key={order.id} order={order} onProcess={onProcess} />
+          ))}
+        </div>
+      )}
+
+      {/* Processed Orders */}
+      {processedOrders.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold text-slate-900">Islenen Siparisler</h2>
+          {processedOrders.slice(0, 5).map((order) => (
+            <WarehouseOrderCard key={order.id} order={order} onProcess={null} />
+          ))}
+        </div>
+      )}
+
+      {orders.length === 0 && (
+        <EmptyState icon={Package} title="Henuz depo siparisi yok" />
+      )}
     </div>
   );
 };
 
 // Warehouse Order Card Component
-const WarehouseOrderCard = ({ order, onProcess, dayTranslations }) => {
+const WarehouseOrderCard = ({ order, onProcess }) => {
   const [expanded, setExpanded] = useState(false);
 
   const formatDate = (isoStr) => {
@@ -411,11 +272,13 @@ const WarehouseOrderCard = ({ order, onProcess, dayTranslations }) => {
               <p className="text-xs text-slate-500">Toplam Adet</p>
             </div>
             {onProcess && order.status === 'submitted' && (
-              <button onClick={(e) => { e.stopPropagation(); onProcess(order.id); }}
-                className="px-4 py-2 bg-emerald-500 text-white text-sm font-medium rounded-xl hover:bg-emerald-600 flex items-center gap-1.5">
-                <Check className="w-4 h-4" />
+              <Button 
+                variant="success" 
+                icon={Check}
+                onClick={(e) => { e.stopPropagation(); onProcess(order.id); }}
+              >
                 Islem Yap
-              </button>
+              </Button>
             )}
             <ChevronRight className={`w-5 h-5 text-slate-400 transition-transform ${expanded ? 'rotate-90' : ''}`} />
           </div>
@@ -443,5 +306,41 @@ const WarehouseOrderCard = ({ order, onProcess, dayTranslations }) => {
     </div>
   );
 };
+
+// Variance Page
+const VariancePage = ({ variance }) => (
+  <div className="space-y-6" data-testid="variance-page">
+    <PageHeader title="Tuketim Sapmalari" subtitle="Ana Sayfa / Sapmalar" />
+    
+    {variance.length > 0 ? (
+      <div className="space-y-3">
+        {variance.map((v, idx) => (
+          <div key={idx} className="bg-white border border-slate-200 rounded-2xl p-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="font-semibold text-slate-900">{v.customer_name || 'Musteri'}</h3>
+                <p className="text-sm text-slate-600">{v.product_name || 'Urun'}</p>
+                <p className="text-xs text-slate-400 mt-1">Sapma: {v.variance_pct?.toFixed(1)}%</p>
+              </div>
+              <Badge variant={v.status === 'needs_reason' ? 'warning' : 'default'}>
+                {v.status === 'needs_reason' ? 'Aciklama Bekliyor' : v.status}
+              </Badge>
+            </div>
+          </div>
+        ))}
+      </div>
+    ) : (
+      <EmptyState icon={TrendingUp} title="Sapma kaydi yok" />
+    )}
+  </div>
+);
+
+// Placeholder Page
+const PlaceholderPage = ({ icon: Icon, title, subtitle }) => (
+  <div className="space-y-6" data-testid={`${title.toLowerCase().replace(' ', '-')}-page`}>
+    <PageHeader title={title} subtitle={`Ana Sayfa / ${title}`} />
+    <EmptyState icon={Icon} title={subtitle} />
+  </div>
+);
 
 export default AdminDashboard;
