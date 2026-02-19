@@ -2,11 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { sfCustomerAPI } from '../../services/seftaliApi';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'sonner';
-import { LineChart, Line, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
 import {
-  ShoppingCart, RotateCcw, FileText, ClipboardList, Truck, TrendingUp,
-  Package, BarChart3, Tag, AlertTriangle, Heart, ArrowLeft, LogOut,
-  Home, MoreHorizontal, Clock, ShoppingBag
+  ShoppingCart, RotateCcw, FileText, Truck, TrendingUp,
+  Package, BarChart3, Tag, AlertTriangle, Heart, LogOut,
+  Home, Clock, ShoppingBag, Search, Bell, ChevronRight,
+  Calendar, Box, Layers
 } from 'lucide-react';
 import DraftView from './DraftView';
 import WorkingCopyPage from './WorkingCopyPage';
@@ -15,19 +16,34 @@ import StockDeclarationForm from './StockDeclarationForm';
 import VarianceList from './VarianceList';
 import DeliveryHistory from './DeliveryHistory';
 import ProductsPage from './ProductsPage';
-import OrderManagement from '../customer/OrderManagement';
-import FavoritesModule from '../customer/FavoritesModule';
 import ConsumptionAnalytics from '../customer/ConsumptionAnalytics';
-import CampaignsModule from '../customer/CampaignsModule';
-import FaultReportModule from '../customer/FaultReportModule';
-import HistoricalRecords from '../customer/HistoricalRecords';
+import {
+  SeftaliSidebar,
+  SeftaliHeader,
+  SeftaliPageHeader,
+  SeftaliStatCard,
+  SeftaliInfoCard,
+  SeftaliButton,
+  SeftaliEmptyState,
+  SeftaliLoading,
+  SeftaliBadge,
+  SeftaliBottomNav,
+  gradients,
+} from './SeftaliDesignSystem';
 
 const SeftaliCustomerDashboard = () => {
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [stats, setStats] = useState({ pendingDeliveries: 0, hasDraft: false, openVariance: 0 });
+  const [stats, setStats] = useState({ 
+    pendingDeliveries: 0, 
+    hasDraft: false, 
+    openVariance: 0,
+    totalSuggested: 0,
+    draftItems: []
+  });
   const [profile, setProfile] = useState(null);
   const [dashData, setDashData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -53,6 +69,7 @@ const SeftaliCustomerDashboard = () => {
 
   const fetchDashboard = useCallback(async () => {
     try {
+      setLoading(true);
       const [summaryRes, histRes] = await Promise.all([
         sfCustomerAPI.getConsumptionSummary(),
         sfCustomerAPI.getDeliveryHistory(),
@@ -61,7 +78,6 @@ const SeftaliCustomerDashboard = () => {
       const totalDaily = summary.reduce((s, i) => s + i.avg_daily, 0);
       const deliveries = histRes.data?.data || [];
 
-      // Last 7 days consumption
       const now = new Date();
       const weekAgo = new Date(now); weekAgo.setDate(now.getDate() - 7);
       let last7 = 0;
@@ -74,7 +90,7 @@ const SeftaliCustomerDashboard = () => {
         }
       });
 
-      // Weekly chart data (last 8 weeks)
+      // Weekly chart data
       const weeklyChart = [];
       for (let w = 7; w >= 0; w--) {
         const wStart = new Date(now); wStart.setDate(now.getDate() - (w * 7 + 7));
@@ -89,10 +105,9 @@ const SeftaliCustomerDashboard = () => {
         weeklyChart.push({ week: `H${8 - w}`, total });
       }
 
-      // Last delivery
       const lastDlv = deliveries.length > 0 ? deliveries[0] : null;
 
-      // Stock days remaining (estimated)
+      // Stock days calculation
       const draftItems = stats.draftItems || [];
       let stockDaysAvg = 0;
       let stockCount = 0;
@@ -105,9 +120,10 @@ const SeftaliCustomerDashboard = () => {
       stockDaysAvg = stockCount > 0 ? stockDaysAvg / stockCount : 0;
 
       setDashData({
-        summary, totalDaily, last7, last7Orders, weeklyChart, lastDlv, stockDaysAvg,
+        summary, totalDaily, last7, last7Orders, weeklyChart, lastDlv, stockDaysAvg, deliveries,
       });
     } catch { /* silent */ }
+    finally { setLoading(false); }
   }, [stats.draftItems]);
 
   useEffect(() => { fetchStats(); }, [fetchStats]);
@@ -117,68 +133,56 @@ const SeftaliCustomerDashboard = () => {
   const dayLabels = { MON: 'Pazartesi', TUE: 'Sali', WED: 'Carsamba', THU: 'Persembe', FRI: 'Cuma', SAT: 'Cumartesi', SUN: 'Pazar' };
   const routeLabel = routeDays.map(d => dayLabels[d] || d).join(', ');
 
-  const tabs = [
+  // Sidebar navigation items
+  const sidebarItems = [
     { id: 'dashboard', label: 'Ana Sayfa', icon: Home },
-    { id: 'products', label: 'Urunler', icon: ShoppingBag },
+    { id: 'draft', label: 'Siparis', icon: ShoppingCart },
+    { id: 'products', label: 'Urunler', icon: Package },
+    { id: 'deliveries', label: 'Teslimat Onayi', icon: Truck, badge: stats.pendingDeliveries },
+    { id: 'history', label: 'Faturalar', icon: FileText },
+    { id: 'stock', label: 'Stok Bildirimi', icon: Box },
+    { id: 'variance', label: 'Tuketim Sapmalari', icon: TrendingUp, badge: stats.openVariance },
+    { id: 'consumption', label: 'Analizler', icon: BarChart3 },
+    { id: 'campaigns', label: 'Kampanyalar', icon: Tag },
+    { id: 'favorites', label: 'Favorilerim', icon: Heart },
+  ];
+
+  // Mobile bottom nav items
+  const bottomNavItems = [
+    { id: 'dashboard', label: 'Ana Sayfa', icon: Home },
+    { id: 'products', label: 'Urunler', icon: Package },
     { id: 'draft', label: 'Siparis', icon: ShoppingCart },
     { id: 'deliveries', label: 'Teslimat', icon: Truck, badge: stats.pendingDeliveries },
-    { id: 'more', label: 'Daha Fazla', icon: MoreHorizontal },
+    { id: 'history', label: 'Faturalar', icon: FileText },
   ];
-
-  const extraModules = [
-    { id: 'history', name: 'Faturalar', icon: FileText, color: 'text-sky-600 bg-sky-50' },
-    { id: 'stock', name: 'Stok Bildirimi', icon: Package, color: 'text-teal-600 bg-teal-50' },
-    { id: 'variance', name: 'Tuketim Sapmalari', icon: TrendingUp, color: 'text-amber-600 bg-amber-50', badge: stats.openVariance },
-    { id: 'consumption', name: 'Tuketim Analizi', icon: BarChart3, color: 'text-green-600 bg-green-50' },
-    { id: 'campaigns', name: 'Kampanyalar', icon: Tag, color: 'text-orange-600 bg-orange-50' },
-    { id: 'fault', name: 'Ariza Bildirimleri', icon: AlertTriangle, color: 'text-red-600 bg-red-50' },
-    { id: 'favorites', name: 'Favorilerim', icon: Heart, color: 'text-pink-600 bg-pink-50' },
-    { id: 'orders_legacy', name: 'Siparis Yonetimi', icon: ClipboardList, color: 'text-blue-600 bg-blue-50' },
-  ];
-
-  const isExtraTab = ['history', 'stock', 'variance', 'consumption', 'campaigns', 'fault', 'favorites', 'orders_legacy'].includes(activeTab);
 
   const renderContent = () => {
     switch (activeTab) {
       case 'draft': return <DraftView onStartEdit={() => setActiveTab('working-copy')} />;
-      case 'products': return <ProductsPage />;
       case 'working-copy': return <WorkingCopyPage onBack={() => setActiveTab('draft')} onSubmitted={() => { setActiveTab('dashboard'); fetchStats(); }} />;
+      case 'products': return <ProductsPage />;
       case 'deliveries': return <DeliveryApproval />;
       case 'history': return <DeliveryHistory />;
       case 'stock': return <StockDeclarationForm />;
       case 'variance': return <VarianceList />;
-      case 'history_legacy': return <HistoricalRecords />;
       case 'consumption': return <ConsumptionAnalytics />;
-      case 'campaigns': return <CampaignsModule />;
-      case 'fault': return <FaultReportModule />;
-      case 'favorites': return <FavoritesModule />;
-      case 'orders_legacy': return <OrderManagement />;
-      case 'more': return renderMoreMenu();
+      case 'campaigns': return renderCampaigns();
+      case 'favorites': return renderFavorites();
       default: return renderDashboard();
     }
   };
 
-  const renderMoreMenu = () => (
-    <div data-testid="more-menu">
-      <p className="text-sm font-medium text-slate-600 mb-3">Ek Moduller</p>
-      <div className="grid grid-cols-2 gap-3">
-        {extraModules.map(mod => {
-          const Icon = mod.icon;
-          return (
-            <button key={mod.id} onClick={() => setActiveTab(mod.id)}
-              className="bg-white border border-slate-200 rounded-xl p-4 text-left hover:border-sky-300 hover:shadow-sm transition-all relative"
-              data-testid={`more-${mod.id}`}>
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${mod.color}`}>
-                <Icon className="w-4 h-4" />
-              </div>
-              <p className="text-sm font-semibold text-slate-800">{mod.name}</p>
-              {mod.badge > 0 && (
-                <span className="absolute top-3 right-3 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">{mod.badge}</span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+  const renderCampaigns = () => (
+    <div className="space-y-6">
+      <SeftaliPageHeader title="Kampanyalar" subtitle="Ana Sayfa / Kampanyalar" />
+      <SeftaliEmptyState icon={Tag} title="Aktif kampanya bulunmuyor" subtitle="Yeni kampanyalar icin takipte kalin" />
+    </div>
+  );
+
+  const renderFavorites = () => (
+    <div className="space-y-6">
+      <SeftaliPageHeader title="Favorilerim" subtitle="Ana Sayfa / Favorilerim" />
+      <SeftaliEmptyState icon={Heart} title="Favori urun eklemediniz" subtitle="Urunler sayfasindan favori ekleyebilirsiniz" />
     </div>
   );
 
@@ -186,179 +190,235 @@ const SeftaliCustomerDashboard = () => {
     if (!isoStr) return '';
     const d = new Date(isoStr);
     const months = ['Ocak','Subat','Mart','Nisan','Mayis','Haziran','Temmuz','Agustos','Eylul','Ekim','Kasim','Aralik'];
-    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+    return `${d.getDate()} ${months[d.getMonth()]}`;
   };
 
   const renderDashboard = () => {
     const d = dashData || {};
-    const topProducts = (d.summary || []).slice(0, 3);
-    const maxAvg = topProducts[0]?.avg_daily || 1;
+    const topProducts = (d.summary || []).slice(0, 5);
 
     return (
-      <div className="space-y-4" data-testid="seftali-home">
-        {/* Greeting */}
-        <div>
-          <h2 className="text-xl font-bold text-slate-900">Merhaba, {profile?.name || user?.full_name || 'Market'}!</h2>
-          <p className="text-xs text-slate-500 mt-0.5">Rota: {routeLabel || '—'}</p>
+      <div className="space-y-6" data-testid="customer-dashboard">
+        {/* Page Header */}
+        <SeftaliPageHeader 
+          title={`Merhaba, ${profile?.name || user?.full_name || 'Market'}!`}
+          subtitle={`Rut Gunleri: ${routeLabel || '—'}`}
+        />
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <SeftaliStatCard
+            title="Son 7 Gun"
+            value={d.last7 || 0}
+            subtitle={`${d.last7Orders || 0} Siparis`}
+            gradient={gradients.sky}
+            onClick={() => setActiveTab('history')}
+          />
+          <SeftaliStatCard
+            title="Gunluk Tuketim"
+            value={Math.round(d.totalDaily || 0)}
+            subtitle="Urun/gun"
+            gradient={gradients.amber}
+            onClick={() => setActiveTab('consumption')}
+          />
+          <SeftaliStatCard
+            title="Onerilen Siparis"
+            value={stats.totalSuggested || 0}
+            subtitle="Adet"
+            gradient={gradients.orange}
+            onClick={() => setActiveTab('draft')}
+          />
+          <SeftaliStatCard
+            title="Stokta Kalan"
+            value={d.stockDaysAvg > 0 ? `${d.stockDaysAvg.toFixed(1)}` : '—'}
+            subtitle="Gun"
+            gradient={gradients.green}
+            onClick={() => setActiveTab('stock')}
+          />
         </div>
 
-        {/* 3 colored stat cards */}
-        <div className="grid grid-cols-3 gap-3">
-          {/* Son 7 Gun Alim - Blue */}
-          <button onClick={() => setActiveTab('history')}
-            className="relative overflow-hidden rounded-xl p-3 text-left transition-transform hover:scale-[1.02]"
-            style={{ background: 'linear-gradient(135deg, #0284c7, #0369a1)' }}
-            data-testid="stat-last7">
-            <p className="text-[10px] font-medium text-sky-200">Son 7 Gun</p>
-            <p className="text-lg font-bold text-white mt-0.5">{d.last7 || 0}</p>
-            <p className="text-[10px] text-sky-200">{d.last7Orders || 0} Siparis</p>
-          </button>
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - 2/3 */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Weekly Chart */}
+            <SeftaliInfoCard title="Haftalik Tuketim Trendi">
+              {(d.weeklyChart || []).length > 0 ? (
+                <div style={{ height: 200 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={d.weeklyChart}>
+                      <XAxis dataKey="week" tick={{ fontSize: 12 }} />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <Tooltip />
+                      <Bar dataKey="total" fill="#f97316" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <p className="text-sm text-slate-400 text-center py-8">Veri yok</p>
+              )}
+            </SeftaliInfoCard>
 
-          {/* Gunluk Tuketim - Amber */}
-          <button onClick={() => setActiveTab('consumption')}
-            className="relative overflow-hidden rounded-xl p-3 text-left transition-transform hover:scale-[1.02]"
-            style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}
-            data-testid="stat-daily">
-            <p className="text-[10px] font-medium text-amber-100">Gunluk Tuketim</p>
-            <p className="text-lg font-bold text-white mt-0.5">{Math.round(d.totalDaily || 0)}</p>
-            <p className="text-[10px] text-amber-100">Urun/gun</p>
-          </button>
-
-          {/* Onerilen Siparis - Orange */}
-          <button onClick={() => setActiveTab('draft')}
-            className="relative overflow-hidden rounded-xl p-3 text-left transition-transform hover:scale-[1.02]"
-            style={{ background: 'linear-gradient(135deg, #ea580c, #c2410c)' }}
-            data-testid="stat-suggested">
-            <p className="text-[10px] font-medium text-orange-100">Onerilen</p>
-            <p className="text-lg font-bold text-white mt-0.5">{stats.totalSuggested || 0}</p>
-            <p className="text-[10px] text-orange-100">Adet</p>
-          </button>
-        </div>
-
-        {/* Stokta Kalan Gun + Quick Actions */}
-        <div className="grid grid-cols-5 gap-3">
-          {/* Green stock card */}
-          <button onClick={() => setActiveTab('stock')}
-            className="col-span-2 rounded-xl p-3 text-left transition-transform hover:scale-[1.02]"
-            style={{ background: 'linear-gradient(135deg, #16a34a, #15803d)' }}
-            data-testid="stat-stock-days">
-            <p className="text-[10px] font-medium text-green-100">Stokta Kalan</p>
-            <p className="text-lg font-bold text-white mt-0.5">{d.stockDaysAvg > 0 ? d.stockDaysAvg.toFixed(1) : '—'}</p>
-            <p className="text-[10px] text-green-100">Gun</p>
-          </button>
-
-          {/* 4 action buttons */}
-          <div className="col-span-3 grid grid-cols-4 gap-2">
-            {[
-              { id: 'draft', icon: ShoppingCart, label: 'Siparis', color: 'text-blue-600' },
-              { id: 'stock', icon: RotateCcw, label: 'Stok', color: 'text-green-600' },
-              { id: 'deliveries', icon: Truck, label: 'Teslimat', color: 'text-sky-600', badge: stats.pendingDeliveries },
-              { id: 'history', icon: FileText, label: 'Faturalar', color: 'text-slate-600' },
-            ].map(act => (
-              <button key={act.id} onClick={() => setActiveTab(act.id)}
-                className="bg-white border border-slate-200 rounded-xl flex flex-col items-center justify-center py-2.5 hover:border-sky-300 hover:shadow-sm transition-all relative"
-                data-testid={`action-${act.id}`}>
-                <act.icon className={`w-5 h-5 ${act.color}`} />
-                <span className="text-[9px] text-slate-600 font-medium mt-1">{act.label}</span>
-                {act.badge > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{act.badge}</span>
-                )}
-              </button>
-            ))}
+            {/* Top Products */}
+            <SeftaliInfoCard title="En Cok Tuketilen Urunler">
+              {topProducts.length > 0 ? (
+                <div className="space-y-3">
+                  {topProducts.map((p, i) => (
+                    <div key={p.product_id} className="flex items-center gap-3">
+                      <span className="w-6 h-6 bg-orange-100 rounded-lg flex items-center justify-center text-xs font-bold text-orange-600">
+                        {i + 1}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-slate-800 truncate">{p.product_name}</p>
+                        <p className="text-xs text-slate-400">{p.avg_daily.toFixed(1)} urun/gun</p>
+                      </div>
+                      <div className="w-24 bg-slate-100 rounded-full h-2">
+                        <div 
+                          className="bg-orange-500 h-2 rounded-full" 
+                          style={{ width: `${Math.min(100, (p.avg_daily / (topProducts[0]?.avg_daily || 1)) * 100)}%` }} 
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-400 text-center py-4">Veri yok</p>
+              )}
+            </SeftaliInfoCard>
           </div>
-        </div>
 
-        {/* Bottom 3 cards */}
-        <div className="grid grid-cols-3 gap-3">
-          {/* Son Siparis */}
-          <button onClick={() => setActiveTab('history')}
-            className="bg-white border border-slate-200 rounded-xl p-3 text-left hover:shadow-sm transition-all"
-            data-testid="card-last-order">
-            <p className="text-xs font-semibold text-slate-700">Son Siparis</p>
-            <p className="text-[10px] text-slate-400 mt-1">{d.lastDlv ? formatDate(d.lastDlv.delivered_at) : '—'}</p>
-            <p className="text-base font-bold text-slate-900 mt-0.5">
-              {d.lastDlv ? (d.lastDlv.items || []).reduce((s, i) => s + i.qty, 0) : 0} Ad.
-            </p>
-          </button>
-
-          {/* Haftalik Tuketim - mini chart */}
-          <button onClick={() => setActiveTab('consumption')}
-            className="bg-white border border-slate-200 rounded-xl p-3 text-left hover:shadow-sm transition-all"
-            data-testid="card-weekly-chart">
-            <p className="text-xs font-semibold text-slate-700">Haftalik</p>
-            {(d.weeklyChart || []).length > 0 && (
-              <div className="mt-1" style={{ height: 40 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={d.weeklyChart}>
-                    <Line type="monotone" dataKey="total" stroke="#0284c7" strokeWidth={1.5} dot={false} />
-                  </LineChart>
-                </ResponsiveContainer>
+          {/* Right Column - 1/3 */}
+          <div className="space-y-6">
+            {/* Quick Actions */}
+            <SeftaliInfoCard title="Hizli Islemler">
+              <div className="space-y-2">
+                <button onClick={() => setActiveTab('draft')}
+                  className="w-full flex items-center justify-between p-3 bg-orange-50 rounded-xl hover:bg-orange-100 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <ShoppingCart className="w-5 h-5 text-orange-600" />
+                    <span className="text-sm font-medium text-slate-800">Yeni Siparis</span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                </button>
+                <button onClick={() => setActiveTab('stock')}
+                  className="w-full flex items-center justify-between p-3 bg-emerald-50 rounded-xl hover:bg-emerald-100 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <Box className="w-5 h-5 text-emerald-600" />
+                    <span className="text-sm font-medium text-slate-800">Stok Bildir</span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                </button>
+                <button onClick={() => setActiveTab('deliveries')}
+                  className="w-full flex items-center justify-between p-3 bg-sky-50 rounded-xl hover:bg-sky-100 transition-colors relative">
+                  <div className="flex items-center gap-3">
+                    <Truck className="w-5 h-5 text-sky-600" />
+                    <span className="text-sm font-medium text-slate-800">Teslimat Onayla</span>
+                  </div>
+                  {stats.pendingDeliveries > 0 && (
+                    <span className="bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
+                      {stats.pendingDeliveries}
+                    </span>
+                  )}
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                </button>
               </div>
-            )}
-          </button>
+            </SeftaliInfoCard>
 
-          {/* En Cok Tuketilenler */}
-          <div className="bg-white border border-slate-200 rounded-xl p-3" data-testid="card-top-products">
-            <p className="text-xs font-semibold text-slate-700 mb-1.5">En Cok</p>
-            {topProducts.map((p, i) => (
-              <div key={p.product_id} className="mb-1 last:mb-0">
-                <p className="text-[9px] text-slate-600 truncate">{p.product_name}</p>
-                <div className="w-full bg-slate-100 rounded-full h-1 mt-0.5">
-                  <div className="bg-sky-500 h-1 rounded-full" style={{ width: `${Math.max(8, (p.avg_daily / maxAvg) * 100)}%` }} />
+            {/* Last Order */}
+            <SeftaliInfoCard title="Son Siparis">
+              {d.lastDlv ? (
+                <div>
+                  <p className="text-xs text-slate-500">{formatDate(d.lastDlv.delivered_at)}</p>
+                  <p className="text-2xl font-bold text-slate-900 mt-1">
+                    {(d.lastDlv.items || []).reduce((s, i) => s + i.qty, 0)} Adet
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">{d.lastDlv.items?.length || 0} cesit urun</p>
+                </div>
+              ) : (
+                <p className="text-sm text-slate-400">Siparis gecmisi yok</p>
+              )}
+            </SeftaliInfoCard>
+
+            {/* Alerts */}
+            {stats.openVariance > 0 && (
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-amber-800">Tuketim Sapmasi</p>
+                    <p className="text-xs text-amber-600 mt-0.5">{stats.openVariance} adet aciklama bekliyor</p>
+                    <button onClick={() => setActiveTab('variance')} className="text-xs text-amber-700 font-medium mt-2 hover:underline">
+                      Incele →
+                    </button>
+                  </div>
                 </div>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </div>
     );
   };
 
-  return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-20">
-        <div className="flex items-center gap-2">
-          <span className="text-lg" role="img" aria-label="peach">&#127825;</span>
-          <h1 className="text-lg font-bold text-slate-900">Seftali</h1>
-        </div>
-        <button onClick={logout} className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-red-600 transition-colors" data-testid="logout-btn">
-          <LogOut className="w-3.5 h-3.5" />
-          Cikis
-        </button>
-      </header>
+  if (loading && activeTab === 'dashboard') {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <SeftaliLoading />
+      </div>
+    );
+  }
 
-      {/* Content */}
-      <main className={`mx-auto px-4 py-4 ${isExtraTab ? 'max-w-4xl' : 'max-w-lg'}`}>
-        {isExtraTab && (
-          <button onClick={() => setActiveTab('more')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 mb-4" data-testid="back-to-more">
-            <ArrowLeft className="w-4 h-4" /> Daha Fazla
+  return (
+    <div className="min-h-screen bg-slate-50 flex">
+      {/* Sidebar - Desktop */}
+      <div className="hidden lg:block">
+        <SeftaliSidebar
+          items={sidebarItems}
+          activeTab={activeTab === 'working-copy' ? 'draft' : activeTab}
+          setActiveTab={setActiveTab}
+          onLogout={logout}
+          userInitial={profile?.name?.charAt(0) || user?.full_name?.charAt(0) || 'M'}
+          userName={profile?.name || user?.full_name || 'Musteri'}
+        />
+      </div>
+
+      {/* Main Content */}
+      <main className="flex-1 lg:ml-56">
+        {/* Top Header - Desktop */}
+        <div className="hidden lg:block">
+          <SeftaliHeader
+            searchPlaceholder="Urun ara..."
+            userName={profile?.name || user?.full_name || 'Musteri'}
+            userInitial={profile?.name?.charAt(0) || user?.full_name?.charAt(0) || 'M'}
+            notificationCount={stats.pendingDeliveries}
+          />
+        </div>
+
+        {/* Mobile Header */}
+        <header className="lg:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-20">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🍑</span>
+            <span className="text-lg font-bold text-slate-900">Seftali</span>
+          </div>
+          <button onClick={logout} className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-red-600 transition-colors">
+            <LogOut className="w-4 h-4" />
+            Cikis
           </button>
-        )}
-        {renderContent()}
+        </header>
+
+        {/* Page Content */}
+        <div className="p-4 lg:p-6 pb-20 lg:pb-6">
+          {renderContent()}
+        </div>
       </main>
 
-      {/* Bottom nav */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-20" data-testid="bottom-nav">
-        <div className="max-w-lg mx-auto flex">
-          {tabs.map(tab => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id || (activeTab === 'working-copy' && tab.id === 'draft') || (isExtraTab && tab.id === 'more');
-            return (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 flex flex-col items-center py-2 relative transition-colors ${isActive ? 'text-sky-600' : 'text-slate-400 hover:text-slate-600'}`}
-                data-testid={`nav-${tab.id}`}>
-                <Icon className="w-5 h-5" />
-                <span className="text-[10px] mt-0.5 font-medium">{tab.label}</span>
-                {tab.badge > 0 && (
-                  <span className="absolute top-1 right-1/4 bg-red-500 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{tab.badge}</span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </nav>
-      <div className="h-16" />
+      {/* Bottom Navigation - Mobile */}
+      <SeftaliBottomNav
+        items={bottomNavItems}
+        activeTab={activeTab === 'working-copy' ? 'draft' : activeTab}
+        setActiveTab={setActiveTab}
+      />
+      <div className="h-16 lg:hidden" />
     </div>
   );
 };
