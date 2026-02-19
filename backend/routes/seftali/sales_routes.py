@@ -238,12 +238,20 @@ async def get_warehouse_draft(current_user=Depends(require_role(SALES_ROLES))):
         cust_id = cust["id"]
         cust_name = cust.get("name", "Bilinmeyen")
         
-        # Bugün gönderilmiş onaylı sipariş var mı?
-        today_order = await db[COL_ORDERS].find_one({
+        # En son gönderilmiş veya onaylı siparişi al (bugün için)
+        # String tarih karşılaştırması sorunlu olduğu için sort ile en yenisini alıyoruz
+        today_orders = await db[COL_ORDERS].find({
             "customer_id": cust_id,
-            "status": {"$in": ["submitted", "approved"]},
-            "created_at": {"$gte": today_start}
-        }, {"_id": 0})
+            "status": {"$in": ["submitted", "approved"]}
+        }, {"_id": 0}).sort("created_at", -1).limit(1).to_list(length=1)
+        
+        # Bugün oluşturulmuş mu kontrol et
+        today_order = None
+        if today_orders:
+            order = today_orders[0]
+            order_date = order.get("created_at", "")[:10]  # YYYY-MM-DD
+            if order_date == today_start[:10]:  # Sadece tarih kısmını karşılaştır
+                today_order = order
         
         if today_order:
             # Müşteri sipariş göndermiş - siparişin tüm ürünlerini al
