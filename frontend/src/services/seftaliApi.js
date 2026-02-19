@@ -29,6 +29,8 @@ export const sfSalesAPI = {
   getOrders: (params) => api.get('/seftali/sales/orders', { params }),
   approveOrder: (id) => api.post(`/seftali/sales/orders/${id}/approve`),
   requestEdit: (id, data) => api.post(`/seftali/sales/orders/${id}/request-edit`, data),
+  getWarehouseDraft: () => api.get('/seftali/sales/warehouse-draft'),
+  submitWarehouseDraft: (data) => api.post('/seftali/sales/warehouse-draft/submit', data),
 };
 
 // ŞEFTALİ Admin API
