@@ -39,6 +39,16 @@ Yogurt/ayran dagitimı yapan bir firmada musterilerin tuketimini delivery bazli 
   - Gradient paleti: blue, green, amber, orange, red, sky, purple
   - Responsive tasarim: Desktop (sidebar) + Mobile (bottom nav)
   - Tutarli tipografi, spacing ve renk kullanimi
+- [x] **Musteri panelinden "Urunler" sekmesi kaldirildi (19 Subat 2026)**
+  - "Siparis" sayfasi zaten urun secimi iceriyordu, tekrar eden sekme kaldirildi
+  - Mobil navigasyona "Analiz" sekmesi eklendi
+- [x] **Plasiyer Rut sayfasina harita entegrasyonu eklendi (19 Subat 2026)**
+  - Leaflet + OpenStreetMap entegrasyonu
+  - Numarali turuncu markerlar ile teslimat noktalari
+  - Harita/Liste gorunum toggle'i
+  - Sag panelde musteri listesi (harita gorunumunde)
+  - "Navigasyonu Baslat" butonu
+  - Rut cizgisi (kesikli turuncu hat)
 
 ## Temel Felsefe
 - Sistem deterministiktir (AI yok, otomatik siparis yok)
