@@ -3,12 +3,34 @@ import { sfSalesAPI } from '../../services/seftaliApi';
 import api, { ordersAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'sonner';
+import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { 
   Truck, ShoppingBag, Plus, Check, Edit3, Package, LogOut,
   MapPin, Users, Calendar, TrendingUp, Home, Search, Filter,
   Phone, MessageSquare, AlertTriangle, Clock, ChevronRight,
-  FileText, BarChart3, RotateCcw, Navigation
+  FileText, BarChart3, RotateCcw, Navigation, Map, List
 } from 'lucide-react';
+
+// Fix for default marker icons in Leaflet with webpack
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+// Custom numbered marker icon
+const createNumberedIcon = (number) => {
+  return L.divIcon({
+    className: 'custom-marker',
+    html: `<div style="background: #f97316; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); border: 2px solid white;">${number}</div>`,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -16],
+  });
+};
 
 const SeftaliSalesDashboard = () => {
   const { user, logout } = useAuth();
