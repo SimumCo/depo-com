@@ -5,10 +5,10 @@ import { useAuth } from '../../context/AuthContext';
 import { toast } from 'sonner';
 import { 
   Truck, ShoppingBag, Plus, Check, Edit3, Package, LogOut,
-  MapPin, Users, Calendar, TrendingUp, Home, MoreHorizontal, ArrowLeft
+  MapPin, Users, Calendar, TrendingUp, Home, Search, Filter,
+  Phone, MessageSquare, AlertTriangle, Clock, ChevronRight,
+  FileText, BarChart3, RotateCcw, Navigation
 } from 'lucide-react';
-import ProductCatalog from '../ProductCatalog';
-import CustomerOrders from '../CustomerOrders';
 
 const SeftaliSalesDashboard = () => {
   const { user, logout } = useAuth();
@@ -17,6 +17,8 @@ const SeftaliSalesDashboard = () => {
   const [deliveries, setDeliveries] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState('last_order');
 
   // Normal plasiyer data
   const [routes, setRoutes] = useState([]);
@@ -24,7 +26,11 @@ const SeftaliSalesDashboard = () => {
   const [stats, setStats] = useState({
     totalCustomers: 0,
     todayOrders: 0,
-    weeklyOrders: 0
+    weeklyOrders: 0,
+    totalSales: 0,
+    pendingOrders: 0,
+    suggestedOrders: 0,
+    returnRequests: 0
   });
 
   // Delivery form state
@@ -46,6 +52,14 @@ const SeftaliSalesDashboard = () => {
       setCustomers(custRes.data?.data || []);
       setDeliveries(dlvRes.data?.data || []);
       setOrders(ordRes.data?.data || []);
+
+      // Calculate stats
+      const pendingCount = (ordRes.data?.data || []).filter(o => o.status === 'submitted').length;
+      setStats(prev => ({
+        ...prev,
+        pendingOrders: pendingCount,
+        suggestedOrders: (custRes.data?.data || []).length,
+      }));
     } catch {
       toast.error('Veri yuklenemedi');
     } finally {
@@ -53,7 +67,6 @@ const SeftaliSalesDashboard = () => {
     }
   }, []);
 
-  // Normal plasiyer verilerini çek
   const fetchPlasiyerData = useCallback(async () => {
     try {
       const [routesRes, ordersRes] = await Promise.all([
@@ -64,14 +77,17 @@ const SeftaliSalesDashboard = () => {
       setRoutes(routesRes.data || []);
       setLegacyOrders(ordersRes.data || []);
       
-      setStats({
+      const today = new Date().toDateString();
+      const todayCount = ordersRes.data?.filter(o => new Date(o.created_at).toDateString() === today).length || 0;
+      
+      setStats(prev => ({
+        ...prev,
         totalCustomers: routesRes.data?.length || 0,
-        todayOrders: ordersRes.data?.filter(o => {
-          const today = new Date().toDateString();
-          return new Date(o.created_at).toDateString() === today;
-        }).length || 0,
-        weeklyOrders: ordersRes.data?.length || 0
-      });
+        todayOrders: todayCount,
+        weeklyOrders: ordersRes.data?.length || 0,
+        totalSales: 135250, // Mock value - would come from real API
+        returnRequests: 2 // Mock value
+      }));
     } catch (error) {
       console.error('Plasiyer verileri yuklenemedi:', error);
     }
@@ -110,7 +126,7 @@ const SeftaliSalesDashboard = () => {
         invoice_no: dlvInvoice || undefined,
         items: validItems.map(it => ({ product_id: it.product_id, qty: parseFloat(it.qty) })),
       });
-      toast.success('Teslimat olusturuldu (pending)');
+      toast.success('Teslimat olusturuldu');
       setDlvCustomerId(''); setDlvInvoice(''); setDlvItems([{ product_id: '', qty: '' }]);
       setActiveTab('deliveries');
       await fetchData();
@@ -141,24 +157,11 @@ const SeftaliSalesDashboard = () => {
     }
   };
 
-  // Bottom navigation tabs (mobile-first)
-  const mainTabs = [
-    { id: 'dashboard', label: 'Ana Sayfa', icon: Home },
-    { id: 'create', label: 'Teslimat', icon: Plus },
-    { id: 'deliveries', label: 'Teslimatlar', icon: Truck },
-    { id: 'orders', label: 'Siparisler', icon: ShoppingBag },
-    { id: 'more', label: 'Daha Fazla', icon: MoreHorizontal },
-  ];
-
-  // Extra modules from normal Plasiyer
-  const extraModules = [
-    { id: 'routes', name: 'Rotalarim', icon: MapPin, color: 'text-blue-600 bg-blue-50' },
-    { id: 'customers', name: 'Musterilerim', icon: Users, color: 'text-green-600 bg-green-50' },
-    { id: 'legacy_orders', name: 'Eski Siparisler', icon: ShoppingBag, color: 'text-purple-600 bg-purple-50' },
-    { id: 'products', name: 'Urun Katalogu', icon: Package, color: 'text-orange-600 bg-orange-50' },
-  ];
-
-  const isExtraTab = ['routes', 'customers', 'legacy_orders', 'products'].includes(activeTab);
+  // Get today's day name for route filtering
+  const getTodayDayCode = () => {
+    const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+    return days[new Date().getDay()];
+  };
 
   const dayTranslations = {
     monday: 'Pazartesi', tuesday: 'Sali', wednesday: 'Carsamba',
@@ -167,353 +170,556 @@ const SeftaliSalesDashboard = () => {
     THU: 'Persembe', FRI: 'Cuma', SAT: 'Cumartesi', SUN: 'Pazar'
   };
 
+  // Filter today's route customers
+  const todayCode = getTodayDayCode();
+  const todayCustomers = customers.filter(c => {
+    const routeDays = c.route_plan?.days || [];
+    return routeDays.includes(todayCode);
+  });
+
+  // Sidebar navigation items
+  const sidebarItems = [
+    { id: 'dashboard', label: 'Ana Sayfa', icon: Home },
+    { id: 'customers', label: 'Musteriler', icon: Users },
+    { id: 'rut', label: 'Rut', icon: Navigation },
+    { id: 'orders', label: 'Siparisler', icon: ShoppingBag },
+    { id: 'deliveries', label: 'Teslimatlar', icon: Truck },
+    { id: 'create', label: 'Teslimat Olustur', icon: Plus },
+    { id: 'analytics', label: 'Analizler', icon: BarChart3 },
+    { id: 'returns', label: 'Iade Talepleri', icon: RotateCcw },
+  ];
+
+  // Filter customers based on search
+  const filteredCustomers = customers.filter(c => 
+    !search || c.name?.toLowerCase().includes(search.toLowerCase())
+  );
+
   const renderContent = () => {
     switch (activeTab) {
+      case 'customers': return renderCustomersPage();
+      case 'rut': return renderRutPage();
+      case 'orders': return renderOrdersPage();
+      case 'deliveries': return renderDeliveriesPage();
       case 'create': return renderCreateDelivery();
-      case 'deliveries': return renderDeliveries();
-      case 'orders': return renderOrders();
-      case 'more': return renderMoreMenu();
-      case 'routes': return renderRoutes();
-      case 'customers': return renderCustomers();
-      case 'legacy_orders': return renderLegacyOrders();
-      case 'products': return renderProductCatalog();
-      default: return renderDashboardHome();
+      case 'analytics': return renderAnalytics();
+      case 'returns': return renderReturns();
+      default: return renderDashboard();
     }
   };
 
-  const renderMoreMenu = () => (
-    <div data-testid="more-menu">
-      <p className="text-sm font-medium text-slate-600 mb-3">Ek Moduller</p>
-      <div className="grid grid-cols-2 gap-3">
-        {extraModules.map(mod => {
-          const Icon = mod.icon;
-          return (
-            <button key={mod.id} onClick={() => setActiveTab(mod.id)}
-              className="bg-white border border-slate-200 rounded-xl p-4 text-left hover:border-sky-300 hover:shadow-sm transition-all"
-              data-testid={`more-${mod.id}`}>
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-2 ${mod.color}`}>
-                <Icon className="w-5 h-5" />
-              </div>
-              <p className="text-sm font-semibold text-slate-800">{mod.name}</p>
-            </button>
-          );
-        })}
+  const renderDashboard = () => (
+    <div className="space-y-6" data-testid="sales-dashboard">
+      {/* Page Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900">Plasiyer</h1>
+        <p className="text-sm text-slate-500">Ana Sayfa / Plasiyer</p>
+      </div>
+
+      {/* Search Bar */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Urun ara..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+            data-testid="search-input"
+          />
+        </div>
+        <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-600 hover:border-slate-300">
+          Son Siparis Tarihine Gore
+          <ChevronRight className="w-4 h-4 rotate-90" />
+        </button>
+        <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-600 hover:border-slate-300">
+          <Filter className="w-4 h-4" />
+          Filtre
+        </button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-4 gap-4">
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-4 text-white">
+          <p className="text-xs font-medium opacity-80">Toplam Satislar (L3M)</p>
+          <p className="text-2xl font-bold mt-1">{stats.totalSales.toLocaleString('tr-TR')} TL</p>
+          <p className="text-xs opacity-70 mt-1">+{stats.totalCustomers} firma</p>
+        </div>
+        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-4 text-white">
+          <div className="flex items-center gap-2 mb-1">
+            <ShoppingBag className="w-4 h-4 opacity-80" />
+            <p className="text-xs font-medium opacity-80">Bekleyen Siparisler</p>
+          </div>
+          <p className="text-2xl font-bold">{stats.pendingOrders} Siparis</p>
+          <p className="text-xs opacity-70 mt-1">5.540 TL Toplam</p>
+        </div>
+        <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl p-4 text-white">
+          <div className="flex items-center gap-2 mb-1">
+            <TrendingUp className="w-4 h-4 opacity-80" />
+            <p className="text-xs font-medium opacity-80">Onerilen Siparisler</p>
+          </div>
+          <p className="text-2xl font-bold">{stats.suggestedOrders} Firma</p>
+          <p className="text-xs opacity-70 mt-1">3.300 TL Tavsiye Edilen</p>
+        </div>
+        <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-2xl p-4 text-white">
+          <div className="flex items-center gap-2 mb-1">
+            <RotateCcw className="w-4 h-4 opacity-80" />
+            <p className="text-xs font-medium opacity-80">Iade Talepleri</p>
+          </div>
+          <p className="text-2xl font-bold">{stats.returnRequests} Firma</p>
+          <p className="text-xs opacity-70 mt-1">2.870 TL Kontrol Edilmeli</p>
+        </div>
+      </div>
+
+      {/* Customer Cards Grid */}
+      <div className="grid grid-cols-2 gap-4">
+        {filteredCustomers.slice(0, 6).map((customer, idx) => (
+          <CustomerCard 
+            key={customer.id} 
+            customer={customer} 
+            index={idx}
+            onCall={() => toast.info('Arama baslatiliyor...')}
+            onMessage={() => toast.info('Mesaj gonderiliyor...')}
+            onAlert={() => toast.warning('Uyari gonderildi')}
+          />
+        ))}
       </div>
     </div>
   );
 
-  const renderRoutes = () => (
-    <div className="space-y-3" data-testid="routes-list">
-      <h3 className="text-lg font-semibold text-slate-900 mb-4">Teslimat Rotalarim</h3>
-      {routes.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-xl border border-slate-200">
-          <MapPin className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-          <p className="text-slate-500 text-sm">Henuz rota atanmamis</p>
+  const renderCustomersPage = () => (
+    <div className="space-y-6" data-testid="customers-page">
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900">Musteriler</h1>
+        <p className="text-sm text-slate-500">Ana Sayfa / Musteriler</p>
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <input
+          type="text"
+          placeholder="Musteri ara..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+        />
+      </div>
+
+      {/* Customer List */}
+      <div className="grid grid-cols-2 gap-4">
+        {filteredCustomers.map((customer, idx) => (
+          <CustomerCard 
+            key={customer.id} 
+            customer={customer} 
+            index={idx}
+            onCall={() => toast.info('Arama baslatiliyor...')}
+            onMessage={() => toast.info('Mesaj gonderiliyor...')}
+            onAlert={() => toast.warning('Uyari gonderildi')}
+          />
+        ))}
+      </div>
+
+      {filteredCustomers.length === 0 && (
+        <div className="text-center py-12 bg-white rounded-2xl border border-slate-200">
+          <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+          <p className="text-slate-500">Musteri bulunamadi</p>
         </div>
-      ) : (
-        routes.map((route) => (
-          <div key={route.id} className="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-md transition-shadow">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h4 className="font-medium text-slate-900">{route.customer_name}</h4>
-                <p className="text-sm text-slate-600 mt-1 flex items-center gap-1">
-                  <MapPin className="w-4 h-4" />
-                  {route.location || 'Konum bilgisi yok'}
-                </p>
-                <p className="text-sm text-slate-500 mt-2 flex items-center gap-1">
-                  <Calendar className="w-4 h-4" />
-                  Teslimat Gunu: <span className="font-medium">{dayTranslations[route.delivery_day] || route.delivery_day}</span>
-                </p>
-              </div>
-              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                route.is_active ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-800'
-              }`}>
-                {route.is_active ? 'Aktif' : 'Pasif'}
-              </span>
-            </div>
-          </div>
-        ))
       )}
     </div>
   );
 
-  const renderCustomers = () => (
-    <div data-testid="customers-list">
-      <h3 className="text-lg font-semibold text-slate-900 mb-4">Musteri Listesi</h3>
-      <div className="grid grid-cols-1 gap-3">
-        {/* Seftali Müşterileri */}
-        {customers.length > 0 && (
-          <>
-            <p className="text-xs font-medium text-orange-600 uppercase tracking-wide">Seftali Musterileri</p>
-            {customers.map((customer) => (
-              <div key={customer.id} className="bg-white border border-slate-200 rounded-xl p-4">
-                <h4 className="font-medium text-slate-900">{customer.name}</h4>
-                <p className="text-sm text-slate-600 mt-1">{customer.address || 'Adres yok'}</p>
-                {customer.route_plan?.days && (
-                  <p className="text-xs text-slate-500 mt-2">
-                    Rota: {customer.route_plan.days.map(d => dayTranslations[d] || d).join(', ')}
+  const renderRutPage = () => (
+    <div className="space-y-6" data-testid="rut-page">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Bugunun Rutu</h1>
+          <p className="text-sm text-slate-500">
+            {new Date().toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' })} - {todayCustomers.length} nokta
+          </p>
+        </div>
+        <div className="flex items-center gap-2 px-4 py-2 bg-orange-50 rounded-xl">
+          <Navigation className="w-5 h-5 text-orange-600" />
+          <span className="text-sm font-medium text-orange-700">Navigasyonu Baslat</span>
+        </div>
+      </div>
+
+      {/* Today's Route Points */}
+      {todayCustomers.length === 0 ? (
+        <div className="text-center py-12 bg-white rounded-2xl border border-slate-200">
+          <MapPin className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+          <p className="text-slate-500 font-medium">Bugun icin planlanmis rut noktasi yok</p>
+          <p className="text-sm text-slate-400 mt-1">Rut gunleriniz: Pazartesi, Cuma</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {todayCustomers.map((customer, idx) => (
+            <div key={customer.id} className="bg-white border border-slate-200 rounded-2xl p-4 hover:shadow-md transition-all" data-testid={`rut-point-${idx}`}>
+              <div className="flex items-start gap-4">
+                {/* Route Number */}
+                <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center text-white font-bold flex-shrink-0">
+                  {idx + 1}
+                </div>
+                
+                {/* Customer Info */}
+                <div className="flex-1">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-bold text-slate-900">{customer.name}</h3>
+                      <p className="text-xs text-slate-500 mt-0.5">{customer.code || `SFT-${customer.id?.slice(0, 5)}`}</p>
+                    </div>
+                    <span className="text-xs px-2 py-1 bg-slate-100 rounded-lg text-slate-600">
+                      {customer.channel || 'Perakende'}
+                    </span>
+                  </div>
+                  
+                  <p className="text-sm text-slate-600 mt-2 flex items-center gap-1">
+                    <MapPin className="w-4 h-4 text-slate-400" />
+                    {customer.address || 'Adres bilgisi yok'}
                   </p>
-                )}
+
+                  {/* Last Order Info */}
+                  <div className="flex items-center gap-4 mt-3 text-xs text-slate-500">
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5" />
+                      Son Siparis: 3 gun once
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <ShoppingBag className="w-3.5 h-3.5" />
+                      Ort: 7 Gun
+                    </span>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex flex-col gap-2">
+                  <button className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500 text-white rounded-xl text-xs font-medium hover:bg-emerald-600 transition-colors">
+                    <Phone className="w-3.5 h-3.5" />
+                    Ara
+                  </button>
+                  <button className="flex items-center gap-1.5 px-3 py-2 bg-orange-500 text-white rounded-xl text-xs font-medium hover:bg-orange-600 transition-colors">
+                    <Navigation className="w-3.5 h-3.5" />
+                    Yol Tarifi
+                  </button>
+                </div>
               </div>
-            ))}
-          </>
-        )}
-        
-        {/* Normal Rota Müşterileri */}
-        {routes.length > 0 && (
-          <>
-            <p className="text-xs font-medium text-blue-600 uppercase tracking-wide mt-4">Rota Musterileri</p>
-            {routes.map((route) => (
-              <div key={route.id} className="bg-white border border-slate-200 rounded-xl p-4">
-                <h4 className="font-medium text-slate-900">{route.customer_name}</h4>
-                <p className="text-sm text-slate-600 mt-1">{route.location || 'Konum yok'}</p>
-                <p className="text-xs text-slate-500 mt-2">
-                  Teslimat: {dayTranslations[route.delivery_day] || route.delivery_day}
-                </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  const renderOrdersPage = () => (
+    <div className="space-y-6" data-testid="orders-page">
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900">Siparisler</h1>
+        <p className="text-sm text-slate-500">Ana Sayfa / Siparisler</p>
+      </div>
+
+      {orders.length === 0 ? (
+        <div className="text-center py-12 bg-white rounded-2xl border border-slate-200">
+          <ShoppingBag className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+          <p className="text-slate-500">Siparis bulunamadi</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {orders.map(o => (
+            <div key={o.id} className="bg-white border border-slate-200 rounded-2xl p-4" data-testid={`order-${o.id?.slice(0,8)}`}>
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <h3 className="font-bold text-slate-900">{o.customer_name || 'Musteri'}</h3>
+                  <p className="text-xs text-slate-500">{o.id?.slice(0, 8)}</p>
+                </div>
+                <span className={`text-xs px-3 py-1 rounded-full font-medium ${
+                  o.status === 'approved' ? 'bg-green-50 text-green-700' :
+                  o.status === 'needs_edit' ? 'bg-amber-50 text-amber-700' :
+                  o.status === 'submitted' ? 'bg-sky-50 text-sky-700' :
+                  'bg-slate-50 text-slate-700'
+                }`}>
+                  {o.status === 'approved' ? 'Onaylandi' : o.status === 'needs_edit' ? 'Duzenleme' : o.status === 'submitted' ? 'Bekliyor' : o.status}
+                </span>
               </div>
-            ))}
-          </>
-        )}
-
-        {customers.length === 0 && routes.length === 0 && (
-          <div className="text-center py-12 bg-white rounded-xl border border-slate-200">
-            <Users className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-            <p className="text-slate-500 text-sm">Musteri bulunamadi</p>
-          </div>
-        )}
-      </div>
+              
+              <p className="text-sm text-slate-600 mb-3">{(o.items || []).map(it => `${it.product_name || '?'}: ${it.qty}`).join(', ')}</p>
+              
+              {o.status === 'submitted' && (
+                <div className="flex gap-2">
+                  <button onClick={() => handleApproveOrder(o.id)} className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-500 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-emerald-600 transition-colors">
+                    <Check className="w-4 h-4" /> Onayla
+                  </button>
+                  <button onClick={() => handleRequestEdit(o.id)} className="flex-1 flex items-center justify-center gap-1.5 border border-slate-300 text-slate-600 py-2.5 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors">
+                    <Edit3 className="w-4 h-4" /> Duzenleme Iste
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 
-  const renderLegacyOrders = () => (
-    <div data-testid="legacy-orders">
-      <h3 className="text-lg font-semibold text-slate-900 mb-4">Eski Siparisler</h3>
-      <CustomerOrders orders={legacyOrders} onUpdate={fetchPlasiyerData} />
-    </div>
-  );
-
-  const renderProductCatalog = () => (
-    <div data-testid="product-catalog">
-      <h3 className="text-lg font-semibold text-slate-900 mb-4">Urun Katalogu</h3>
-      <ProductCatalog onOrderCreated={fetchPlasiyerData} />
-    </div>
-  );
-
-  const renderDashboardHome = () => (
-    <div className="space-y-4" data-testid="sales-home">
-      {/* Stats Cards - Seftali */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-white border border-slate-200 rounded-xl p-4">
-          <Truck className="w-6 h-6 text-sky-600 mb-2" />
-          <p className="text-2xl font-bold text-slate-800">{deliveries.filter(d => d.acceptance_status === 'pending').length}</p>
-          <p className="text-xs text-slate-500">Bekleyen Teslimat</p>
-        </div>
-        <div className="bg-white border border-slate-200 rounded-xl p-4">
-          <ShoppingBag className="w-6 h-6 text-emerald-600 mb-2" />
-          <p className="text-2xl font-bold text-slate-800">{orders.filter(o => o.status === 'submitted').length}</p>
-          <p className="text-xs text-slate-500">Onay Bekleyen Siparis</p>
-        </div>
+  const renderDeliveriesPage = () => (
+    <div className="space-y-6" data-testid="deliveries-page">
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900">Teslimatlar</h1>
+        <p className="text-sm text-slate-500">Ana Sayfa / Teslimatlar</p>
       </div>
 
-      {/* Stats Cards - Normal Plasiyer */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white border border-slate-200 rounded-xl p-3 border-l-4 border-l-blue-500">
-          <p className="text-xs text-slate-500">Toplam Musteri</p>
-          <p className="text-xl font-bold text-slate-800">{stats.totalCustomers}</p>
+      {deliveries.length === 0 ? (
+        <div className="text-center py-12 bg-white rounded-2xl border border-slate-200">
+          <Truck className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+          <p className="text-slate-500">Teslimat bulunamadi</p>
         </div>
-        <div className="bg-white border border-slate-200 rounded-xl p-3 border-l-4 border-l-green-500">
-          <p className="text-xs text-slate-500">Bugunun Siparisi</p>
-          <p className="text-xl font-bold text-slate-800">{stats.todayOrders}</p>
+      ) : (
+        <div className="space-y-3">
+          {deliveries.map(d => (
+            <div key={d.id} className="bg-white border border-slate-200 rounded-2xl p-4">
+              <div className="flex justify-between items-center mb-2">
+                <div>
+                  <h3 className="font-bold text-slate-900">{d.customer_name || 'Musteri'}</h3>
+                  <p className="text-xs text-slate-500">{d.invoice_no}</p>
+                </div>
+                <span className={`text-xs px-3 py-1 rounded-full font-medium ${
+                  d.acceptance_status === 'accepted' ? 'bg-green-50 text-green-700' :
+                  d.acceptance_status === 'rejected' ? 'bg-red-50 text-red-700' :
+                  'bg-amber-50 text-amber-700'
+                }`}>
+                  {d.acceptance_status === 'accepted' ? 'Kabul Edildi' : d.acceptance_status === 'rejected' ? 'Reddedildi' : 'Bekliyor'}
+                </span>
+              </div>
+              <p className="text-sm text-slate-500">{d.items?.length || 0} urun - {d.delivery_type === 'route' ? 'Rut' : 'Rut Disi'}</p>
+            </div>
+          ))}
         </div>
-        <div className="bg-white border border-slate-200 rounded-xl p-3 border-l-4 border-l-purple-500">
-          <p className="text-xs text-slate-500">Haftalik</p>
-          <p className="text-xl font-bold text-slate-800">{stats.weeklyOrders}</p>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <button onClick={() => setActiveTab('create')} 
-        className="w-full bg-sky-600 text-white py-3 rounded-xl font-medium hover:bg-sky-700 flex items-center justify-center gap-2 transition-colors" 
-        data-testid="create-delivery-shortcut">
-        <Plus className="w-5 h-5" /> Yeni Teslimat Olustur
-      </button>
-
-      {/* Quick access to extra modules */}
-      <div className="grid grid-cols-4 gap-2">
-        {extraModules.map(mod => {
-          const Icon = mod.icon;
-          return (
-            <button key={mod.id} onClick={() => setActiveTab(mod.id)}
-              className="bg-white border border-slate-200 rounded-xl p-3 flex flex-col items-center justify-center hover:border-sky-300 transition-all"
-              data-testid={`quick-${mod.id}`}>
-              <Icon className={`w-5 h-5 mb-1 ${mod.color.split(' ')[0]}`} />
-              <span className="text-[10px] text-slate-600 font-medium text-center">{mod.name}</span>
-            </button>
-          );
-        })}
-      </div>
+      )}
     </div>
   );
 
   const renderCreateDelivery = () => (
-    <div className="space-y-4" data-testid="create-delivery-form">
-      <h3 className="text-lg font-semibold text-slate-900">Yeni Teslimat Olustur</h3>
+    <div className="space-y-6" data-testid="create-delivery">
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">Musteri</label>
-        <select value={dlvCustomerId} onChange={e => setDlvCustomerId(e.target.value)} className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-sky-500 focus:border-transparent" data-testid="customer-select">
-          <option value="">Musteri secin...</option>
-          {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
+        <h1 className="text-2xl font-bold text-slate-900">Yeni Teslimat</h1>
+        <p className="text-sm text-slate-500">Ana Sayfa / Teslimat Olustur</p>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Teslimat Tipi</label>
-          <select value={dlvType} onChange={e => setDlvType(e.target.value)} className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-sky-500 focus:border-transparent" data-testid="delivery-type-select">
-            <option value="route">Rota</option>
-            <option value="off_route">Rota Disi</option>
+          <label className="block text-sm font-medium text-slate-700 mb-2">Musteri</label>
+          <select value={dlvCustomerId} onChange={e => setDlvCustomerId(e.target.value)} 
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+            <option value="">Musteri secin...</option>
+            {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Fatura No</label>
-          <input type="text" value={dlvInvoice} onChange={e => setDlvInvoice(e.target.value)} placeholder="FTR-XXX" className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-sky-500 focus:border-transparent" data-testid="invoice-input" />
-        </div>
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-slate-700 mb-2">Urunler</label>
-        {dlvItems.map((item, idx) => (
-          <div key={idx} className="flex gap-2 mb-2">
-            <select value={item.product_id} onChange={e => {
-              const newItems = [...dlvItems]; newItems[idx].product_id = e.target.value; setDlvItems(newItems);
-            }} className="flex-1 px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-sky-500 focus:border-transparent" data-testid={`product-select-${idx}`}>
-              <option value="">Urun sec...</option>
-              {products.map(p => <option key={p.id} value={p.id}>{p.name} ({p.code})</option>)}
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Teslimat Tipi</label>
+            <select value={dlvType} onChange={e => setDlvType(e.target.value)} 
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+              <option value="route">Rut</option>
+              <option value="off_route">Rut Disi</option>
             </select>
-            <input type="number" min="1" placeholder="Adet" value={item.qty} onChange={e => {
-              const newItems = [...dlvItems]; newItems[idx].qty = e.target.value; setDlvItems(newItems);
-            }} className="w-24 px-2 py-2.5 border border-slate-300 rounded-xl text-sm text-center focus:ring-2 focus:ring-sky-500 focus:border-transparent" data-testid={`qty-input-${idx}`} />
           </div>
-        ))}
-        <button onClick={() => setDlvItems([...dlvItems, { product_id: '', qty: '' }])} className="text-sm text-sky-600 hover:text-sky-700 font-medium" data-testid="add-item-btn">
-          + Urun Ekle
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Fatura No</label>
+            <input type="text" value={dlvInvoice} onChange={e => setDlvInvoice(e.target.value)} 
+              placeholder="FTR-XXX" 
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent" />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">Urunler</label>
+          {dlvItems.map((item, idx) => (
+            <div key={idx} className="flex gap-3 mb-2">
+              <select value={item.product_id} onChange={e => {
+                const newItems = [...dlvItems]; newItems[idx].product_id = e.target.value; setDlvItems(newItems);
+              }} className="flex-1 px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                <option value="">Urun sec...</option>
+                {products.map(p => <option key={p.id} value={p.id}>{p.name} ({p.code})</option>)}
+              </select>
+              <input type="number" min="1" placeholder="Adet" value={item.qty} onChange={e => {
+                const newItems = [...dlvItems]; newItems[idx].qty = e.target.value; setDlvItems(newItems);
+              }} className="w-28 px-4 py-3 border border-slate-200 rounded-xl text-sm text-center focus:ring-2 focus:ring-orange-500 focus:border-transparent" />
+            </div>
+          ))}
+          <button onClick={() => setDlvItems([...dlvItems, { product_id: '', qty: '' }])} 
+            className="text-sm text-orange-600 hover:text-orange-700 font-medium mt-2">
+            + Urun Ekle
+          </button>
+        </div>
+
+        <button onClick={handleCreateDelivery} disabled={submitting} 
+          className="w-full bg-orange-500 text-white py-3 rounded-xl font-semibold hover:bg-orange-600 disabled:opacity-50 transition-colors">
+          {submitting ? 'Kaydediliyor...' : 'Teslimati Kaydet'}
         </button>
       </div>
-      <button onClick={handleCreateDelivery} disabled={submitting} className="w-full bg-emerald-600 text-white py-3 rounded-xl font-medium hover:bg-emerald-700 disabled:opacity-50 transition-colors" data-testid="save-delivery-btn">
-        {submitting ? 'Kaydediliyor...' : 'Teslimati Kaydet'}
-      </button>
     </div>
   );
 
-  const renderDeliveries = () => (
-    <div className="space-y-3" data-testid="deliveries-list">
-      <h3 className="text-lg font-semibold text-slate-900 mb-4">Teslimatlar</h3>
-      {deliveries.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-xl border border-slate-200">
-          <Truck className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-          <p className="text-slate-500 text-sm">Teslimat yok</p>
-        </div>
-      ) : deliveries.map(d => (
-        <div key={d.id} className="bg-white border border-slate-200 rounded-xl p-4" data-testid={`dlv-row-${d.id?.slice(0,8)}`}>
-          <div className="flex justify-between items-center">
-            <div>
-              <span className="text-sm font-medium text-slate-800">{d.customer_name || d.customer_id?.slice(0, 8)}</span>
-              <span className="text-xs text-slate-400 ml-2">{d.invoice_no}</span>
-            </div>
-            <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-              d.acceptance_status === 'accepted' ? 'bg-green-50 text-green-700' :
-              d.acceptance_status === 'rejected' ? 'bg-red-50 text-red-700' :
-              'bg-amber-50 text-amber-700'
-            }`}>{d.acceptance_status === 'accepted' ? 'Kabul' : d.acceptance_status === 'rejected' ? 'Red' : 'Bekliyor'}</span>
-          </div>
-          <p className="text-xs text-slate-400 mt-2">{d.items?.length || 0} urun - {d.delivery_type === 'route' ? 'Rota' : 'Rota Disi'}</p>
-        </div>
-      ))}
+  const renderAnalytics = () => (
+    <div className="space-y-6" data-testid="analytics-page">
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900">Analizler</h1>
+        <p className="text-sm text-slate-500">Ana Sayfa / Analizler</p>
+      </div>
+      <div className="text-center py-12 bg-white rounded-2xl border border-slate-200">
+        <BarChart3 className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+        <p className="text-slate-500">Analiz modulu yakin zamanda eklenecek</p>
+      </div>
     </div>
   );
 
-  const renderOrders = () => (
-    <div className="space-y-3" data-testid="orders-list">
-      <h3 className="text-lg font-semibold text-slate-900 mb-4">Siparisler</h3>
-      {orders.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-xl border border-slate-200">
-          <ShoppingBag className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-          <p className="text-slate-500 text-sm">Siparis yok</p>
-        </div>
-      ) : orders.map(o => (
-        <div key={o.id} className="bg-white border border-slate-200 rounded-xl p-4" data-testid={`order-row-${o.id?.slice(0,8)}`}>
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-slate-800">{o.customer_name || o.customer_id?.slice(0, 8)}</span>
-            <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-              o.status === 'approved' ? 'bg-green-50 text-green-700' :
-              o.status === 'needs_edit' ? 'bg-amber-50 text-amber-700' :
-              o.status === 'submitted' ? 'bg-sky-50 text-sky-700' :
-              'bg-slate-50 text-slate-700'
-            }`}>{o.status === 'approved' ? 'Onaylandi' : o.status === 'needs_edit' ? 'Duzenleme' : o.status === 'submitted' ? 'Bekliyor' : o.status}</span>
-          </div>
-          <p className="text-xs text-slate-500 mb-3">{(o.items || []).map(it => `${it.product_name || '?'}: ${it.qty}`).join(', ')}</p>
-          {o.status === 'submitted' && (
-            <div className="flex gap-2">
-              <button onClick={() => handleApproveOrder(o.id)} className="flex-1 flex items-center justify-center gap-1 bg-emerald-600 text-white py-2 rounded-lg text-xs font-medium hover:bg-emerald-700 transition-colors" data-testid="approve-btn">
-                <Check className="w-3.5 h-3.5" /> Onayla
-              </button>
-              <button onClick={() => handleRequestEdit(o.id)} className="flex-1 flex items-center justify-center gap-1 border border-slate-300 text-slate-600 py-2 rounded-lg text-xs font-medium hover:bg-slate-50 transition-colors" data-testid="edit-request-btn">
-                <Edit3 className="w-3.5 h-3.5" /> Duzenleme Iste
-              </button>
-            </div>
-          )}
-        </div>
-      ))}
+  const renderReturns = () => (
+    <div className="space-y-6" data-testid="returns-page">
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900">Iade Talepleri</h1>
+        <p className="text-sm text-slate-500">Ana Sayfa / Iade Talepleri</p>
+      </div>
+      <div className="text-center py-12 bg-white rounded-2xl border border-slate-200">
+        <RotateCcw className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+        <p className="text-slate-500">Henuz iade talebi yok</p>
+      </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-20">
-        <div className="flex items-center gap-2">
-          <span className="text-lg" role="img" aria-label="peach">🍑</span>
-          <div>
-            <h1 className="text-lg font-bold text-slate-900">Seftali - Plasiyer</h1>
-            <p className="text-xs text-slate-500">{user?.full_name}</p>
+    <div className="min-h-screen bg-slate-50 flex">
+      {/* Sidebar */}
+      <aside className="w-56 bg-white border-r border-slate-200 flex flex-col fixed h-full z-30" data-testid="sidebar">
+        {/* Logo */}
+        <div className="p-4 border-b border-slate-200">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">🍑</span>
+            <span className="text-xl font-bold text-slate-900">Seftali</span>
           </div>
         </div>
-        <button onClick={logout} className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-red-600 transition-colors" data-testid="logout-btn">
-          <LogOut className="w-3.5 h-3.5" />
-          Cikis
-        </button>
-      </header>
 
-      {/* Content */}
-      <main className={`mx-auto px-4 py-4 ${isExtraTab ? 'max-w-4xl' : 'max-w-2xl'}`}>
-        {isExtraTab && (
-          <button onClick={() => setActiveTab('more')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 mb-4" data-testid="back-to-more">
-            <ArrowLeft className="w-4 h-4" /> Geri
-          </button>
-        )}
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-600" />
-          </div>
-        ) : renderContent()}
-      </main>
-
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-20" data-testid="bottom-nav">
-        <div className="max-w-2xl mx-auto flex">
-          {mainTabs.map(tab => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id || (isExtraTab && tab.id === 'more');
+        {/* Navigation */}
+        <nav className="flex-1 p-3 space-y-1">
+          {sidebarItems.map(item => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
             return (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 flex flex-col items-center py-2 relative transition-colors ${isActive ? 'text-sky-600' : 'text-slate-400 hover:text-slate-600'}`}
-                data-testid={`nav-${tab.id}`}>
+              <button key={item.id} onClick={() => setActiveTab(item.id)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  isActive 
+                    ? 'bg-orange-500 text-white shadow-md' 
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+                data-testid={`nav-${item.id}`}>
                 <Icon className="w-5 h-5" />
-                <span className="text-[10px] mt-0.5 font-medium">{tab.label}</span>
+                {item.label}
               </button>
             );
           })}
+        </nav>
+
+        {/* Logout */}
+        <div className="p-3 border-t border-slate-200">
+          <button onClick={logout} 
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600 transition-all"
+            data-testid="logout-btn">
+            <LogOut className="w-5 h-5" />
+            Cikis Yap
+          </button>
         </div>
-      </nav>
-      <div className="h-16" />
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 ml-56">
+        {/* Top Header */}
+        <header className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between sticky top-0 z-20">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input type="text" placeholder="Urun ara..." 
+              className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] text-white flex items-center justify-center font-bold">3</span>
+              <button className="p-2 hover:bg-slate-100 rounded-full">
+                <AlertTriangle className="w-5 h-5 text-slate-600" />
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-9 h-9 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold">
+                {user?.full_name?.charAt(0) || 'P'}
+              </div>
+              <span className="text-sm font-medium text-slate-700">{user?.full_name || 'Plasiyer'}</span>
+            </div>
+          </div>
+        </header>
+
+        {/* Page Content */}
+        <div className="p-6">
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-orange-500" />
+            </div>
+          ) : renderContent()}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+// Customer Card Component
+const CustomerCard = ({ customer, index, onCall, onMessage, onAlert }) => {
+  const isUrgent = index % 3 === 0; // Mock urgency
+  
+  return (
+    <div className="bg-white border border-slate-200 rounded-2xl p-4 hover:shadow-md transition-all" data-testid={`customer-card-${index}`}>
+      {/* Header */}
+      <div className="flex items-start justify-between mb-3">
+        <div>
+          <h3 className="font-bold text-slate-900">{customer.name}</h3>
+          <p className="text-xs text-slate-500">{customer.code || `SFT-${customer.id?.slice(0, 5)}`} · {customer.channel || 'Perakende'}</p>
+        </div>
+        <div className="text-right">
+          <p className="text-lg font-bold text-slate-900">3.420 TL</p>
+          <p className="text-xs text-slate-500">Ort. Siparis</p>
+        </div>
+      </div>
+
+      {/* Order Info */}
+      <div className="flex items-center gap-4 mb-3 text-xs">
+        <div>
+          <p className="text-slate-500">Son Siparis: <span className="font-medium text-slate-700">3</span></p>
+          <p className="text-slate-400">Now: 9 Gun / Ort: 7 Gun</p>
+        </div>
+        <div className="text-right">
+          <p className="text-emerald-600 font-medium">2.600 TL <span className="text-slate-500">4 Koli</span></p>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+        <div className="flex items-center gap-2">
+          <button onClick={onCall} className="p-2 hover:bg-slate-100 rounded-lg transition-colors" title="Ara">
+            <Phone className="w-4 h-4 text-slate-500" />
+          </button>
+          <button onClick={onMessage} className="p-2 hover:bg-slate-100 rounded-lg transition-colors" title="Mesaj">
+            <MessageSquare className="w-4 h-4 text-slate-500" />
+          </button>
+          <span className="text-xs text-slate-400">12</span>
+          <span className="text-xs text-slate-400 flex items-center gap-0.5">
+            <AlertTriangle className="w-3 h-3" /> 0
+          </span>
+        </div>
+        {isUrgent ? (
+          <button onClick={onAlert} className="flex items-center gap-1.5 px-4 py-2 bg-orange-500 text-white rounded-xl text-xs font-semibold hover:bg-orange-600 transition-colors">
+            Uyar <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        ) : (
+          <button className="flex items-center gap-1.5 px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-medium hover:bg-slate-50 transition-colors">
+            Gorusme Baslat <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
     </div>
   );
 };
