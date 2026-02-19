@@ -421,7 +421,9 @@ const SeftaliSalesDashboard = () => {
                 Liste
               </button>
             </div>
-            <button className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-xl text-sm font-medium hover:bg-orange-600 transition-colors">
+            <button onClick={startFullNavigation} 
+              disabled={customerLocations.length === 0}
+              className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-xl text-sm font-medium hover:bg-orange-600 transition-colors disabled:opacity-50">
               <Navigation className="w-4 h-4" />
               Navigasyonu Baslat
             </button>
