@@ -159,6 +159,30 @@ daily_avg_base = previous_delivery_qty / days_between_deliveries
 - T7: Order -> tuketim degismez
 - T8: Bulk variance reason -> recorded
 
+## Kod Mimarisi (19 Şubat 2026)
+```
+/app/frontend/src/
+├── components/
+│   ├── plasiyer/
+│   │   ├── RutPage.js          # Harita + liste görünümü (289 satır)
+│   │   ├── WarehouseDraftPage.js  # Depo sipariş taslağı (297 satır)
+│   │   ├── CustomerCard.js     # Müşteri kartı (77 satır)
+│   │   ├── OrdersPage.js       # Sipariş listesi (87 satır)
+│   │   └── CreateDeliveryForm.js  # Teslimat formu (138 satır)
+│   ├── shared/
+│   │   ├── DraftView.js        # Sipariş taslağı
+│   │   ├── DeliveryApproval.js # Teslimat onayı
+│   │   └── ...                 # Diğer paylaşımlı bileşenler
+│   └── ui/
+│       └── DesignSystem.js     # Ortak UI bileşenleri (489 satır)
+├── pages/
+│   ├── PlasiyerDashboard.js    # Ana dashboard (357 satır)
+│   ├── CustomerDashboard.js    # Müşteri dashboard (375 satır)
+│   └── AdminDashboard.js       # Admin dashboard (346 satır)
+└── services/
+    └── seftaliApi.js           # API çağrıları
+```
+
 ## Backend Kod Duzetmeleri (18 Subat 2026)
 - EPSILON: 0.001 -> 1e-6 (spec uyumu)
 - Spike hesabi: base_avg=0 iken de epsilon ile hesaplama (R10)
