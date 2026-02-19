@@ -222,6 +222,7 @@ const SeftaliSalesDashboard = () => {
     switch (activeTab) {
       case 'customers': return renderCustomersPage();
       case 'rut': return renderRutPage();
+      case 'warehouse': return <WarehouseDraftPage />;
       case 'orders': return renderOrdersPage();
       case 'deliveries': return renderDeliveriesPage();
       case 'create': return renderCreateDelivery();
