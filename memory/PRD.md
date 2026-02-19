@@ -146,19 +146,21 @@ daily_avg_base = previous_delivery_qty / days_between_deliveries
 - Script: backend/import_excel_consumption.py
 - Tuketim istatistikleri MODEL B ile hesaplandi
 
-## Demo Kullanicilar
-- Musteri: sf_musteri / musteri123
-- Musteri 2: sf_musteri2 / musteri123
-- Satici: sf_satici / satici123
+## Demo Kullanıcılar
+- Müşteri: sf_musteri / musteri123
+- Müşteri 2: sf_musteri2 / musteri123
+- Satıcı: sf_satici / satici123
 - Plasiyer: sf_plasiyer / plasiyer123
 - Admin: admin / admin123
 
-## Backlog / Gelecek Gorevler
-- [ ] P1: Bakim Teknisyeni Dashboard frontend (7 modul)
-- [ ] P2: README ve API dokumantasyonu
-- [ ] P2: Integration testleri (Jest/pytest)
-- [ ] P3: Refactoring: maintenance_routes.py dosyasini bolme
-- [ ] P3: Production notlari (replica set, transaction desteigi)
+## Backlog / Gelecek Görevler
+- [ ] P1: Analizler modülünü geliştir (müşteri/admin)
+- [ ] P1: Bildirim sistemi ekle
+- [ ] P2: Admin raporlama modülü
+- [ ] P2: README ve API dokümantasyonu
+- [ ] P3: Refactoring: PlasiyerDashboard.js dosyasını parçala (850+ satır)
+- [ ] P3: Paylaşımlı Layout component oluştur
+- [ ] P3: Production notları (replica set, transaction desteği)
 
 ## Test Suite (18 Subat 2026)
 - Test dosyasi: backend/tests/test_seftali_rules.py
