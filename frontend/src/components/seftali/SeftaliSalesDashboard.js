@@ -851,4 +851,250 @@ const CustomerCard = ({ customer, index, onCall, onMessage, onAlert }) => {
   );
 };
 
+// Warehouse Draft Page Component
+const WarehouseDraftPage = () => {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [expandedCustomer, setExpandedCustomer] = useState(null);
+
+  const fetchDraft = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await sfSalesAPI.getWarehouseDraft();
+      setData(res.data?.data || null);
+    } catch (err) {
+      toast.error('Depo taslagi yuklenemedi');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchDraft(); }, [fetchDraft]);
+
+  const handleSubmit = async () => {
+    const now = new Date();
+    const hour = now.getHours();
+    
+    // Saat 17:00 kontrolü (16:00-18:00 arası izin ver)
+    if (hour < 16 || hour > 18) {
+      toast.error('Depo siparisi sadece 16:00-18:00 arasinda gonderilebilir');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await sfSalesAPI.submitWarehouseDraft({ note: '' });
+      toast.success('Depo siparisi basariyla gonderildi!');
+      fetchDraft();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Gonderim hatasi');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Countdown to 17:00
+  const getTimeUntil17 = () => {
+    const now = new Date();
+    const target = new Date(now);
+    target.setHours(17, 0, 0, 0);
+    
+    if (now > target) {
+      // Eğer 17:00 geçtiyse, yarın 17:00
+      target.setDate(target.getDate() + 1);
+    }
+    
+    const diff = target - now;
+    const hours = Math.floor(diff / 3600000);
+    const mins = Math.floor((diff % 3600000) / 60000);
+    
+    return { hours, mins, isPast: now.getHours() >= 17 && now.getHours() < 18 };
+  };
+
+  const timeInfo = getTimeUntil17();
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-orange-500" />
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="text-center py-12 bg-white rounded-2xl border border-slate-200">
+        <Package className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+        <p className="text-slate-500">Veri yuklenemedi</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6" data-testid="warehouse-draft-page">
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Depo Siparis Taslagi</h1>
+          <p className="text-sm text-slate-500">
+            Yarin ({data.route_day_label}) rutu icin hazirlanmis siparis
+          </p>
+        </div>
+        <div className="text-right">
+          <div className={`text-sm font-medium ${timeInfo.isPast ? 'text-emerald-600' : 'text-slate-600'}`}>
+            {timeInfo.isPast ? (
+              <span className="flex items-center gap-1">
+                <Clock className="w-4 h-4" />
+                Gonderim saati aktif!
+              </span>
+            ) : (
+              <span>Gonderim: {timeInfo.hours}s {timeInfo.mins}dk sonra</span>
+            )}
+          </div>
+          <p className="text-xs text-slate-400">Her gun saat 17:00</p>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-4 gap-4">
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-4 text-white">
+          <p className="text-xs font-medium opacity-80">Toplam Musteri</p>
+          <p className="text-2xl font-bold mt-1">{data.customer_count}</p>
+        </div>
+        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-4 text-white">
+          <div className="flex items-center gap-2 mb-1">
+            <ShoppingBag className="w-4 h-4 opacity-80" />
+            <p className="text-xs font-medium opacity-80">Siparis Veren</p>
+          </div>
+          <p className="text-2xl font-bold">{data.order_count}</p>
+        </div>
+        <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl p-4 text-white">
+          <div className="flex items-center gap-2 mb-1">
+            <FileText className="w-4 h-4 opacity-80" />
+            <p className="text-xs font-medium opacity-80">Taslaktan</p>
+          </div>
+          <p className="text-2xl font-bold">{data.draft_count}</p>
+        </div>
+        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl p-4 text-white">
+          <p className="text-xs font-medium opacity-80">Toplam Adet</p>
+          <p className="text-2xl font-bold mt-1">{data.grand_total_qty}</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-6">
+        {/* Customer List */}
+        <div className="col-span-2 space-y-3">
+          <h2 className="text-lg font-semibold text-slate-900">Musteriler</h2>
+          {data.customers?.map((cust, idx) => (
+            <div key={cust.customer_id} 
+              className={`bg-white border rounded-2xl overflow-hidden transition-all ${
+                cust.source === 'order' ? 'border-emerald-200' : 'border-amber-200'
+              }`}
+              data-testid={`warehouse-customer-${idx}`}>
+              <button 
+                onClick={() => setExpandedCustomer(expandedCustomer === cust.customer_id ? null : cust.customer_id)}
+                className="w-full p-4 text-left hover:bg-slate-50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm ${
+                      cust.source === 'order' ? 'bg-emerald-500' : 'bg-amber-500'
+                    }`}>
+                      {idx + 1}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-slate-900">{cust.customer_name}</h3>
+                      <p className="text-xs text-slate-500">
+                        {cust.source === 'order' ? (
+                          <span className="text-emerald-600">✓ Siparis gonderdi</span>
+                        ) : (
+                          <span className="text-amber-600">○ Sistem taslagi</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-slate-900">{cust.total_qty}</p>
+                      <p className="text-xs text-slate-500">{cust.item_count} cesit</p>
+                    </div>
+                    <ChevronRight className={`w-5 h-5 text-slate-400 transition-transform ${
+                      expandedCustomer === cust.customer_id ? 'rotate-90' : ''
+                    }`} />
+                  </div>
+                </div>
+              </button>
+              
+              {/* Expanded Items */}
+              {expandedCustomer === cust.customer_id && (
+                <div className="px-4 pb-4 border-t border-slate-100">
+                  <div className="mt-3 space-y-2">
+                    {cust.items?.map((item, iIdx) => (
+                      <div key={iIdx} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
+                        <div>
+                          <p className="text-sm font-medium text-slate-800">{item.product_name}</p>
+                          <p className="text-xs text-slate-400">{item.product_code}</p>
+                        </div>
+                        <span className="text-sm font-bold text-slate-700">{item.qty} Adet</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {data.customers?.length === 0 && (
+            <div className="text-center py-12 bg-white rounded-2xl border border-slate-200">
+              <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+              <p className="text-slate-500">Yarin icin rut musterisi yok</p>
+            </div>
+          )}
+        </div>
+
+        {/* Product Summary */}
+        <div className="space-y-4">
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 sticky top-24">
+            <h2 className="text-lg font-semibold text-slate-900 mb-4">Urun Toplami</h2>
+            
+            <div className="space-y-2 max-h-80 overflow-y-auto">
+              {data.product_totals?.map((pt, idx) => (
+                <div key={idx} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
+                  <div>
+                    <p className="text-sm font-medium text-slate-800">{pt.product_name}</p>
+                    <p className="text-xs text-slate-400">{pt.product_code}</p>
+                  </div>
+                  <span className="text-sm font-bold text-orange-600">{pt.total_qty}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-slate-200">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-base font-semibold text-slate-700">Toplam</span>
+                <span className="text-xl font-bold text-orange-600">{data.grand_total_qty} Adet</span>
+              </div>
+              
+              <button onClick={handleSubmit}
+                disabled={submitting || data.customer_count === 0}
+                className={`w-full py-3 rounded-xl font-semibold text-white transition-colors ${
+                  submitting || data.customer_count === 0
+                    ? 'bg-slate-300 cursor-not-allowed'
+                    : 'bg-orange-500 hover:bg-orange-600'
+                }`}
+                data-testid="submit-warehouse-btn">
+                {submitting ? 'Gonderiliyor...' : 'Depoya Gonder'}
+              </button>
+              
+              <p className="text-xs text-slate-400 text-center mt-2">
+                Gonderim saati: 17:00
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default SeftaliSalesDashboard;
