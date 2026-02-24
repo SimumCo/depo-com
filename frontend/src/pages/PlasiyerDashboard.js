@@ -292,7 +292,7 @@ const PlasiyerDashboard = () => {
 // ============================================
 
 // Dashboard Page
-const DashboardPage = ({ stats, customers, search, setSearch }) => (
+const DashboardPage = ({ stats, customers, search, setSearch, deliveries, orders, onViewDetail, onCall, onMessage }) => (
   <div className="space-y-6" data-testid="sales-dashboard">
     <PageHeader title="Plasiyer" subtitle="Ana Sayfa / Plasiyer" />
 
@@ -334,9 +334,11 @@ const DashboardPage = ({ stats, customers, search, setSearch }) => (
           key={customer.id} 
           customer={customer} 
           index={idx}
-          onCall={() => toast.info('Arama baslatiliyor...')}
-          onMessage={() => toast.info('Mesaj gonderiliyor...')}
-          onAlert={() => toast.warning('Uyari gonderildi')}
+          deliveries={deliveries}
+          orders={orders}
+          onCall={() => onCall?.(customer)}
+          onMessage={() => onMessage?.(customer)}
+          onViewDetail={() => onViewDetail?.(customer)}
         />
       ))}
     </div>
@@ -344,39 +346,104 @@ const DashboardPage = ({ stats, customers, search, setSearch }) => (
 );
 
 // Customers Page
-const CustomersPage = ({ customers, search, setSearch }) => (
-  <div className="space-y-6" data-testid="customers-page">
-    <PageHeader title="Musteriler" subtitle="Ana Sayfa / Musteriler" />
+const CustomersPage = ({ customers, search, setSearch, deliveries, orders, onViewDetail, onCall, onMessage }) => {
+  // Sıralama state'i
+  const [sortBy, setSortBy] = useState('name');
+  
+  // Sıralama fonksiyonu
+  const sortedCustomers = [...customers].sort((a, b) => {
+    switch (sortBy) {
+      case 'pending_orders':
+        return (b.pending_orders_count || 0) - (a.pending_orders_count || 0);
+      case 'overdue':
+        return (b.overdue_deliveries_count || 0) - (a.overdue_deliveries_count || 0);
+      case 'last_order':
+        return (a.days_since_last_order || 999) - (b.days_since_last_order || 999);
+      default:
+        return (a.name || '').localeCompare(b.name || '', 'tr');
+    }
+  });
 
-    <div className="relative">
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-      <input
-        type="text"
-        placeholder="Musteri ara..."
-        value={search}
-        onChange={e => setSearch(e.target.value)}
-        className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-      />
+  return (
+    <div className="space-y-6" data-testid="customers-page">
+      <PageHeader title="Musteriler" subtitle="Ana Sayfa / Musteriler" />
+
+      {/* Arama ve Filtre */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Musteri ara..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+            data-testid="customer-search-input"
+          />
+        </div>
+        
+        {/* Sıralama Dropdown */}
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
+          data-testid="sort-dropdown"
+        >
+          <option value="name">İsme Göre</option>
+          <option value="pending_orders">Bekleyen Siparişler</option>
+          <option value="overdue">Vadesi Geçenler</option>
+          <option value="last_order">Son Sipariş Tarihi</option>
+        </select>
+      </div>
+
+      {/* Özet İstatistikler */}
+      <div className="grid grid-cols-4 gap-3">
+        <div className="bg-white border border-slate-200 rounded-xl p-3">
+          <p className="text-xs text-slate-500">Toplam Müşteri</p>
+          <p className="text-xl font-bold text-slate-800">{customers.length}</p>
+        </div>
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+          <p className="text-xs text-emerald-600">Bekleyen Sipariş</p>
+          <p className="text-xl font-bold text-emerald-700">
+            {customers.reduce((sum, c) => sum + (c.pending_orders_count || 0), 0)}
+          </p>
+        </div>
+        <div className="bg-red-50 border border-red-200 rounded-xl p-3">
+          <p className="text-xs text-red-600">Vadesi Geçmiş</p>
+          <p className="text-xl font-bold text-red-700">
+            {customers.reduce((sum, c) => sum + (c.overdue_deliveries_count || 0), 0)}
+          </p>
+        </div>
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
+          <p className="text-xs text-amber-600">7+ Gün Sipariş Yok</p>
+          <p className="text-xl font-bold text-amber-700">
+            {customers.filter(c => (c.days_since_last_order || 999) > 7).length}
+          </p>
+        </div>
+      </div>
+
+      {/* Müşteri Kartları Grid */}
+      <div className="grid grid-cols-2 gap-4">
+        {sortedCustomers.map((customer, idx) => (
+          <CustomerCard 
+            key={customer.id} 
+            customer={customer} 
+            index={idx}
+            deliveries={deliveries}
+            orders={orders}
+            onCall={() => onCall?.(customer)}
+            onMessage={() => onMessage?.(customer)}
+            onViewDetail={() => onViewDetail?.(customer)}
+          />
+        ))}
+      </div>
+
+      {customers.length === 0 && (
+        <EmptyState icon={Users} title="Musteri bulunamadi" />
+      )}
     </div>
-
-    <div className="grid grid-cols-2 gap-4">
-      {customers.map((customer, idx) => (
-        <CustomerCard 
-          key={customer.id} 
-          customer={customer} 
-          index={idx}
-          onCall={() => toast.info('Arama baslatiliyor...')}
-          onMessage={() => toast.info('Mesaj gonderiliyor...')}
-          onAlert={() => toast.warning('Uyari gonderildi')}
-        />
-      ))}
-    </div>
-
-    {customers.length === 0 && (
-      <EmptyState icon={Users} title="Musteri bulunamadi" />
-    )}
-  </div>
-);
+  );
+};
 
 // Deliveries Page
 const DeliveriesPage = ({ deliveries }) => (
