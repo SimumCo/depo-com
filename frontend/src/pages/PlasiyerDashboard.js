@@ -219,7 +219,18 @@ const PlasiyerDashboard = () => {
 
     switch (activeTab) {
       case 'customers':
-        return <CustomersPage customers={filteredCustomers} search={search} setSearch={setSearch} />;
+        return (
+          <CustomersPage 
+            customers={filteredCustomers} 
+            search={search} 
+            setSearch={setSearch}
+            deliveries={deliveries}
+            orders={orders}
+            onViewDetail={handleViewCustomerDetail}
+            onCall={handleCallCustomer}
+            onMessage={handleMessageCustomer}
+          />
+        );
       case 'rut':
         return <RutPage todayCustomers={todayCustomers} />;
       case 'warehouse':
@@ -235,7 +246,19 @@ const PlasiyerDashboard = () => {
       case 'returns':
         return <ReturnsPage />;
       default:
-        return <DashboardPage stats={stats} customers={filteredCustomers} search={search} setSearch={setSearch} />;
+        return (
+          <DashboardPage 
+            stats={stats} 
+            customers={filteredCustomers} 
+            search={search} 
+            setSearch={setSearch}
+            deliveries={deliveries}
+            orders={orders}
+            onViewDetail={handleViewCustomerDetail}
+            onCall={handleCallCustomer}
+            onMessage={handleMessageCustomer}
+          />
+        );
     }
   };
 
@@ -250,6 +273,16 @@ const PlasiyerDashboard = () => {
       notificationCount={stats.pendingOrders}
     >
       {renderContent()}
+      
+      {/* Customer Detail Modal */}
+      <CustomerDetailModal
+        customer={selectedCustomer}
+        isOpen={modalOpen}
+        onClose={handleCloseModal}
+        deliveries={deliveries}
+        orders={orders}
+        onSave={handleSaveCustomer}
+      />
     </DashboardLayout>
   );
 };
