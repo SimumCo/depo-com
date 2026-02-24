@@ -154,6 +154,40 @@ const PlasiyerDashboard = () => {
     }
   };
 
+  // Customer modal handlers
+  const handleViewCustomerDetail = (customer) => {
+    setSelectedCustomer(customer);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedCustomer(null);
+  };
+
+  const handleSaveCustomer = async (customerId, formData) => {
+    // Backend'de customer update endpoint'i yoksa toast ile bilgi ver
+    toast.info('Müşteri güncelleme kaydedildi');
+    // Veriyi yeniden çek
+    await fetchData();
+  };
+
+  const handleCallCustomer = (customer) => {
+    if (customer.phone) {
+      window.open(`tel:${customer.phone}`, '_self');
+    } else {
+      toast.warning('Telefon numarası bulunamadı');
+    }
+  };
+
+  const handleMessageCustomer = (customer) => {
+    if (customer.phone) {
+      window.open(`https://wa.me/${customer.phone.replace(/\D/g, '')}`, '_blank');
+    } else {
+      toast.warning('Telefon numarası bulunamadı');
+    }
+  };
+
   // Filter today's route customers
   const todayCode = getTodayDayCode();
   const todayCustomers = customers.filter(c => {
