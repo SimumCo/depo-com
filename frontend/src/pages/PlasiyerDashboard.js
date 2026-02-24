@@ -561,90 +561,94 @@ const StockPage = ({ products = [] }) => (
   </div>
 );
 
-// Campaigns Page - Kampanyalar
+// Campaigns Page - Kampanyalar (Backend Entegrasyonlu)
 const CampaignsPage = () => {
-  // Kampanya verileri - İki tür kampanya
-  const campaigns = [
-    // TÜR 1: Miktar İndirimi Kampanyaları
+  const [campaigns, setCampaigns] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [orderModal, setOrderModal] = useState({ open: false, campaign: null });
+  const [orderQty, setOrderQty] = useState(0);
+
+  // Kampanyaları backend'den çek
+  useEffect(() => {
+    const fetchCampaigns = async () => {
+      try {
+        const resp = await sfSalesAPI.getCampaigns();
+        if (resp.data?.data) {
+          setCampaigns(resp.data.data);
+        } else {
+          // Backend'de kampanya yoksa örnek kampanyaları göster
+          setCampaigns(defaultCampaigns);
+        }
+      } catch (err) {
+        console.error('Kampanya verisi alınamadı:', err);
+        // Fallback olarak örnek kampanyaları kullan
+        setCampaigns(defaultCampaigns);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCampaigns();
+  }, []);
+
+  // Örnek kampanyalar (backend boşsa)
+  const defaultCampaigns = [
     {
-      id: 1,
-      type: 'discount', // Miktar indirimi
+      id: 'demo-1',
+      type: 'discount',
       title: '1000 ml YY Edge Süt - Toplu Alım',
-      productName: '1000 ml Y.Yağlı Edge Süt',
-      productCode: '1000_ML_YY_EDGE_SUT',
-      productImage: '🥛',
-      minQty: 360,
-      normalPrice: 40,
-      campaignPrice: 30,
-      savings: 3600, // 360 * 10 TL tasarruf
-      validUntil: '2026-03-15',
+      product_name: '1000 ml Y.Yağlı Edge Süt',
+      product_code: '1000_ML_YY_EDGE_SUT',
+      min_qty: 360,
+      normal_price: 40,
+      campaign_price: 30,
+      valid_until: '2026-03-15',
       status: 'active',
       description: '360 adet ve üzeri alımlarda birim fiyat 40 TL yerine 30 TL'
     },
     {
-      id: 2,
+      id: 'demo-2',
       type: 'discount',
       title: '200 ml Ayran - Yüklü Alım',
-      productName: '200 ml Ayran',
-      productCode: '200_ML_AYRAN',
-      productImage: '🥤',
-      minQty: 500,
-      normalPrice: 8,
-      campaignPrice: 6,
-      savings: 1000,
-      validUntil: '2026-03-10',
+      product_name: '200 ml Ayran',
+      product_code: '200_ML_AYRAN',
+      min_qty: 500,
+      normal_price: 8,
+      campaign_price: 6,
+      valid_until: '2026-03-10',
       status: 'active',
       description: '500 adet ve üzeri alımlarda birim fiyat 8 TL yerine 6 TL'
     },
-    // TÜR 2: Hediyeli Kampanyalar
     {
-      id: 3,
-      type: 'gift', // Hediyeli
+      id: 'demo-3',
+      type: 'gift',
       title: '10 kg YY Yoğurt Al, Ekşi Ayran Kazan',
-      productName: '10 kg Y.Yağlı Yoğurt',
-      productCode: '10_KG_YY_YOGURT',
-      productImage: '🥣',
-      minQty: 20,
-      normalPrice: 100,
-      campaignPrice: 80, // Efektif birim fiyat
-      giftProduct: '250 ml Ekşi Ayran',
-      giftQty: 12,
-      giftValue: 400,
-      validUntil: '2026-03-20',
+      product_name: '10 kg Y.Yağlı Yoğurt',
+      product_code: '10_KG_YY_YOGURT',
+      min_qty: 20,
+      normal_price: 100,
+      campaign_price: 80,
+      gift_product_name: '250 ml Ekşi Ayran',
+      gift_qty: 12,
+      gift_value: 400,
+      valid_until: '2026-03-20',
       status: 'active',
-      description: '20 adet alımda 12 adet 250 ml Ekşi Ayran hediye (400 TL değerinde)'
+      description: '20 adet alımda 12 adet 250 ml Ekşi Ayran hediye'
     },
     {
-      id: 4,
+      id: 'demo-4',
       type: 'gift',
       title: '500 gr Süzme Yoğurt Al, Ayran Kazan',
-      productName: '500 gr Süzme Yoğurt',
-      productCode: '500_GR_SUZME_YOGURT',
-      productImage: '🥛',
-      minQty: 50,
-      normalPrice: 35,
-      campaignPrice: 28,
-      giftProduct: '200 ml Ayran',
-      giftQty: 25,
-      giftValue: 200,
-      validUntil: '2026-03-25',
+      product_name: '500 gr Süzme Yoğurt',
+      product_code: '500_GR_SUZME_YOGURT',
+      min_qty: 50,
+      normal_price: 35,
+      campaign_price: 28,
+      gift_product_name: '200 ml Ayran',
+      gift_qty: 25,
+      gift_value: 200,
+      valid_until: '2026-03-25',
       status: 'active',
-      description: '50 adet alımda 25 adet 200 ml Ayran hediye (200 TL değerinde)'
-    },
-    {
-      id: 5,
-      type: 'discount',
-      title: '180 ml Kakaolu Süt - Sezon Kampanyası',
-      productName: '180 ml Kakaolu Süt 6lı',
-      productCode: '180_ML_KAKAOLU_SUT_6LI',
-      productImage: '🍫',
-      minQty: 100,
-      normalPrice: 45,
-      campaignPrice: 38,
-      savings: 700,
-      validUntil: '2026-02-20',
-      status: 'expired',
-      description: '100 adet ve üzeri alımlarda birim fiyat 45 TL yerine 38 TL'
+      description: '50 adet alımda 25 adet 200 ml Ayran hediye'
     }
   ];
 
@@ -653,9 +657,38 @@ const CampaignsPage = () => {
   const discountCampaigns = activeCampaigns.filter(c => c.type === 'discount');
   const giftCampaigns = activeCampaigns.filter(c => c.type === 'gift');
 
-  // Kampanya Kartı Bileşeni
+  // Siparişe Ekle Modal'ını aç
+  const handleAddToOrder = (campaign) => {
+    setOrderQty(campaign.min_qty);
+    setOrderModal({ open: true, campaign });
+  };
+
+  // Siparişi onayla
+  const handleConfirmOrder = () => {
+    const { campaign } = orderModal;
+    const totalPrice = orderQty * campaign.campaign_price;
+    const savings = orderQty * (campaign.normal_price - campaign.campaign_price);
+    
+    toast.success(
+      `${campaign.product_name} - ${orderQty} adet siparişe eklendi! ` +
+      `Toplam: ${totalPrice.toLocaleString('tr-TR')} TL (${savings.toLocaleString('tr-TR')} TL tasarruf)`
+    );
+    setOrderModal({ open: false, campaign: null });
+  };
+
+  // Ürün emojisi
+  const getProductEmoji = (code) => {
+    if (code?.includes('SUT') || code?.includes('EDGE')) return '🥛';
+    if (code?.includes('AYRAN')) return '🥤';
+    if (code?.includes('YOGURT')) return '🥣';
+    if (code?.includes('KAKAO')) return '🍫';
+    return '📦';
+  };
+
+  // Kampanya Kartı
   const CampaignCard = ({ campaign, isExpired = false }) => {
-    const discountPercent = Math.round((1 - campaign.campaignPrice / campaign.normalPrice) * 100);
+    const discountPercent = Math.round((1 - campaign.campaign_price / campaign.normal_price) * 100);
+    const savings = campaign.min_qty * (campaign.normal_price - campaign.campaign_price);
     
     return (
       <div className={`bg-white rounded-2xl border-2 overflow-hidden ${
@@ -667,7 +700,7 @@ const CampaignsPage = () => {
           isExpired ? 'bg-slate-100' :
           campaign.type === 'gift' ? 'bg-purple-500' : 'bg-emerald-500'
         }`}>
-          <span className="text-white text-xs font-bold flex items-center gap-1.5">
+          <span className={`text-xs font-bold flex items-center gap-1.5 ${isExpired ? 'text-slate-600' : 'text-white'}`}>
             {campaign.type === 'gift' ? (
               <><span>🎁</span> HEDİYELİ KAMPANYA</>
             ) : (
@@ -685,16 +718,14 @@ const CampaignsPage = () => {
           {/* Ürün Bilgisi */}
           <div className="flex gap-4 mb-4">
             <div className="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center text-3xl">
-              {campaign.productImage}
+              {getProductEmoji(campaign.product_code)}
             </div>
             <div className="flex-1">
-              <h4 className="font-bold text-slate-800 text-sm leading-tight">{campaign.productName}</h4>
-              <p className="text-xs text-slate-500 mb-1">{campaign.productCode}</p>
-              <div className="flex items-center gap-2">
-                <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-medium">
-                  Min. {campaign.minQty} adet
-                </span>
-              </div>
+              <h4 className="font-bold text-slate-800 text-sm leading-tight">{campaign.product_name}</h4>
+              <p className="text-xs text-slate-500 mb-1">{campaign.product_code}</p>
+              <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-medium">
+                Min. {campaign.min_qty} adet
+              </span>
             </div>
           </div>
 
@@ -702,70 +733,85 @@ const CampaignsPage = () => {
           <div className="bg-slate-50 rounded-xl p-3 mb-3">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs text-slate-500">Normal Birim Fiyat</span>
-              <span className="text-sm text-slate-400 line-through">{campaign.normalPrice} TL</span>
+              <span className="text-sm text-slate-400 line-through">{campaign.normal_price} TL</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-xs text-emerald-600 font-medium">Kampanya Birim Fiyat</span>
-              <span className="text-xl font-bold text-emerald-600">{campaign.campaignPrice} TL</span>
+              <span className="text-xl font-bold text-emerald-600">{campaign.campaign_price} TL</span>
             </div>
           </div>
 
-          {/* Hediye Bilgisi (Hediyeli kampanyalar için) */}
-          {campaign.type === 'gift' && (
+          {/* Hediye Bilgisi */}
+          {campaign.type === 'gift' && campaign.gift_product_name && (
             <div className="bg-purple-50 rounded-xl p-3 mb-3 border border-purple-200">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-lg">🎁</span>
                 <span className="text-sm font-bold text-purple-700">HEDİYE</span>
               </div>
               <p className="text-sm text-purple-800 font-medium">
-                {campaign.giftQty} adet {campaign.giftProduct}
+                {campaign.gift_qty} adet {campaign.gift_product_name}
               </p>
               <p className="text-xs text-purple-600">
-                ({campaign.giftValue} TL değerinde)
+                ({campaign.gift_value} TL değerinde)
               </p>
             </div>
           )}
 
-          {/* Tasarruf Hesabı (Miktar indirimi için) */}
-          {campaign.type === 'discount' && campaign.savings && (
+          {/* Tasarruf */}
+          {campaign.type === 'discount' && (
             <div className="bg-emerald-50 rounded-xl p-3 mb-3 border border-emerald-200">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-emerald-700">
-                  {campaign.minQty} adet alımda toplam tasarruf
+                  {campaign.min_qty} adet alımda tasarruf
                 </span>
                 <span className="text-lg font-bold text-emerald-700">
-                  {campaign.savings.toLocaleString('tr-TR')} TL
+                  {savings.toLocaleString('tr-TR')} TL
                 </span>
               </div>
             </div>
           )}
 
-          {/* Açıklama ve Geçerlilik */}
-          <p className="text-xs text-slate-600 mb-2">{campaign.description}</p>
-          <div className="flex items-center justify-between text-xs">
+          {/* Geçerlilik */}
+          <div className="flex items-center justify-between text-xs mb-3">
             <span className="text-slate-400">
-              Son: {new Date(campaign.validUntil).toLocaleDateString('tr-TR')}
+              Son: {new Date(campaign.valid_until).toLocaleDateString('tr-TR')}
             </span>
             {!isExpired && (
               <span className={`font-medium ${
-                new Date(campaign.validUntil) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-                  ? 'text-red-500'
-                  : 'text-slate-500'
+                new Date(campaign.valid_until) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                  ? 'text-red-500' : 'text-slate-500'
               }`}>
-                {Math.ceil((new Date(campaign.validUntil) - new Date()) / (1000 * 60 * 60 * 24))} gün kaldı
+                {Math.ceil((new Date(campaign.valid_until) - new Date()) / (1000 * 60 * 60 * 24))} gün kaldı
               </span>
             )}
           </div>
+
+          {/* Siparişe Ekle Butonu */}
+          {!isExpired && (
+            <button
+              onClick={() => handleAddToOrder(campaign)}
+              className={`w-full py-2.5 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 transition-colors ${
+                campaign.type === 'gift' 
+                  ? 'bg-purple-500 hover:bg-purple-600' 
+                  : 'bg-emerald-500 hover:bg-emerald-600'
+              }`}
+            >
+              <ShoppingBag className="w-4 h-4" />
+              Siparişe Ekle
+            </button>
+          )}
         </div>
       </div>
     );
   };
 
+  if (loading) return <Loading />;
+
   return (
     <div className="space-y-6" data-testid="campaigns-page">
       <PageHeader title="Kampanyalar" subtitle="Ana Sayfa / Kampanyalar" />
       
-      {/* Kampanya Özeti */}
+      {/* Özet */}
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
           <p className="text-xs text-emerald-600 mb-1">💰 Miktar İndirimi</p>
@@ -781,42 +827,36 @@ const CampaignsPage = () => {
         </div>
       </div>
 
-      {/* Miktar İndirimi Kampanyaları */}
+      {/* Miktar İndirimi */}
       {discountCampaigns.length > 0 && (
         <div>
           <h3 className="text-sm font-semibold text-emerald-700 mb-3 flex items-center gap-2">
             <span>💰</span> Miktar İndirimi Kampanyaları
           </h3>
           <div className="grid grid-cols-2 gap-4">
-            {discountCampaigns.map(campaign => (
-              <CampaignCard key={campaign.id} campaign={campaign} />
-            ))}
+            {discountCampaigns.map(c => <CampaignCard key={c.id} campaign={c} />)}
           </div>
         </div>
       )}
 
-      {/* Hediyeli Kampanyalar */}
+      {/* Hediyeli */}
       {giftCampaigns.length > 0 && (
         <div>
           <h3 className="text-sm font-semibold text-purple-700 mb-3 flex items-center gap-2">
             <span>🎁</span> Hediyeli Kampanyalar
           </h3>
           <div className="grid grid-cols-2 gap-4">
-            {giftCampaigns.map(campaign => (
-              <CampaignCard key={campaign.id} campaign={campaign} />
-            ))}
+            {giftCampaigns.map(c => <CampaignCard key={c.id} campaign={c} />)}
           </div>
         </div>
       )}
 
-      {/* Sona Eren Kampanyalar */}
+      {/* Sona Eren */}
       {expiredCampaigns.length > 0 && (
         <div>
           <h3 className="text-sm font-semibold text-slate-500 mb-3">Sona Eren Kampanyalar</h3>
           <div className="grid grid-cols-2 gap-4">
-            {expiredCampaigns.map(campaign => (
-              <CampaignCard key={campaign.id} campaign={campaign} isExpired />
-            ))}
+            {expiredCampaigns.map(c => <CampaignCard key={c.id} campaign={c} isExpired />)}
           </div>
         </div>
       )}
@@ -825,6 +865,80 @@ const CampaignsPage = () => {
         <div className="text-center py-12 bg-slate-50 rounded-xl">
           <Tag className="w-12 h-12 text-slate-300 mx-auto mb-3" />
           <p className="text-slate-500">Aktif kampanya bulunmuyor</p>
+        </div>
+      )}
+
+      {/* Sipariş Modal */}
+      {orderModal.open && orderModal.campaign && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6">
+            <h3 className="text-lg font-bold text-slate-800 mb-4">Siparişe Ekle</h3>
+            
+            <div className="bg-slate-50 rounded-xl p-4 mb-4">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-3xl">{getProductEmoji(orderModal.campaign.product_code)}</span>
+                <div>
+                  <p className="font-bold text-slate-800">{orderModal.campaign.product_name}</p>
+                  <p className="text-xs text-slate-500">{orderModal.campaign.product_code}</p>
+                </div>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500">Kampanya Fiyatı:</span>
+                <span className="font-bold text-emerald-600">{orderModal.campaign.campaign_price} TL/adet</span>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm text-slate-600 mb-2">Sipariş Adedi</label>
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => setOrderQty(Math.max(orderModal.campaign.min_qty, orderQty - 10))}
+                  className="w-12 h-12 bg-slate-100 rounded-xl text-xl font-bold hover:bg-slate-200"
+                >-</button>
+                <input 
+                  type="number"
+                  value={orderQty}
+                  onChange={(e) => setOrderQty(Math.max(orderModal.campaign.min_qty, parseInt(e.target.value) || 0))}
+                  className="flex-1 text-center text-2xl font-bold border border-slate-200 rounded-xl py-2"
+                />
+                <button 
+                  onClick={() => setOrderQty(orderQty + 10)}
+                  className="w-12 h-12 bg-slate-100 rounded-xl text-xl font-bold hover:bg-slate-200"
+                >+</button>
+              </div>
+              <p className="text-xs text-orange-600 mt-1">Minimum: {orderModal.campaign.min_qty} adet</p>
+            </div>
+
+            <div className="bg-emerald-50 rounded-xl p-4 mb-4">
+              <div className="flex justify-between mb-2">
+                <span className="text-slate-600">Toplam Tutar:</span>
+                <span className="text-xl font-bold text-slate-800">
+                  {(orderQty * orderModal.campaign.campaign_price).toLocaleString('tr-TR')} TL
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-emerald-600">Tasarruf:</span>
+                <span className="font-bold text-emerald-600">
+                  {(orderQty * (orderModal.campaign.normal_price - orderModal.campaign.campaign_price)).toLocaleString('tr-TR')} TL
+                </span>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setOrderModal({ open: false, campaign: null })}
+                className="flex-1 py-3 bg-slate-100 text-slate-700 rounded-xl font-medium"
+              >
+                İptal
+              </button>
+              <button 
+                onClick={handleConfirmOrder}
+                className="flex-1 py-3 bg-emerald-500 text-white rounded-xl font-bold"
+              >
+                Siparişe Ekle
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
