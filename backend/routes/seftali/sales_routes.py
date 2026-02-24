@@ -196,6 +196,62 @@ async def list_customers(current_user=Depends(require_role(SALES_ROLES))):
     return std_resp(True, items)
 
 
+# ===========================
+# EXTRA: PATCH /customers/{id} - Müşteri Güncelleme
+# ===========================
+class UpdateCustomerBody(BaseModel):
+    name: Optional[str] = None
+    code: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    address: Optional[str] = None
+    channel: Optional[str] = None
+    route_days: Optional[List[str]] = None
+
+
+@router.patch("/customers/{customer_id}")
+async def update_customer(customer_id: str, body: UpdateCustomerBody, current_user=Depends(require_role(SALES_ROLES))):
+    """Müşteri bilgilerini günceller (plasiyer tarafından)"""
+    
+    # Müşteri var mı kontrol et
+    customer = await db[COL_CUSTOMERS].find_one({"id": customer_id}, {"_id": 0})
+    if not customer:
+        raise HTTPException(404, "Müşteri bulunamadı")
+    
+    # Güncellenecek alanları hazırla
+    update_data = {}
+    
+    if body.name is not None:
+        update_data["name"] = body.name
+    if body.code is not None:
+        update_data["code"] = body.code
+    if body.phone is not None:
+        update_data["phone"] = body.phone
+    if body.email is not None:
+        update_data["email"] = body.email
+    if body.address is not None:
+        update_data["address"] = body.address
+    if body.channel is not None:
+        update_data["channel"] = body.channel
+    if body.route_days is not None:
+        # Rut günlerini route_plan içinde güncelle
+        update_data["route_plan.days"] = body.route_days
+    
+    if not update_data:
+        return std_resp(True, customer, "Güncellenecek alan yok")
+    
+    update_data["updated_at"] = to_iso(now_utc())
+    
+    await db[COL_CUSTOMERS].update_one(
+        {"id": customer_id},
+        {"$set": update_data}
+    )
+    
+    # Güncellenmiş müşteriyi döndür
+    updated_customer = await db[COL_CUSTOMERS].find_one({"id": customer_id}, {"_id": 0})
+    return std_resp(True, updated_customer, "Müşteri bilgileri güncellendi")
+
+
 @router.get("/products")
 async def list_products(current_user=Depends(require_role(SALES_ROLES))):
     cursor = db[COL_PRODUCTS].find({}, {"_id": 0})
