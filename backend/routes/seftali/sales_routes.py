@@ -259,6 +259,59 @@ async def list_products(current_user=Depends(require_role(SALES_ROLES))):
     return std_resp(True, items)
 
 
+# ===========================
+# EXTRA: GET /customers/{id}/consumption - Müşteri Tüketim İstatistikleri (Plasiyer için)
+# ===========================
+@router.get("/customers/{customer_id}/consumption")
+async def get_customer_consumption(customer_id: str, current_user=Depends(require_role(SALES_ROLES))):
+    """
+    Plasiyer'in müşteri tüketim istatistiklerini görmesi için endpoint.
+    Ürün bazında günlük ortalama tüketim ve toplam tüketim.
+    """
+    # Müşteri var mı kontrol et
+    customer = await db[COL_CUSTOMERS].find_one({"id": customer_id}, {"_id": 0})
+    if not customer:
+        raise HTTPException(404, "Müşteri bulunamadı")
+    
+    # sf_daily_consumption koleksiyonundan tüketim verilerini çek
+    pipeline = [
+        {"$match": {"customer_id": customer_id}},
+        {"$group": {
+            "_id": "$product_id",
+            "total_consumption": {"$sum": "$consumption"},
+            "daily_avg": {"$avg": "$consumption"},
+            "record_count": {"$sum": 1},
+            "first_date": {"$min": "$date"},
+            "last_date": {"$max": "$date"},
+        }},
+        {"$sort": {"daily_avg": -1}},
+    ]
+    
+    results = await db["sf_daily_consumption"].aggregate(pipeline).to_list(50)
+    
+    consumption_data = []
+    for r in results:
+        product_id = r.pop("_id")
+        product = await db[COL_PRODUCTS].find_one({"id": product_id}, {"_id": 0, "name": 1, "code": 1})
+        
+        consumption_data.append({
+            "product_id": product_id,
+            "product_name": product.get("name", "Bilinmeyen") if product else "Bilinmeyen",
+            "product_code": product.get("code", "") if product else "",
+            "daily_avg": round(r["daily_avg"], 2),
+            "total_consumption": round(r["total_consumption"], 2),
+            "record_count": r["record_count"],
+            "first_date": r["first_date"],
+            "last_date": r["last_date"],
+        })
+    
+    return std_resp(True, {
+        "customer_id": customer_id,
+        "customer_name": customer.get("name"),
+        "products": consumption_data,
+        "total_products": len(consumption_data)
+    })
+
 
 # ===========================
 # 7. GET /warehouse-draft - Depo Sipariş Taslağı
