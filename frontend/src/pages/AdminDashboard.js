@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 import { 
   BarChart3, TrendingUp, Truck, Users, AlertTriangle, Package,
-  Home, Clock, Check, ChevronRight, CheckCircle
+  Home, Clock, Check, ChevronRight, CheckCircle, Tag, Plus, Edit3, Trash2, X
 } from 'lucide-react';
 
 // Import Layout Components
