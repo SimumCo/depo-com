@@ -508,4 +508,161 @@ const ReturnsPage = () => (
   </div>
 );
 
+// Stock Page - Stok Durumu
+const StockPage = ({ products = [] }) => (
+  <div className="space-y-6" data-testid="stock-page">
+    <PageHeader title="Stok Durumu" subtitle="Ana Sayfa / Stok" />
+    
+    {/* Stok Özeti */}
+    <div className="grid grid-cols-3 gap-4">
+      <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+        <p className="text-xs text-emerald-600 mb-1">Toplam Ürün</p>
+        <p className="text-2xl font-bold text-emerald-700">{products.length}</p>
+      </div>
+      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+        <p className="text-xs text-amber-600 mb-1">Düşük Stok</p>
+        <p className="text-2xl font-bold text-amber-700">0</p>
+      </div>
+      <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+        <p className="text-xs text-red-600 mb-1">Stok Bitti</p>
+        <p className="text-2xl font-bold text-red-700">0</p>
+      </div>
+    </div>
+
+    {/* Ürün Listesi */}
+    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div className="p-4 border-b border-slate-200 bg-slate-50">
+        <h3 className="font-semibold text-slate-800">Ürün Stok Listesi</h3>
+      </div>
+      <div className="divide-y divide-slate-100">
+        {products.length > 0 ? (
+          products.map((product, idx) => (
+            <div key={product.id || idx} className="p-4 flex items-center justify-between hover:bg-slate-50">
+              <div>
+                <p className="font-medium text-slate-800">{product.name}</p>
+                <p className="text-xs text-slate-500">{product.code}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-bold text-emerald-600">
+                  {product.stock_qty || '∞'}
+                </p>
+                <p className="text-xs text-slate-500">adet</p>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="p-8 text-center">
+            <Box className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+            <p className="text-slate-500">Ürün bulunamadı</p>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+);
+
+// Campaigns Page - Kampanyalar
+const CampaignsPage = () => {
+  // Örnek kampanya verileri
+  const campaigns = [
+    {
+      id: 1,
+      title: '3 Al 2 Öde',
+      description: '200 ML Ayran ürününde geçerli',
+      validUntil: '2026-03-01',
+      status: 'active',
+      discount: '%33'
+    },
+    {
+      id: 2,
+      title: 'Yeni Müşteri İndirimi',
+      description: 'İlk siparişte %10 indirim',
+      validUntil: '2026-02-28',
+      status: 'active',
+      discount: '%10'
+    },
+    {
+      id: 3,
+      title: 'Hafta Sonu Kampanyası',
+      description: 'Tüm yoğurtlarda geçerli',
+      validUntil: '2026-02-25',
+      status: 'expired',
+      discount: '%15'
+    }
+  ];
+
+  const activeCampaigns = campaigns.filter(c => c.status === 'active');
+  const expiredCampaigns = campaigns.filter(c => c.status === 'expired');
+
+  return (
+    <div className="space-y-6" data-testid="campaigns-page">
+      <PageHeader title="Kampanyalar" subtitle="Ana Sayfa / Kampanyalar" />
+      
+      {/* Kampanya Özeti */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+          <p className="text-xs text-emerald-600 mb-1">Aktif Kampanya</p>
+          <p className="text-2xl font-bold text-emerald-700">{activeCampaigns.length}</p>
+        </div>
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+          <p className="text-xs text-slate-600 mb-1">Sona Eren</p>
+          <p className="text-2xl font-bold text-slate-700">{expiredCampaigns.length}</p>
+        </div>
+      </div>
+
+      {/* Aktif Kampanyalar */}
+      <div>
+        <h3 className="text-sm font-semibold text-slate-700 mb-3">Aktif Kampanyalar</h3>
+        <div className="space-y-3">
+          {activeCampaigns.length > 0 ? (
+            activeCampaigns.map(campaign => (
+              <div key={campaign.id} className="bg-white border border-emerald-200 rounded-xl p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <h4 className="font-bold text-slate-800">{campaign.title}</h4>
+                    <p className="text-sm text-slate-600">{campaign.description}</p>
+                  </div>
+                  <span className="bg-emerald-100 text-emerald-700 text-sm font-bold px-3 py-1 rounded-full">
+                    {campaign.discount}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500">
+                  Geçerlilik: {new Date(campaign.validUntil).toLocaleDateString('tr-TR')} tarihine kadar
+                </p>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-8 bg-slate-50 rounded-xl">
+              <Tag className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+              <p className="text-slate-500">Aktif kampanya yok</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Sona Eren Kampanyalar */}
+      {expiredCampaigns.length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold text-slate-500 mb-3">Sona Eren Kampanyalar</h3>
+          <div className="space-y-2">
+            {expiredCampaigns.map(campaign => (
+              <div key={campaign.id} className="bg-slate-50 border border-slate-200 rounded-xl p-3 opacity-60">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium text-slate-600">{campaign.title}</h4>
+                    <p className="text-xs text-slate-500">{campaign.description}</p>
+                  </div>
+                  <span className="bg-slate-200 text-slate-600 text-xs font-medium px-2 py-1 rounded-full">
+                    Sona Erdi
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default PlasiyerDashboard;
