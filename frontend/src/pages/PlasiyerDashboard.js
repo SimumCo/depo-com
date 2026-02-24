@@ -190,13 +190,13 @@ const PlasiyerDashboard = () => {
 
   // Filter today's route customers
   const todayCode = getTodayDayCode();
-  const todayCustomers = customers.filter(c => {
+  const todayCustomers = customersSummary.filter(c => {
     const routeDays = c.route_plan?.days || [];
     return routeDays.includes(todayCode);
   });
 
   // Filter customers by search
-  const filteredCustomers = customers.filter(c => 
+  const filteredCustomers = customersSummary.filter(c => 
     !search || c.name?.toLowerCase().includes(search.toLowerCase())
   );
 
