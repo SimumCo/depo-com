@@ -1,6 +1,6 @@
 # Dağıtım Yönetim Sistemi PRD
 
-## Son Güncelleme: 19 Şubat 2026
+## Son Güncelleme: 23 Şubat 2026
 
 ## Proje Özeti
 Yoğurt/ayran dağıtımı yapan bir firmada müşterilerin tüketimini delivery bazlı hesaplayan ve rota gününe göre sipariş taslağı oluşturan deterministik bir sistem.
@@ -35,14 +35,14 @@ Yoğurt/ayran dağıtımı yapan bir firmada müşterilerin tüketimini delivery
     - `/components/plasiyer/CustomerCard.js` - Müşteri kartı
     - `/components/plasiyer/OrdersPage.js` - Sipariş listesi
     - `/components/plasiyer/CreateDeliveryForm.js` - Teslimat formu
-  - Ortak UI bileşenleri `/components/ui/DesignSystem.js` altında toplandı:
-    - DashboardLayout, Sidebar, Header, PageHeader
-    - StatCard, InfoCard, EmptyState, Loading
-    - Button, Badge, QuickAction, ListItem
-    - MobileHeader, BottomNav
-  - Tekrarlı kod patterns kaldırıldı (DRY principle)
-  - Backward compatibility korundu (eski export isimleri destekleniyor)
-    - "Navigasyonu Baslat" butonu tum rut icin waypoint'li navigasyon
+  - Ortak UI bileşenleri `/components/ui/DesignSystem.js` altında toplandı
+- [x] **Plasiyer Müşteri Kartları (23 Şubat 2026)**
+  - Backend'de yeni `/api/seftali/sales/customers/summary` endpoint'i
+  - Müşteri kartlarında özet veriler: bekleyen sipariş, vadesi geçmiş fatura, son sipariş tarihi
+  - Özet istatistik kartları: Toplam Müşteri, Bekleyen Sipariş, Vadesi Geçmiş, 7+ Gün Sipariş Yok
+  - Sıralama dropdown: İsme Göre, Bekleyen Siparişler, Vadesi Geçenler, Son Sipariş Tarihi
+  - Müşteri Detay Modal: bilgiler, bekleyen siparişler, geçmiş faturalar
+  - Telefon arama ve WhatsApp mesaj entegrasyonu
 
 ## Temel Felsefe
 - Sistem deterministiktir (AI yok, otomatik siparis yok)
