@@ -250,6 +250,10 @@ const PlasiyerDashboard = () => {
         return <DeliveriesPage deliveries={deliveries} />;
       case 'create':
         return <CreateDeliveryForm customers={customers} products={products} onSubmit={handleCreateDelivery} submitting={submitting} />;
+      case 'stock':
+        return <StockPage products={products} />;
+      case 'campaigns':
+        return <CampaignsPage />;
       case 'analytics':
         return <AnalyticsPage />;
       case 'returns':
