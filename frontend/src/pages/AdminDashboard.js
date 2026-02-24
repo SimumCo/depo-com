@@ -66,6 +66,7 @@ const AdminDashboard = () => {
   const sidebarItems = [
     { id: 'overview', label: 'Genel Bakis', icon: Home },
     { id: 'warehouse', label: 'Depo Siparisleri', icon: Package, badge: pendingOrdersCount },
+    { id: 'campaigns', label: 'Kampanyalar', icon: Tag },
     { id: 'variance', label: 'Sapmalar', icon: TrendingUp, badge: pendingVarianceCount },
     { id: 'deliveries', label: 'Teslimatlar', icon: Truck },
     { id: 'customers', label: 'Musteriler', icon: Users },
@@ -78,6 +79,8 @@ const AdminDashboard = () => {
     switch (activeTab) {
       case 'warehouse':
         return <WarehouseOrdersPage orders={warehouseOrders} onProcess={handleProcessOrder} />;
+      case 'campaigns':
+        return <CampaignsManagementPage />;
       case 'variance':
         return <VariancePage variance={variance} />;
       case 'deliveries':
