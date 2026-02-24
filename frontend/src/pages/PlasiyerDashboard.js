@@ -40,12 +40,17 @@ const PlasiyerDashboard = () => {
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [customers, setCustomers] = useState([]);
+  const [customersSummary, setCustomersSummary] = useState([]);
   const [deliveries, setDeliveries] = useState([]);
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  
+  // Modal state
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   // Stats
   const [stats, setStats] = useState({
@@ -60,12 +65,14 @@ const PlasiyerDashboard = () => {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const [custRes, dlvRes, ordRes] = await Promise.all([
+      const [custRes, custSummaryRes, dlvRes, ordRes] = await Promise.all([
         sfSalesAPI.getCustomers(),
+        sfSalesAPI.getCustomersSummary(),
         sfSalesAPI.getDeliveries({}),
         sfSalesAPI.getOrders({}),
       ]);
       setCustomers(custRes.data?.data || []);
+      setCustomersSummary(custSummaryRes.data?.data || []);
       setDeliveries(dlvRes.data?.data || []);
       setOrders(ordRes.data?.data || []);
 
