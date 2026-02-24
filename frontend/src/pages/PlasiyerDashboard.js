@@ -166,10 +166,16 @@ const PlasiyerDashboard = () => {
   };
 
   const handleSaveCustomer = async (customerId, formData) => {
-    // Backend'de customer update endpoint'i yoksa toast ile bilgi ver
-    toast.info('Müşteri güncelleme kaydedildi');
-    // Veriyi yeniden çek
-    await fetchData();
+    try {
+      // Backend'e güncelleme isteği gönder
+      await sfSalesAPI.updateCustomer(customerId, formData);
+      toast.success('Müşteri bilgileri güncellendi');
+      // Veriyi yeniden çek
+      await fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Güncelleme başarısız');
+      throw err; // Modal'daki hata işleme için throw et
+    }
   };
 
   const handleCallCustomer = (customer) => {
