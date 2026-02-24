@@ -346,4 +346,419 @@ const PlaceholderPage = ({ icon: Icon, title, subtitle }) => (
   </div>
 );
 
+
+// Campaigns Management Page
+const CampaignsManagementPage = () => {
+  const [campaigns, setCampaigns] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [editingCampaign, setEditingCampaign] = useState(null);
+  const [formData, setFormData] = useState({
+    type: 'discount',
+    title: '',
+    product_id: '',
+    product_name: '',
+    product_code: '',
+    min_qty: 100,
+    normal_price: 0,
+    campaign_price: 0,
+    valid_until: '',
+    description: '',
+    gift_product_id: '',
+    gift_product_name: '',
+    gift_qty: 0,
+    gift_value: 0,
+  });
+
+  const fetchCampaigns = async () => {
+    try {
+      setLoading(true);
+      const resp = await sfAdminAPI.getCampaigns({});
+      setCampaigns(resp.data?.data || []);
+    } catch (err) {
+      toast.error('Kampanyalar yüklenemedi');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchCampaigns(); }, []);
+
+  const handleOpenModal = (campaign = null) => {
+    if (campaign) {
+      setEditingCampaign(campaign);
+      setFormData({
+        type: campaign.type || 'discount',
+        title: campaign.title || '',
+        product_id: campaign.product_id || '',
+        product_name: campaign.product_name || '',
+        product_code: campaign.product_code || '',
+        min_qty: campaign.min_qty || 100,
+        normal_price: campaign.normal_price || 0,
+        campaign_price: campaign.campaign_price || 0,
+        valid_until: campaign.valid_until || '',
+        description: campaign.description || '',
+        gift_product_id: campaign.gift_product_id || '',
+        gift_product_name: campaign.gift_product_name || '',
+        gift_qty: campaign.gift_qty || 0,
+        gift_value: campaign.gift_value || 0,
+      });
+    } else {
+      setEditingCampaign(null);
+      setFormData({
+        type: 'discount',
+        title: '',
+        product_id: '',
+        product_name: '',
+        product_code: '',
+        min_qty: 100,
+        normal_price: 0,
+        campaign_price: 0,
+        valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        description: '',
+        gift_product_id: '',
+        gift_product_name: '',
+        gift_qty: 0,
+        gift_value: 0,
+      });
+    }
+    setShowModal(true);
+  };
+
+  const handleSave = async () => {
+    try {
+      if (editingCampaign) {
+        await sfAdminAPI.updateCampaign(editingCampaign.id, formData);
+        toast.success('Kampanya güncellendi');
+      } else {
+        await sfAdminAPI.createCampaign(formData);
+        toast.success('Kampanya oluşturuldu');
+      }
+      setShowModal(false);
+      fetchCampaigns();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'İşlem başarısız');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Bu kampanyayı silmek istediğinize emin misiniz?')) return;
+    try {
+      await sfAdminAPI.deleteCampaign(id);
+      toast.success('Kampanya silindi');
+      fetchCampaigns();
+    } catch (err) {
+      toast.error('Silme işlemi başarısız');
+    }
+  };
+
+  const handleToggleStatus = async (campaign) => {
+    const newStatus = campaign.status === 'active' ? 'expired' : 'active';
+    try {
+      await sfAdminAPI.updateCampaign(campaign.id, { status: newStatus });
+      toast.success(`Kampanya ${newStatus === 'active' ? 'aktif edildi' : 'durduruldu'}`);
+      fetchCampaigns();
+    } catch (err) {
+      toast.error('Durum değiştirme başarısız');
+    }
+  };
+
+  const activeCampaigns = campaigns.filter(c => c.status === 'active');
+  const expiredCampaigns = campaigns.filter(c => c.status !== 'active');
+
+  if (loading) return <Loading />;
+
+  return (
+    <div className="space-y-6" data-testid="campaigns-management-page">
+      <div className="flex items-center justify-between">
+        <PageHeader title="Kampanya Yönetimi" subtitle="Ana Sayfa / Kampanyalar" />
+        <button
+          onClick={() => handleOpenModal()}
+          className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-xl font-medium hover:bg-orange-600"
+        >
+          <Plus className="w-4 h-4" />
+          Yeni Kampanya
+        </button>
+      </div>
+
+      {/* Özet */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+          <p className="text-xs text-emerald-600 mb-1">Aktif Kampanya</p>
+          <p className="text-2xl font-bold text-emerald-700">{activeCampaigns.length}</p>
+        </div>
+        <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+          <p className="text-xs text-purple-600 mb-1">Hediyeli</p>
+          <p className="text-2xl font-bold text-purple-700">
+            {activeCampaigns.filter(c => c.type === 'gift').length}
+          </p>
+        </div>
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+          <p className="text-xs text-slate-600 mb-1">Durdurulmuş</p>
+          <p className="text-2xl font-bold text-slate-700">{expiredCampaigns.length}</p>
+        </div>
+      </div>
+
+      {/* Kampanya Listesi */}
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-slate-50">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Kampanya</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Tür</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Min. Adet</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Fiyat</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Son Tarih</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Durum</th>
+              <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600">İşlem</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {campaigns.map(campaign => (
+              <tr key={campaign.id} className="hover:bg-slate-50">
+                <td className="px-4 py-3">
+                  <p className="font-medium text-slate-800 text-sm">{campaign.title}</p>
+                  <p className="text-xs text-slate-500">{campaign.product_name}</p>
+                </td>
+                <td className="px-4 py-3">
+                  <span className={`text-xs font-medium px-2 py-1 rounded ${
+                    campaign.type === 'gift' ? 'bg-purple-100 text-purple-700' : 'bg-emerald-100 text-emerald-700'
+                  }`}>
+                    {campaign.type === 'gift' ? '🎁 Hediyeli' : '💰 İndirim'}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-sm text-slate-700">{campaign.min_qty} adet</td>
+                <td className="px-4 py-3">
+                  <span className="text-slate-400 line-through text-xs">{campaign.normal_price} TL</span>
+                  <span className="ml-2 text-emerald-600 font-bold text-sm">{campaign.campaign_price} TL</span>
+                </td>
+                <td className="px-4 py-3 text-sm text-slate-700">
+                  {new Date(campaign.valid_until).toLocaleDateString('tr-TR')}
+                </td>
+                <td className="px-4 py-3">
+                  <button
+                    onClick={() => handleToggleStatus(campaign)}
+                    className={`text-xs font-medium px-2 py-1 rounded cursor-pointer ${
+                      campaign.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    {campaign.status === 'active' ? 'Aktif' : 'Durduruldu'}
+                  </button>
+                </td>
+                <td className="px-4 py-3 text-right">
+                  <button
+                    onClick={() => handleOpenModal(campaign)}
+                    className="p-2 text-slate-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(campaign.id)}
+                    className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {campaigns.length === 0 && (
+          <div className="p-8 text-center">
+            <Tag className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+            <p className="text-slate-500">Henüz kampanya eklenmemiş</p>
+          </div>
+        )}
+      </div>
+
+      {/* Kampanya Ekleme/Düzenleme Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-800">
+                {editingCampaign ? 'Kampanya Düzenle' : 'Yeni Kampanya'}
+              </h3>
+              <button onClick={() => setShowModal(false)} className="p-2 hover:bg-slate-100 rounded-lg">
+                <X className="w-5 h-5 text-slate-500" />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              {/* Kampanya Türü */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Kampanya Türü</label>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setFormData({ ...formData, type: 'discount' })}
+                    className={`flex-1 py-3 rounded-xl border-2 font-medium ${
+                      formData.type === 'discount' 
+                        ? 'border-emerald-500 bg-emerald-50 text-emerald-700' 
+                        : 'border-slate-200 text-slate-600'
+                    }`}
+                  >
+                    💰 Miktar İndirimi
+                  </button>
+                  <button
+                    onClick={() => setFormData({ ...formData, type: 'gift' })}
+                    className={`flex-1 py-3 rounded-xl border-2 font-medium ${
+                      formData.type === 'gift' 
+                        ? 'border-purple-500 bg-purple-50 text-purple-700' 
+                        : 'border-slate-200 text-slate-600'
+                    }`}
+                  >
+                    🎁 Hediyeli
+                  </button>
+                </div>
+              </div>
+
+              {/* Kampanya Başlığı */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Kampanya Başlığı</label>
+                <input
+                  type="text"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  className="w-full px-4 py-2 border border-slate-200 rounded-xl"
+                  placeholder="Örn: 1000 ml Süt - Toplu Alım Kampanyası"
+                />
+              </div>
+
+              {/* Ürün Bilgileri */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Ürün Adı</label>
+                  <input
+                    type="text"
+                    value={formData.product_name}
+                    onChange={(e) => setFormData({ ...formData, product_name: e.target.value })}
+                    className="w-full px-4 py-2 border border-slate-200 rounded-xl"
+                    placeholder="1000 ml Y.Yağlı Süt"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Ürün Kodu</label>
+                  <input
+                    type="text"
+                    value={formData.product_code}
+                    onChange={(e) => setFormData({ ...formData, product_code: e.target.value })}
+                    className="w-full px-4 py-2 border border-slate-200 rounded-xl"
+                    placeholder="1000_ML_YY_SUT"
+                  />
+                </div>
+              </div>
+
+              {/* Fiyat ve Miktar */}
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Min. Adet</label>
+                  <input
+                    type="number"
+                    value={formData.min_qty}
+                    onChange={(e) => setFormData({ ...formData, min_qty: parseInt(e.target.value) || 0 })}
+                    className="w-full px-4 py-2 border border-slate-200 rounded-xl"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Normal Fiyat (TL)</label>
+                  <input
+                    type="number"
+                    value={formData.normal_price}
+                    onChange={(e) => setFormData({ ...formData, normal_price: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-4 py-2 border border-slate-200 rounded-xl"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Kampanya Fiyat (TL)</label>
+                  <input
+                    type="number"
+                    value={formData.campaign_price}
+                    onChange={(e) => setFormData({ ...formData, campaign_price: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-4 py-2 border border-slate-200 rounded-xl"
+                  />
+                </div>
+              </div>
+
+              {/* Hediyeli Kampanya Alanları */}
+              {formData.type === 'gift' && (
+                <div className="bg-purple-50 rounded-xl p-4 space-y-4">
+                  <h4 className="font-medium text-purple-800">🎁 Hediye Ürün Bilgileri</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-purple-700 mb-1">Hediye Ürün Adı</label>
+                      <input
+                        type="text"
+                        value={formData.gift_product_name}
+                        onChange={(e) => setFormData({ ...formData, gift_product_name: e.target.value })}
+                        className="w-full px-4 py-2 border border-purple-200 rounded-xl"
+                        placeholder="250 ml Ekşi Ayran"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-purple-700 mb-1">Hediye Adet</label>
+                      <input
+                        type="number"
+                        value={formData.gift_qty}
+                        onChange={(e) => setFormData({ ...formData, gift_qty: parseInt(e.target.value) || 0 })}
+                        className="w-full px-4 py-2 border border-purple-200 rounded-xl"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-purple-700 mb-1">Hediye Değeri (TL)</label>
+                    <input
+                      type="number"
+                      value={formData.gift_value}
+                      onChange={(e) => setFormData({ ...formData, gift_value: parseFloat(e.target.value) || 0 })}
+                      className="w-full px-4 py-2 border border-purple-200 rounded-xl"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Geçerlilik ve Açıklama */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Son Geçerlilik Tarihi</label>
+                  <input
+                    type="date"
+                    value={formData.valid_until}
+                    onChange={(e) => setFormData({ ...formData, valid_until: e.target.value })}
+                    className="w-full px-4 py-2 border border-slate-200 rounded-xl"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Açıklama</label>
+                  <input
+                    type="text"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    className="w-full px-4 py-2 border border-slate-200 rounded-xl"
+                    placeholder="Kampanya açıklaması..."
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-slate-200 flex gap-3">
+              <button
+                onClick={() => setShowModal(false)}
+                className="flex-1 py-3 bg-slate-100 text-slate-700 rounded-xl font-medium"
+              >
+                İptal
+              </button>
+              <button
+                onClick={handleSave}
+                className="flex-1 py-3 bg-orange-500 text-white rounded-xl font-bold"
+              >
+                {editingCampaign ? 'Güncelle' : 'Oluştur'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default AdminDashboard;
