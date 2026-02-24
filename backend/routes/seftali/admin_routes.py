@@ -170,3 +170,163 @@ async def process_warehouse_order(
     )
     
     return std_resp(True, {"id": order_id, "status": "processed"}, "Siparis islendi olarak isaretlendi")
+
+
+# ===========================
+# KAMPANYA YÖNETİMİ
+# ===========================
+from pydantic import BaseModel
+from typing import List
+import uuid
+
+COL_CAMPAIGNS = "sf_campaigns"
+
+
+class CampaignCreate(BaseModel):
+    type: str  # 'discount' veya 'gift'
+    title: str
+    product_id: str
+    product_name: str
+    product_code: str
+    min_qty: int
+    normal_price: float
+    campaign_price: float
+    valid_until: str
+    description: str
+    # Hediyeli kampanyalar için
+    gift_product_id: Optional[str] = None
+    gift_product_name: Optional[str] = None
+    gift_qty: Optional[int] = None
+    gift_value: Optional[float] = None
+
+
+class CampaignUpdate(BaseModel):
+    title: Optional[str] = None
+    min_qty: Optional[int] = None
+    normal_price: Optional[float] = None
+    campaign_price: Optional[float] = None
+    valid_until: Optional[str] = None
+    description: Optional[str] = None
+    status: Optional[str] = None
+    gift_qty: Optional[int] = None
+    gift_value: Optional[float] = None
+
+
+# 6. GET /campaigns - Kampanya Listesi
+@router.get("/campaigns")
+async def list_campaigns(
+    status: Optional[str] = None,
+    type: Optional[str] = None,
+    current_user=Depends(require_role([UserRole.ADMIN])),
+):
+    """Tüm kampanyaları listele"""
+    from services.seftali.utils import now_utc
+    
+    filt = {}
+    if status:
+        filt["status"] = status
+    if type:
+        filt["type"] = type
+    
+    cursor = db[COL_CAMPAIGNS].find(filt, {"_id": 0}).sort("created_at", -1)
+    items = await cursor.to_list(length=100)
+    
+    # Süresi geçmiş kampanyaları otomatik güncelle
+    now = now_utc().isoformat()[:10]
+    for item in items:
+        if item.get("status") == "active" and item.get("valid_until", "") < now:
+            await db[COL_CAMPAIGNS].update_one(
+                {"id": item["id"]},
+                {"$set": {"status": "expired"}}
+            )
+            item["status"] = "expired"
+    
+    return std_resp(True, items)
+
+
+# 7. POST /campaigns - Yeni Kampanya Oluştur
+@router.post("/campaigns")
+async def create_campaign(
+    body: CampaignCreate,
+    current_user=Depends(require_role([UserRole.ADMIN])),
+):
+    """Yeni kampanya oluştur"""
+    from services.seftali.utils import now_utc, to_iso
+    
+    campaign_id = str(uuid.uuid4())
+    
+    campaign = {
+        "id": campaign_id,
+        "type": body.type,
+        "title": body.title,
+        "product_id": body.product_id,
+        "product_name": body.product_name,
+        "product_code": body.product_code,
+        "min_qty": body.min_qty,
+        "normal_price": body.normal_price,
+        "campaign_price": body.campaign_price,
+        "valid_until": body.valid_until,
+        "description": body.description,
+        "status": "active",
+        "created_at": to_iso(now_utc()),
+        "created_by": current_user.id,
+    }
+    
+    # Hediyeli kampanya ise
+    if body.type == "gift":
+        campaign["gift_product_id"] = body.gift_product_id
+        campaign["gift_product_name"] = body.gift_product_name
+        campaign["gift_qty"] = body.gift_qty
+        campaign["gift_value"] = body.gift_value
+    
+    await db[COL_CAMPAIGNS].insert_one(campaign)
+    campaign.pop("_id", None)
+    
+    return std_resp(True, campaign, "Kampanya oluşturuldu")
+
+
+# 8. PATCH /campaigns/{id} - Kampanya Güncelle
+@router.patch("/campaigns/{campaign_id}")
+async def update_campaign(
+    campaign_id: str,
+    body: CampaignUpdate,
+    current_user=Depends(require_role([UserRole.ADMIN])),
+):
+    """Kampanya güncelle"""
+    from fastapi import HTTPException
+    from services.seftali.utils import now_utc, to_iso
+    
+    campaign = await db[COL_CAMPAIGNS].find_one({"id": campaign_id}, {"_id": 0})
+    if not campaign:
+        raise HTTPException(404, "Kampanya bulunamadı")
+    
+    update_data = {}
+    for field, value in body.dict(exclude_unset=True).items():
+        if value is not None:
+            update_data[field] = value
+    
+    if update_data:
+        update_data["updated_at"] = to_iso(now_utc())
+        await db[COL_CAMPAIGNS].update_one(
+            {"id": campaign_id},
+            {"$set": update_data}
+        )
+    
+    updated = await db[COL_CAMPAIGNS].find_one({"id": campaign_id}, {"_id": 0})
+    return std_resp(True, updated, "Kampanya güncellendi")
+
+
+# 9. DELETE /campaigns/{id} - Kampanya Sil
+@router.delete("/campaigns/{campaign_id}")
+async def delete_campaign(
+    campaign_id: str,
+    current_user=Depends(require_role([UserRole.ADMIN])),
+):
+    """Kampanya sil"""
+    from fastapi import HTTPException
+    
+    result = await db[COL_CAMPAIGNS].delete_one({"id": campaign_id})
+    if result.deleted_count == 0:
+        raise HTTPException(404, "Kampanya bulunamadı")
+    
+    return std_resp(True, {"id": campaign_id}, "Kampanya silindi")
