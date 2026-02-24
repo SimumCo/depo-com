@@ -325,120 +325,212 @@ async def get_customer_consumption(customer_id: str, current_user=Depends(requir
 
 
 # ===========================
-# 7. GET /warehouse-draft - Depo Sipariş Taslağı
+# 7. GET /warehouse-draft - Depo Sipariş Taslağı (Gelişmiş)
 # ===========================
 @router.get("/warehouse-draft")
-async def get_warehouse_draft(current_user=Depends(require_role(SALES_ROLES))):
+async def get_warehouse_draft(
+    route_day: Optional[str] = None,
+    current_user=Depends(require_role(SALES_ROLES))
+):
     """
-    Yarın rutu olan müşteriler için depo sipariş taslağı:
-    - Bugün sipariş gönderenler: Gönderilen siparişler
-    - Sipariş göndermeyenler: Sistem taslağı (önerilen tüketim)
+    Belirli bir rut günü için depo sipariş taslağı hesaplar.
+    
+    Mantık:
+    1. Müşteri siparişleri (submitted/approved) toplanır
+    2. 16:30'a kadar gönderilmeyen müşterilerin taslakları toplanır
+    3. Toplam ihtiyaç hesaplanır
+    4. Plasiyer stoğu çıkarılır (opsiyonel)
+    5. Koli bazında yuvarlanır
+    
+    Örnek:
+    - Müşteri siparişleri: 40 ayran
+    - Taslaklar: 30 ayran
+    - Toplam: 70 ayran
+    - Plasiyer stoğu: 20 ayran
+    - İhtiyaç: 50 ayran
+    - Koli (20'lik): 60 adet sipariş
     """
     from datetime import datetime, timedelta
     
-    # Yarının gün kodunu bul (MON, TUE, WED, THU, FRI, SAT, SUN)
-    tomorrow = datetime.utcnow() + timedelta(days=1)
-    day_codes = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
-    tomorrow_code = day_codes[tomorrow.weekday()]
+    # Rut günü belirtilmemişse yarını al
+    if not route_day:
+        tomorrow = datetime.utcnow() + timedelta(days=1)
+        day_codes = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
+        route_day = day_codes[tomorrow.weekday()]
     
-    # Bugünün başlangıcı (sipariş kontrolü için)
-    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0).isoformat() + "Z"
+    # Bugünün saat 16:30 kontrolü
+    now = datetime.utcnow()
+    cutoff_time = now.replace(hour=16, minute=30, second=0, microsecond=0)
+    is_after_cutoff = now > cutoff_time
     
-    # Yarın rutu olan aktif müşterileri bul
+    # Bugünün başlangıcı
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0).isoformat() + "Z"
+    
+    # Belirtilen rut gününde olan aktif müşterileri bul
     cursor = db[COL_CUSTOMERS].find(
-        {"is_active": True, "route_plan.days": tomorrow_code},
+        {"is_active": True, "route_plan.days": route_day},
         {"_id": 0}
     )
-    tomorrow_customers = await cursor.to_list(length=500)
+    route_customers = await cursor.to_list(length=500)
     
-    customer_drafts = []
+    customer_details = []
     product_totals = {}  # Ürün bazında toplam
     
-    for cust in tomorrow_customers:
+    # Ürün koli bilgilerini çek
+    products_cursor = db[COL_PRODUCTS].find({}, {"_id": 0})
+    products_list = await products_cursor.to_list(length=500)
+    products_map = {p["id"]: p for p in products_list}
+    
+    orders_total = {}  # Siparişlerden gelen toplam
+    drafts_total = {}  # Taslaklardan gelen toplam
+    
+    for cust in route_customers:
         cust_id = cust["id"]
         cust_name = cust.get("name", "Bilinmeyen")
         
-        # En son gönderilmiş veya onaylı siparişi al (bugün için)
-        # String tarih karşılaştırması sorunlu olduğu için sort ile en yenisini alıyoruz
+        # Bu müşterinin bugün gönderilmiş siparişi var mı?
         today_orders = await db[COL_ORDERS].find({
             "customer_id": cust_id,
-            "status": {"$in": ["submitted", "approved"]}
-        }, {"_id": 0}).sort("created_at", -1).limit(1).to_list(length=1)
+            "status": {"$in": ["submitted", "approved"]},
+            "created_at": {"$gte": today_start}
+        }, {"_id": 0}).sort("created_at", -1).to_list(length=10)
         
-        # Bugün oluşturulmuş mu kontrol et
-        today_order = None
+        customer_items = []
+        source = "none"
+        
         if today_orders:
-            order = today_orders[0]
-            order_date = order.get("created_at", "")[:10]  # YYYY-MM-DD
-            if order_date == today_start[:10]:  # Sadece tarih kısmını karşılaştır
-                today_order = order
-        
-        if today_order:
-            # Müşteri sipariş göndermiş - siparişin tüm ürünlerini al
-            items = today_order.get("items", [])
+            # Müşteri sipariş göndermiş
             source = "order"
-            order_id = today_order.get("id")
+            for order in today_orders:
+                for it in order.get("items", []):
+                    pid = it.get("product_id")
+                    qty = it.get("qty") or it.get("user_qty") or 0
+                    if pid and qty > 0:
+                        customer_items.append({
+                            "product_id": pid,
+                            "qty": qty,
+                            "source": "order"
+                        })
+                        # Sipariş toplamına ekle
+                        if pid not in orders_total:
+                            orders_total[pid] = 0
+                        orders_total[pid] += qty
         else:
-            # Sistem taslağını al (sf_system_drafts)
-            system_draft = await db["sf_system_drafts"].find_one(
-                {"customer_id": cust_id},
+            # 16:30'dan sonraysa veya sipariş yoksa taslağı al
+            source = "draft"
+            # Önce working_copy (müşteri taslağı) kontrol et
+            working_copy = await db["sf_working_copies"].find_one(
+                {"customer_id": cust_id, "status": "active"},
                 {"_id": 0}
             )
-            items = system_draft.get("items", []) if system_draft else []
-            source = "draft"
-            order_id = None
-        
-        # Ürün isimlerini ekle ve toplamları hesapla
-        enriched_items = []
-        for it in items:
-            prod = await db[COL_PRODUCTS].find_one({"id": it.get("product_id")}, {"_id": 0, "name": 1, "code": 1})
-            qty = it.get("qty") or it.get("suggested_qty") or 0
             
-            enriched_items.append({
-                "product_id": it.get("product_id"),
-                "product_name": prod.get("name") if prod else "Bilinmeyen",
-                "product_code": prod.get("code") if prod else "",
-                "qty": qty
+            if working_copy:
+                for it in working_copy.get("items", []):
+                    pid = it.get("product_id")
+                    qty = it.get("user_qty") or it.get("qty") or 0
+                    if pid and qty > 0:
+                        customer_items.append({
+                            "product_id": pid,
+                            "qty": qty,
+                            "source": "working_copy"
+                        })
+                        if pid not in drafts_total:
+                            drafts_total[pid] = 0
+                        drafts_total[pid] += qty
+            else:
+                # Sistem taslağını al
+                system_draft = await db["sf_system_drafts"].find_one(
+                    {"customer_id": cust_id},
+                    {"_id": 0}
+                )
+                if system_draft:
+                    for it in system_draft.get("items", []):
+                        pid = it.get("product_id")
+                        qty = it.get("suggested_qty") or 0
+                        if pid and qty > 0:
+                            customer_items.append({
+                                "product_id": pid,
+                                "qty": qty,
+                                "source": "system_draft"
+                            })
+                            if pid not in drafts_total:
+                                drafts_total[pid] = 0
+                            drafts_total[pid] += qty
+        
+        # Müşteri detayını ekle
+        total_qty = sum(it["qty"] for it in customer_items)
+        if total_qty > 0:
+            customer_details.append({
+                "customer_id": cust_id,
+                "customer_name": cust_name,
+                "source": source,
+                "items": customer_items,
+                "total_qty": total_qty
             })
-            
-            # Toplama ekle
-            pid = it.get("product_id")
-            if pid:
-                if pid not in product_totals:
-                    product_totals[pid] = {
-                        "product_id": pid,
-                        "product_name": prod.get("name") if prod else "Bilinmeyen",
-                        "product_code": prod.get("code") if prod else "",
-                        "total_qty": 0
-                    }
-                product_totals[pid]["total_qty"] += qty
+    
+    # Tüm ürünleri birleştir ve koli hesapla
+    all_product_ids = set(orders_total.keys()) | set(drafts_total.keys())
+    
+    final_order_items = []
+    for pid in all_product_ids:
+        prod = products_map.get(pid, {})
+        order_qty = orders_total.get(pid, 0)
+        draft_qty = drafts_total.get(pid, 0)
+        total_need = order_qty + draft_qty
         
-        customer_drafts.append({
-            "customer_id": cust_id,
-            "customer_name": cust_name,
-            "source": source,  # "order" veya "draft"
-            "order_id": order_id,
-            "items": enriched_items,
-            "item_count": len(enriched_items),
-            "total_qty": sum(it["qty"] for it in enriched_items)
-        })
+        # Koli bilgisi (varsayılan 1)
+        box_size = prod.get("box_size") or prod.get("koli_adeti") or 1
+        
+        # Plasiyer stoğu (şimdilik 0, ileride eklenebilir)
+        plasiyer_stock = 0
+        
+        # Net ihtiyaç
+        net_need = max(0, total_need - plasiyer_stock)
+        
+        # Koli bazında yuvarla (yukarı)
+        if box_size > 1 and net_need > 0:
+            boxes_needed = -(-net_need // box_size)  # Ceiling division
+            final_qty = boxes_needed * box_size
+        else:
+            final_qty = net_need
+        
+        if final_qty > 0:
+            final_order_items.append({
+                "product_id": pid,
+                "product_name": prod.get("name", "Bilinmeyen"),
+                "product_code": prod.get("code", ""),
+                "order_qty": order_qty,  # Siparişlerden
+                "draft_qty": draft_qty,  # Taslaklardan
+                "total_need": total_need,
+                "plasiyer_stock": plasiyer_stock,
+                "net_need": net_need,
+                "box_size": box_size,
+                "final_qty": final_qty,  # Koli bazında yuvarlanmış
+                "boxes": final_qty // box_size if box_size > 1 else final_qty
+            })
+    
+    # Sırala (miktar bazında azalan)
+    final_order_items.sort(key=lambda x: x["final_qty"], reverse=True)
     
     # Özet istatistikler
-    order_count = sum(1 for c in customer_drafts if c["source"] == "order")
-    draft_count = sum(1 for c in customer_drafts if c["source"] == "draft")
+    order_customer_count = sum(1 for c in customer_details if c["source"] == "order")
+    draft_customer_count = sum(1 for c in customer_details if c["source"] == "draft")
     
     return std_resp(True, {
-        "route_day": tomorrow_code,
+        "route_day": route_day,
         "route_day_label": {
-            "MON": "Pazartesi", "TUE": "Sali", "WED": "Carsamba",
-            "THU": "Persembe", "FRI": "Cuma", "SAT": "Cumartesi", "SUN": "Pazar"
-        }.get(tomorrow_code, tomorrow_code),
-        "customer_count": len(customer_drafts),
-        "order_count": order_count,
-        "draft_count": draft_count,
-        "customers": customer_drafts,
-        "product_totals": list(product_totals.values()),
-        "grand_total_qty": sum(pt["total_qty"] for pt in product_totals.values())
+            "MON": "Pazartesi", "TUE": "Salı", "WED": "Çarşamba",
+            "THU": "Perşembe", "FRI": "Cuma", "SAT": "Cumartesi", "SUN": "Pazar"
+        }.get(route_day, route_day),
+        "is_after_cutoff": is_after_cutoff,
+        "cutoff_time": "16:30",
+        "customer_count": len(customer_details),
+        "order_customer_count": order_customer_count,
+        "draft_customer_count": draft_customer_count,
+        "customers": customer_details,
+        "order_items": final_order_items,
+        "total_order_qty": sum(it["final_qty"] for it in final_order_items),
+        "total_products": len(final_order_items)
     })
 
 
