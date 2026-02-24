@@ -216,6 +216,8 @@ const PlasiyerDashboard = () => {
     { id: 'orders', label: 'Siparisler', icon: ShoppingBag, badge: stats.pendingOrders },
     { id: 'deliveries', label: 'Teslimatlar', icon: Truck },
     { id: 'create', label: 'Teslimat Olustur', icon: Plus },
+    { id: 'stock', label: 'Stok', icon: Box },
+    { id: 'campaigns', label: 'Kampanyalar', icon: Tag },
     { id: 'analytics', label: 'Analizler', icon: BarChart3 },
     { id: 'returns', label: 'Iade Talepleri', icon: RotateCcw },
   ];
