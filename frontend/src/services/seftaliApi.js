@@ -24,6 +24,7 @@ export const sfCustomerAPI = {
 // ŞEFTALİ Sales API
 export const sfSalesAPI = {
   getCustomers: () => api.get('/seftali/sales/customers'),
+  getCustomersSummary: () => api.get('/seftali/sales/customers/summary'),
   createDelivery: (data) => api.post('/seftali/sales/deliveries', data),
   getDeliveries: (params) => api.get('/seftali/sales/deliveries', { params }),
   getOrders: (params) => api.get('/seftali/sales/orders', { params }),
