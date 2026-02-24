@@ -33,6 +33,7 @@ export const sfSalesAPI = {
   requestEdit: (id, data) => api.post(`/seftali/sales/orders/${id}/request-edit`, data),
   getWarehouseDraft: () => api.get('/seftali/sales/warehouse-draft'),
   submitWarehouseDraft: (data) => api.post('/seftali/sales/warehouse-draft/submit', data),
+  getCampaigns: () => api.get('/seftali/sales/campaigns'),
 };
 
 // ŞEFTALİ Admin API
@@ -42,4 +43,9 @@ export const sfAdminAPI = {
   getDeliveries: (params) => api.get('/seftali/admin/deliveries', { params }),
   getWarehouseOrders: (params) => api.get('/seftali/admin/warehouse-orders', { params }),
   processWarehouseOrder: (id) => api.post(`/seftali/admin/warehouse-orders/${id}/process`),
+  // Kampanya yönetimi
+  getCampaigns: (params) => api.get('/seftali/admin/campaigns', { params }),
+  createCampaign: (data) => api.post('/seftali/admin/campaigns', data),
+  updateCampaign: (id, data) => api.patch(`/seftali/admin/campaigns/${id}`, data),
+  deleteCampaign: (id) => api.delete(`/seftali/admin/campaigns/${id}`),
 };
