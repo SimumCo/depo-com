@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Phone, MessageSquare, Calendar, FileText, ShoppingBag, 
   ChevronRight, MapPin, Clock, Edit3, X, User, Mail,
-  CheckCircle, AlertCircle, Package
+  CheckCircle, AlertCircle, Package, AlertTriangle
 } from 'lucide-react';
 import { sfSalesAPI } from '../../services/seftaliApi';
 import { toast } from 'sonner';
@@ -22,33 +22,18 @@ const CustomerCard = ({
   deliveries = [],
   orders = []
 }) => {
-  // Müşteri verileri
+  // Müşteri verileri (API'den gelen özet veriler)
   const routeDays = customer.route_plan?.days || [];
   const routeLabel = routeDays.map(d => dayLabels[d] || d).join(', ');
   
-  // Son teslimatlar (bu müşteriye ait)
-  const customerDeliveries = deliveries.filter(d => d.customer_id === customer.id).slice(0, 3);
-  const lastDelivery = customerDeliveries[0];
-  
-  // Bekleyen siparişler
-  const pendingOrders = orders.filter(o => 
-    o.customer_id === customer.id && 
-    ['submitted', 'approved'].includes(o.status)
-  );
+  // API'den gelen özet veriler
+  const pendingOrdersCount = customer.pending_orders_count || 0;
+  const overdueCount = customer.overdue_deliveries_count || 0;
+  const daysSinceLastOrder = customer.days_since_last_order;
+  const totalDeliveries = customer.total_deliveries || 0;
   
   // Mesaj sayısı (örnek)
   const messageCount = customer.unread_messages || 0;
-  
-  // Son sipariş tarihi hesapla
-  const getLastOrderDays = () => {
-    if (!lastDelivery?.delivered_at) return null;
-    const lastDate = new Date(lastDelivery.delivered_at);
-    const today = new Date();
-    const diffDays = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
-  
-  const lastOrderDays = getLastOrderDays();
 
   return (
     <div 
@@ -63,10 +48,16 @@ const CustomerCard = ({
             {customer.code || `MUS-${customer.id?.slice(0, 5)}`}
           </p>
         </div>
-        <div className="flex items-center gap-1">
-          {pendingOrders.length > 0 && (
+        <div className="flex items-center gap-1 flex-wrap justify-end">
+          {pendingOrdersCount > 0 && (
             <span className="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full font-medium">
-              {pendingOrders.length} Sipariş
+              {pendingOrdersCount} Sipariş
+            </span>
+          )}
+          {overdueCount > 0 && (
+            <span className="bg-red-100 text-red-700 text-[10px] px-2 py-0.5 rounded-full font-medium flex items-center gap-0.5">
+              <AlertTriangle className="w-2.5 h-2.5" />
+              {overdueCount} Vadeli
             </span>
           )}
           {messageCount > 0 && (
@@ -97,35 +88,35 @@ const CustomerCard = ({
             <span className="text-[10px] font-medium">Son Sipariş</span>
           </div>
           <p className={`text-xs font-semibold ${
-            lastOrderDays === null ? 'text-slate-400' :
-            lastOrderDays > 7 ? 'text-red-600' :
-            lastOrderDays > 3 ? 'text-amber-600' : 'text-emerald-600'
+            daysSinceLastOrder === null || daysSinceLastOrder === undefined ? 'text-slate-400' :
+            daysSinceLastOrder > 7 ? 'text-red-600' :
+            daysSinceLastOrder > 3 ? 'text-amber-600' : 'text-emerald-600'
           }`}>
-            {lastOrderDays === null ? 'Yok' : 
-             lastOrderDays === 0 ? 'Bugün' : 
-             `${lastOrderDays} gün önce`}
+            {daysSinceLastOrder === null || daysSinceLastOrder === undefined ? 'Yok' : 
+             daysSinceLastOrder === 0 ? 'Bugün' : 
+             `${daysSinceLastOrder} gün önce`}
           </p>
         </div>
         
-        {/* Geçmiş Faturalar */}
+        {/* Toplam Teslimat */}
         <div className="bg-slate-50 rounded-lg p-2">
           <div className="flex items-center gap-1.5 text-slate-500 mb-1">
             <FileText className="w-3 h-3" />
-            <span className="text-[10px] font-medium">Faturalar</span>
+            <span className="text-[10px] font-medium">Teslimatlar</span>
           </div>
           <p className="text-xs font-semibold text-slate-800">
-            {customerDeliveries.length} adet
+            {totalDeliveries} adet
           </p>
         </div>
         
         {/* Bekleyen Siparişler */}
-        <div className="bg-slate-50 rounded-lg p-2">
+        <div className={`rounded-lg p-2 ${pendingOrdersCount > 0 ? 'bg-emerald-50' : 'bg-slate-50'}`}>
           <div className="flex items-center gap-1.5 text-slate-500 mb-1">
             <ShoppingBag className="w-3 h-3" />
             <span className="text-[10px] font-medium">Bekleyen</span>
           </div>
-          <p className={`text-xs font-semibold ${pendingOrders.length > 0 ? 'text-emerald-600' : 'text-slate-400'}`}>
-            {pendingOrders.length > 0 ? `${pendingOrders.length} sipariş` : 'Yok'}
+          <p className={`text-xs font-semibold ${pendingOrdersCount > 0 ? 'text-emerald-600' : 'text-slate-400'}`}>
+            {pendingOrdersCount > 0 ? `${pendingOrdersCount} sipariş` : 'Yok'}
           </p>
         </div>
       </div>
@@ -145,6 +136,7 @@ const CustomerCard = ({
             onClick={() => onCall?.(customer)}
             className="p-2 hover:bg-emerald-50 hover:text-emerald-600 rounded-lg transition-colors text-slate-500"
             title="Ara"
+            data-testid={`call-btn-${index}`}
           >
             <Phone className="w-4 h-4" />
           </button>
@@ -152,6 +144,7 @@ const CustomerCard = ({
             onClick={() => onMessage?.(customer)}
             className="p-2 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors text-slate-500 relative"
             title="Mesaj"
+            data-testid={`message-btn-${index}`}
           >
             <MessageSquare className="w-4 h-4" />
             {messageCount > 0 && (
@@ -165,6 +158,7 @@ const CustomerCard = ({
         <button 
           onClick={() => onViewDetail?.(customer)}
           className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 text-white rounded-lg text-xs font-medium hover:bg-orange-600 transition-colors"
+          data-testid={`detail-btn-${index}`}
         >
           <Edit3 className="w-3.5 h-3.5" />
           Detay
