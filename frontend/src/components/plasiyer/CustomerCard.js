@@ -197,26 +197,31 @@ export const CustomerDetailModal = ({
       });
       setActiveTab('info');
       setEditMode(false);
+      setConsumptionData(null); // Reset consumption data when customer changes
     }
   }, [customer]);
 
   // Tüketim istatistiklerini çek
   useEffect(() => {
     const fetchConsumption = async () => {
-      if (activeTab === 'stats' && customer?.user_id && !consumptionData) {
+      if (activeTab === 'stats' && customer?.id && !consumptionData) {
         setLoadingStats(true);
         try {
           const API_BASE = process.env.REACT_APP_BACKEND_URL;
           const token = localStorage.getItem('token');
-          const resp = await fetch(`${API_BASE}/api/seftali/customer/daily-consumption/summary?customer_id=${customer.id}`, {
+          // Plasiyer için yeni endpoint kullan
+          const resp = await fetch(`${API_BASE}/api/seftali/sales/customers/${customer.id}/consumption`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           if (resp.ok) {
             const data = await resp.json();
-            setConsumptionData(data?.data || []);
+            setConsumptionData(data?.data?.products || []);
+          } else {
+            setConsumptionData([]);
           }
         } catch (err) {
           console.error('Tüketim verisi alınamadı:', err);
+          setConsumptionData([]);
         } finally {
           setLoadingStats(false);
         }
