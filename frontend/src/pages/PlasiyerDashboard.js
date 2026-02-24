@@ -563,102 +563,268 @@ const StockPage = ({ products = [] }) => (
 
 // Campaigns Page - Kampanyalar
 const CampaignsPage = () => {
-  // Örnek kampanya verileri
+  // Kampanya verileri - İki tür kampanya
   const campaigns = [
+    // TÜR 1: Miktar İndirimi Kampanyaları
     {
       id: 1,
-      title: '3 Al 2 Öde',
-      description: '200 ML Ayran ürününde geçerli',
-      validUntil: '2026-03-01',
+      type: 'discount', // Miktar indirimi
+      title: '1000 ml YY Edge Süt - Toplu Alım',
+      productName: '1000 ml Y.Yağlı Edge Süt',
+      productCode: '1000_ML_YY_EDGE_SUT',
+      productImage: '🥛',
+      minQty: 360,
+      normalPrice: 40,
+      campaignPrice: 30,
+      savings: 3600, // 360 * 10 TL tasarruf
+      validUntil: '2026-03-15',
       status: 'active',
-      discount: '%33'
+      description: '360 adet ve üzeri alımlarda birim fiyat 40 TL yerine 30 TL'
     },
     {
       id: 2,
-      title: 'Yeni Müşteri İndirimi',
-      description: 'İlk siparişte %10 indirim',
-      validUntil: '2026-02-28',
+      type: 'discount',
+      title: '200 ml Ayran - Yüklü Alım',
+      productName: '200 ml Ayran',
+      productCode: '200_ML_AYRAN',
+      productImage: '🥤',
+      minQty: 500,
+      normalPrice: 8,
+      campaignPrice: 6,
+      savings: 1000,
+      validUntil: '2026-03-10',
       status: 'active',
-      discount: '%10'
+      description: '500 adet ve üzeri alımlarda birim fiyat 8 TL yerine 6 TL'
     },
+    // TÜR 2: Hediyeli Kampanyalar
     {
       id: 3,
-      title: 'Hafta Sonu Kampanyası',
-      description: 'Tüm yoğurtlarda geçerli',
-      validUntil: '2026-02-25',
+      type: 'gift', // Hediyeli
+      title: '10 kg YY Yoğurt Al, Ekşi Ayran Kazan',
+      productName: '10 kg Y.Yağlı Yoğurt',
+      productCode: '10_KG_YY_YOGURT',
+      productImage: '🥣',
+      minQty: 20,
+      normalPrice: 100,
+      campaignPrice: 80, // Efektif birim fiyat
+      giftProduct: '250 ml Ekşi Ayran',
+      giftQty: 12,
+      giftValue: 400,
+      validUntil: '2026-03-20',
+      status: 'active',
+      description: '20 adet alımda 12 adet 250 ml Ekşi Ayran hediye (400 TL değerinde)'
+    },
+    {
+      id: 4,
+      type: 'gift',
+      title: '500 gr Süzme Yoğurt Al, Ayran Kazan',
+      productName: '500 gr Süzme Yoğurt',
+      productCode: '500_GR_SUZME_YOGURT',
+      productImage: '🥛',
+      minQty: 50,
+      normalPrice: 35,
+      campaignPrice: 28,
+      giftProduct: '200 ml Ayran',
+      giftQty: 25,
+      giftValue: 200,
+      validUntil: '2026-03-25',
+      status: 'active',
+      description: '50 adet alımda 25 adet 200 ml Ayran hediye (200 TL değerinde)'
+    },
+    {
+      id: 5,
+      type: 'discount',
+      title: '180 ml Kakaolu Süt - Sezon Kampanyası',
+      productName: '180 ml Kakaolu Süt 6lı',
+      productCode: '180_ML_KAKAOLU_SUT_6LI',
+      productImage: '🍫',
+      minQty: 100,
+      normalPrice: 45,
+      campaignPrice: 38,
+      savings: 700,
+      validUntil: '2026-02-20',
       status: 'expired',
-      discount: '%15'
+      description: '100 adet ve üzeri alımlarda birim fiyat 45 TL yerine 38 TL'
     }
   ];
 
   const activeCampaigns = campaigns.filter(c => c.status === 'active');
   const expiredCampaigns = campaigns.filter(c => c.status === 'expired');
+  const discountCampaigns = activeCampaigns.filter(c => c.type === 'discount');
+  const giftCampaigns = activeCampaigns.filter(c => c.type === 'gift');
+
+  // Kampanya Kartı Bileşeni
+  const CampaignCard = ({ campaign, isExpired = false }) => {
+    const discountPercent = Math.round((1 - campaign.campaignPrice / campaign.normalPrice) * 100);
+    
+    return (
+      <div className={`bg-white rounded-2xl border-2 overflow-hidden ${
+        isExpired ? 'border-slate-200 opacity-60' : 
+        campaign.type === 'gift' ? 'border-purple-300' : 'border-emerald-300'
+      }`}>
+        {/* Üst Bant */}
+        <div className={`px-4 py-2 flex items-center justify-between ${
+          isExpired ? 'bg-slate-100' :
+          campaign.type === 'gift' ? 'bg-purple-500' : 'bg-emerald-500'
+        }`}>
+          <span className="text-white text-xs font-bold flex items-center gap-1.5">
+            {campaign.type === 'gift' ? (
+              <><span>🎁</span> HEDİYELİ KAMPANYA</>
+            ) : (
+              <><span>💰</span> MİKTAR İNDİRİMİ</>
+            )}
+          </span>
+          <span className={`text-xs font-bold px-2 py-0.5 rounded ${
+            isExpired ? 'bg-slate-300 text-slate-600' : 'bg-white/20 text-white'
+          }`}>
+            {isExpired ? 'Sona Erdi' : `%${discountPercent} Avantaj`}
+          </span>
+        </div>
+
+        <div className="p-4">
+          {/* Ürün Bilgisi */}
+          <div className="flex gap-4 mb-4">
+            <div className="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center text-3xl">
+              {campaign.productImage}
+            </div>
+            <div className="flex-1">
+              <h4 className="font-bold text-slate-800 text-sm leading-tight">{campaign.productName}</h4>
+              <p className="text-xs text-slate-500 mb-1">{campaign.productCode}</p>
+              <div className="flex items-center gap-2">
+                <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-medium">
+                  Min. {campaign.minQty} adet
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Fiyat Bilgisi */}
+          <div className="bg-slate-50 rounded-xl p-3 mb-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-slate-500">Normal Birim Fiyat</span>
+              <span className="text-sm text-slate-400 line-through">{campaign.normalPrice} TL</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-emerald-600 font-medium">Kampanya Birim Fiyat</span>
+              <span className="text-xl font-bold text-emerald-600">{campaign.campaignPrice} TL</span>
+            </div>
+          </div>
+
+          {/* Hediye Bilgisi (Hediyeli kampanyalar için) */}
+          {campaign.type === 'gift' && (
+            <div className="bg-purple-50 rounded-xl p-3 mb-3 border border-purple-200">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-lg">🎁</span>
+                <span className="text-sm font-bold text-purple-700">HEDİYE</span>
+              </div>
+              <p className="text-sm text-purple-800 font-medium">
+                {campaign.giftQty} adet {campaign.giftProduct}
+              </p>
+              <p className="text-xs text-purple-600">
+                ({campaign.giftValue} TL değerinde)
+              </p>
+            </div>
+          )}
+
+          {/* Tasarruf Hesabı (Miktar indirimi için) */}
+          {campaign.type === 'discount' && campaign.savings && (
+            <div className="bg-emerald-50 rounded-xl p-3 mb-3 border border-emerald-200">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-emerald-700">
+                  {campaign.minQty} adet alımda toplam tasarruf
+                </span>
+                <span className="text-lg font-bold text-emerald-700">
+                  {campaign.savings.toLocaleString('tr-TR')} TL
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Açıklama ve Geçerlilik */}
+          <p className="text-xs text-slate-600 mb-2">{campaign.description}</p>
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-slate-400">
+              Son: {new Date(campaign.validUntil).toLocaleDateString('tr-TR')}
+            </span>
+            {!isExpired && (
+              <span className={`font-medium ${
+                new Date(campaign.validUntil) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                  ? 'text-red-500'
+                  : 'text-slate-500'
+              }`}>
+                {Math.ceil((new Date(campaign.validUntil) - new Date()) / (1000 * 60 * 60 * 24))} gün kaldı
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6" data-testid="campaigns-page">
       <PageHeader title="Kampanyalar" subtitle="Ana Sayfa / Kampanyalar" />
       
       {/* Kampanya Özeti */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-          <p className="text-xs text-emerald-600 mb-1">Aktif Kampanya</p>
-          <p className="text-2xl font-bold text-emerald-700">{activeCampaigns.length}</p>
+          <p className="text-xs text-emerald-600 mb-1">💰 Miktar İndirimi</p>
+          <p className="text-2xl font-bold text-emerald-700">{discountCampaigns.length}</p>
+        </div>
+        <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+          <p className="text-xs text-purple-600 mb-1">🎁 Hediyeli</p>
+          <p className="text-2xl font-bold text-purple-700">{giftCampaigns.length}</p>
         </div>
         <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-          <p className="text-xs text-slate-600 mb-1">Sona Eren</p>
+          <p className="text-xs text-slate-600 mb-1">⏰ Sona Eren</p>
           <p className="text-2xl font-bold text-slate-700">{expiredCampaigns.length}</p>
         </div>
       </div>
 
-      {/* Aktif Kampanyalar */}
-      <div>
-        <h3 className="text-sm font-semibold text-slate-700 mb-3">Aktif Kampanyalar</h3>
-        <div className="space-y-3">
-          {activeCampaigns.length > 0 ? (
-            activeCampaigns.map(campaign => (
-              <div key={campaign.id} className="bg-white border border-emerald-200 rounded-xl p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <h4 className="font-bold text-slate-800">{campaign.title}</h4>
-                    <p className="text-sm text-slate-600">{campaign.description}</p>
-                  </div>
-                  <span className="bg-emerald-100 text-emerald-700 text-sm font-bold px-3 py-1 rounded-full">
-                    {campaign.discount}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-500">
-                  Geçerlilik: {new Date(campaign.validUntil).toLocaleDateString('tr-TR')} tarihine kadar
-                </p>
-              </div>
-            ))
-          ) : (
-            <div className="text-center py-8 bg-slate-50 rounded-xl">
-              <Tag className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-              <p className="text-slate-500">Aktif kampanya yok</p>
-            </div>
-          )}
+      {/* Miktar İndirimi Kampanyaları */}
+      {discountCampaigns.length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold text-emerald-700 mb-3 flex items-center gap-2">
+            <span>💰</span> Miktar İndirimi Kampanyaları
+          </h3>
+          <div className="grid grid-cols-2 gap-4">
+            {discountCampaigns.map(campaign => (
+              <CampaignCard key={campaign.id} campaign={campaign} />
+            ))}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Hediyeli Kampanyalar */}
+      {giftCampaigns.length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold text-purple-700 mb-3 flex items-center gap-2">
+            <span>🎁</span> Hediyeli Kampanyalar
+          </h3>
+          <div className="grid grid-cols-2 gap-4">
+            {giftCampaigns.map(campaign => (
+              <CampaignCard key={campaign.id} campaign={campaign} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Sona Eren Kampanyalar */}
       {expiredCampaigns.length > 0 && (
         <div>
           <h3 className="text-sm font-semibold text-slate-500 mb-3">Sona Eren Kampanyalar</h3>
-          <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-4">
             {expiredCampaigns.map(campaign => (
-              <div key={campaign.id} className="bg-slate-50 border border-slate-200 rounded-xl p-3 opacity-60">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium text-slate-600">{campaign.title}</h4>
-                    <p className="text-xs text-slate-500">{campaign.description}</p>
-                  </div>
-                  <span className="bg-slate-200 text-slate-600 text-xs font-medium px-2 py-1 rounded-full">
-                    Sona Erdi
-                  </span>
-                </div>
-              </div>
+              <CampaignCard key={campaign.id} campaign={campaign} isExpired />
             ))}
           </div>
+        </div>
+      )}
+
+      {activeCampaigns.length === 0 && (
+        <div className="text-center py-12 bg-slate-50 rounded-xl">
+          <Tag className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+          <p className="text-slate-500">Aktif kampanya bulunmuyor</p>
         </div>
       )}
     </div>
