@@ -329,6 +329,85 @@ class WarehouseSubmitBody(BaseModel):
     note: str = ""
 
 
+# ===========================
+# 9. GET /customers/summary - Müşteri Kartları için Özet Veri
+# ===========================
+@router.get("/customers/summary")
+async def get_customers_summary(current_user=Depends(require_role(SALES_ROLES))):
+    """
+    Plasiyer müşteri kartları için özet veriler:
+    - Vadesi geçmiş faturalar
+    - Bekleyen siparişler
+    - Son teslimat tarihi
+    - Toplam sipariş sayısı
+    """
+    from datetime import datetime, timedelta
+    
+    # Tüm aktif müşterileri al
+    cursor = db[COL_CUSTOMERS].find({"is_active": True}, {"_id": 0})
+    customers = await cursor.to_list(length=500)
+    
+    customer_summaries = []
+    
+    for cust in customers:
+        cust_id = cust["id"]
+        
+        # Bekleyen siparişler (submitted veya approved)
+        pending_orders = await db[COL_ORDERS].find({
+            "customer_id": cust_id,
+            "status": {"$in": ["submitted", "approved"]}
+        }, {"_id": 0, "id": 1, "status": 1, "items": 1, "created_at": 1}).to_list(length=50)
+        
+        # Toplam siparişler
+        total_orders = await db[COL_ORDERS].count_documents({"customer_id": cust_id})
+        
+        # Son teslimat
+        last_delivery = await db[COL_DELIVERIES].find_one(
+            {"customer_id": cust_id, "acceptance_status": "accepted"},
+            {"_id": 0, "delivered_at": 1, "items": 1}
+        )
+        
+        # Vadesi geçmiş teslimatlar (beklemede olan ve 7 günden eski)
+        seven_days_ago = (datetime.utcnow() - timedelta(days=7)).isoformat() + "Z"
+        overdue_deliveries = await db[COL_DELIVERIES].count_documents({
+            "customer_id": cust_id,
+            "acceptance_status": "pending",
+            "delivered_at": {"$lt": seven_days_ago}
+        })
+        
+        # Toplam teslimat
+        total_deliveries = await db[COL_DELIVERIES].count_documents({"customer_id": cust_id})
+        
+        # Son sipariş tarihi
+        last_order = await db[COL_ORDERS].find_one(
+            {"customer_id": cust_id},
+            {"_id": 0, "created_at": 1}
+        )
+        
+        # Son sipariş kaç gün önce
+        days_since_last_order = None
+        if last_order:
+            try:
+                last_date = datetime.fromisoformat(last_order["created_at"].replace("Z", "+00:00"))
+                days_since_last_order = (datetime.now(last_date.tzinfo) - last_date).days
+            except:
+                pass
+        
+        customer_summaries.append({
+            **cust,
+            "pending_orders_count": len(pending_orders),
+            "pending_orders": pending_orders[:3],  # İlk 3 bekleyen sipariş
+            "total_orders": total_orders,
+            "overdue_deliveries_count": overdue_deliveries,
+            "total_deliveries": total_deliveries,
+            "last_delivery_date": last_delivery.get("delivered_at") if last_delivery else None,
+            "last_order_date": last_order.get("created_at") if last_order else None,
+            "days_since_last_order": days_since_last_order
+        })
+    
+    return std_resp(True, customer_summaries)
+
+
 @router.post("/warehouse-draft/submit")
 async def submit_warehouse_draft(body: WarehouseSubmitBody, current_user=Depends(require_role(SALES_ROLES))):
     """
