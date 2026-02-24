@@ -260,6 +260,17 @@ async def list_products(current_user=Depends(require_role(SALES_ROLES))):
 
 
 # ===========================
+# EXTRA: GET /campaigns - Aktif Kampanyalar (Plasiyer için)
+# ===========================
+@router.get("/campaigns")
+async def list_active_campaigns(current_user=Depends(require_role(SALES_ROLES))):
+    """Plasiyer için aktif kampanyaları listele"""
+    cursor = db["sf_campaigns"].find({"status": "active"}, {"_id": 0}).sort("created_at", -1)
+    items = await cursor.to_list(length=50)
+    return std_resp(True, items)
+
+
+# ===========================
 # EXTRA: GET /customers/{id}/consumption - Müşteri Tüketim İstatistikleri (Plasiyer için)
 # ===========================
 @router.get("/customers/{customer_id}/consumption")
