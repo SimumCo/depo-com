@@ -8,7 +8,7 @@ import requests
 import json
 
 # Configuration
-BASE_URL = "https://order-flow-61.preview.emergentagent.com/api"
+BASE_URL = "https://seftali-dist.preview.emergentagent.com/api"
 
 def test_sed_invoice():
     print("🧪 Testing SED Invoice HTML Parsing")
