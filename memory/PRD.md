@@ -7,46 +7,48 @@ Yoğurt/ayran dağıtımı yapan bir firmada müşterilerin tüketimini teslimat
 
 ---
 
-## ✅ SON GÜNCELLEME (26 Şubat 2026)
+## ✅ SON GÜNCELLEME - REFACTORING TAMAMLANDI (26 Şubat 2026)
 
-### Müşteri Paneli İyileştirmeleri
-1. **Kaldırılan Sekmeler:**
-   - ❌ "Stok Bildirimi" sekmesi kaldırıldı
-   - ❌ "Tüketim Sapmaları" sekmesi kaldırıldı
+### Yapılan Değişiklikler
 
-2. **Sipariş Sekmesi İyileştirmeleri:**
-   - ✅ "Tahmini İhtiyaç" açıklaması eklendi: `rate×gün` tooltip
-   - ✅ "Son Alış" miktarı eklendi: `last_delivery_qty`
-   - Backend: `/api/seftali/customer/draft` son teslimat miktarını döndürüyor
+#### Backend OOP Refactoring
+- ✅ Tüm iş mantığı `/app/backend/services/seftali/` altında service sınıflarına taşındı
+- ✅ `core.py`: Ortak sabitler, yardımcı fonksiyonlar
+- ✅ `draft_engine.py`: Draft Engine 2.0 hesaplamaları
+- ✅ `order_service.py`: Plasiyer sipariş hesaplama servisi
+- ✅ Route dosyaları basitleştirildi (controller görevi)
 
-3. **Analizler Sayfası:**
-   - ✅ Günlük tüketim < 1 ise "1/2 gün", "1/3 gün" formatında gösterim
-   - `formatDailyRate()` fonksiyonu eklendi
+#### Route Order Endpoint Düzeltmesi
+- ✅ `GET /api/seftali/sales/route-order/{route_day}` endpoint'i eklendi
+- ✅ Koli yuvarlama çalışıyor
 
----
-
-## Mevcut Sekmeler (Müşteri Paneli)
-1. Ana Sayfa
-2. Sipariş (Tahmini ihtiyaç + Son alış)
-3. Teslimat Onayı
-4. Faturalar
-5. Analizler (Günlük tüketim formatlaması)
-6. Kampanyalar
-7. Favorilerim
+#### Frontend Component Düzeltmeleri
+- ✅ Eksik placeholder component'ler oluşturuldu:
+  - CustomerManagement.js
+  - AllCustomersConsumption.js  
+  - BulkImport.js
+  - CustomerForm.js
+  - InventoryView.js
+  - IncomingShipments.js
 
 ---
 
-## Önceki Tamamlanan Özellikler
+## Çalışan Dashboard'lar
+- ✅ **Plasiyer Dashboard**: Ana sayfa, Müşteriler, Rota Siparişi, Teslimatlar
+- ✅ **Customer Dashboard**: Ana sayfa, Sipariş, Teslimat Onayı, Analizler
+- ✅ **Admin Dashboard**: Genel Bakış, Kampanyalar, Müşteriler, Teslimatar
 
-### Draft Engine 2.0 ✅
-- Model B Implicit Consumption
-- SMA-8, Weekly Multiplier, Maturity Modes, K=3 Passivation
+---
 
-### Admin & Plasiyer ✅
-- Raporlama Dashboard
-- Kampanya "Siparişe Ekle"
-- Component Refactoring
-- Mesajlar Sekmesi (simüle)
+## API Endpoints
+
+### Ana Endpoint'ler
+- `POST /api/auth/login` - Giriş
+- `GET /api/seftali/customer/draft` - Müşteri taslak siparişi (Draft Engine 2.0)
+- `GET /api/seftali/sales/customers` - Plasiyer müşteri listesi
+- `GET /api/seftali/sales/route-order/{route_day}` - Plasiyer rota siparişi hesaplama
+- `GET /api/seftali/admin/health/summary` - Admin özet istatistikler
+- `GET/POST /api/seftali/admin/settings` - Sistem ayarları
 
 ---
 
@@ -61,32 +63,24 @@ Yoğurt/ayran dağıtımı yapan bir firmada müşterilerin tüketimini teslimat
 
 ---
 
-## Formüller
+## P0 - Tamamlandı ✅
+- [x] Draft Engine 2.0 entegrasyonu
+- [x] Plasiyer Rota Siparişi hesaplama
+- [x] OOP Refactoring
+- [x] Frontend stabilizasyonu
 
-### Tahmini İhtiyaç Hesaplama
-```
-suggested_qty = rate_mt × days_to_next_route
+## P1 - Yaklaşan Görevler
+- [ ] Cutoff Time Trigger'ı supervisor ile yapılandır
+- [ ] Admin Ayarları UI sayfası oluştur
+- [ ] Haftalık çarpan batch job'ını aktive et
 
-rate_mt = SMA(son 8 interval)
-interval_rate = prev_delivery_qty / days_between
-```
-
-### Günlük Tüketim Gösterimi
-```javascript
-if (rate >= 1) → "1.5/gün"
-if (rate < 1)  → "1/2 gün" (= 1 / rate)
-```
-
----
-
-## Backlog
-
-### P1
-- [ ] Real SMS/WhatsApp entegrasyonu
-
-### P2
+## P2 - Gelecek Görevler
+- [ ] "Sipariş Gönder" butonu (Rota Siparişi)
+- [ ] Plasiyer stok defteri/raporlama
+- [ ] Admin raporları ve analizler sayfaları
 - [ ] Bildirim sistemi
-- [ ] Mobile responsive iyileştirmeler
 
-### P3
+## P3 - Backlog
+- [ ] Real SMS/WhatsApp entegrasyonu
+- [ ] Mobile responsive iyileştirmeler
 - [ ] Multi-tenant desteği
