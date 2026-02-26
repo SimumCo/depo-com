@@ -989,3 +989,36 @@ async def get_route_customers(
     
     return std_resp(True, customers)
 
+
+# ===========================
+# ROUTE ORDER - Plasiyer Sipariş Hesaplama
+# ===========================
+
+@router.get("/route-order/{route_day}")
+async def get_route_order(route_day: str, current_user=Depends(require_role(SALES_ROLES))):
+    """
+    Plasiyerin belirli bir rota günü için sipariş ihtiyacını hesapla.
+    
+    Hesaplama adımları:
+    1. O gün rotasındaki müşterileri bul
+    2. Sipariş atanların siparişlerini al
+    3. Sipariş atmayanların draft'larını al
+    4. Toplam ihtiyaçtan plasiyer stoğunu düş
+    5. Koli yuvarlaması uygula
+    """
+    valid_days = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
+    route_day = route_day.upper()
+    
+    if route_day not in valid_days:
+        raise HTTPException(400, f"Geçersiz gün kodu. Geçerli kodlar: {', '.join(valid_days)}")
+    
+    result = await OrderService.calculate(current_user.id, route_day)
+    return std_resp(True, result)
+
+
+@router.get("/route-order")
+async def get_route_order_tomorrow(current_user=Depends(require_role(SALES_ROLES))):
+    """Yarınki rota için sipariş ihtiyacını hesapla."""
+    result = await OrderService.calculate(current_user.id)
+    return std_resp(True, result)
+
