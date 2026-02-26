@@ -571,27 +571,35 @@ const CampaignsPage = () => {
   const [loading, setLoading] = useState(true);
   const [orderModal, setOrderModal] = useState({ open: false, campaign: null });
   const [orderQty, setOrderQty] = useState(0);
+  const [customers, setCustomers] = useState([]);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  // Kampanyaları backend'den çek
+  // Kampanyaları ve müşterileri backend'den çek
   useEffect(() => {
-    const fetchCampaigns = async () => {
+    const fetchData = async () => {
       try {
-        const resp = await sfSalesAPI.getCampaigns();
-        if (resp.data?.data) {
-          setCampaigns(resp.data.data);
+        // Kampanyaları çek
+        const campaignResp = await sfSalesAPI.getCampaigns();
+        if (campaignResp.data?.data) {
+          setCampaigns(campaignResp.data.data);
         } else {
-          // Backend'de kampanya yoksa örnek kampanyaları göster
           setCampaigns(defaultCampaigns);
         }
+        
+        // Müşterileri çek
+        const customerResp = await sfSalesAPI.getCustomers();
+        if (customerResp.data?.data) {
+          setCustomers(customerResp.data.data);
+        }
       } catch (err) {
-        console.error('Kampanya verisi alınamadı:', err);
-        // Fallback olarak örnek kampanyaları kullan
+        console.error('Veri alınamadı:', err);
         setCampaigns(defaultCampaigns);
       } finally {
         setLoading(false);
       }
     };
-    fetchCampaigns();
+    fetchData();
   }, []);
 
   // Örnek kampanyalar (backend boşsa)
