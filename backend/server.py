@@ -75,6 +75,7 @@ api_router.include_router(fault_reports_router)
 api_router.include_router(production_router)
 api_router.include_router(maintenance_router)
 api_router.include_router(seftali_router)
+api_router.include_router(draft_engine_router)
 
 # Include old routes temporarily
 # TODO: Refactor these into separate modules
