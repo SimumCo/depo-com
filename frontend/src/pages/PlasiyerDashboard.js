@@ -246,6 +246,8 @@ const PlasiyerDashboard = () => {
         return <RutPage todayCustomers={todayCustomers} />;
       case 'warehouse':
         return <WarehouseDraftPage />;
+      case 'draft-engine':
+        return <DraftEnginePage />;
       case 'orders':
         return <OrdersPage orders={orders} onApprove={handleApproveOrder} onRequestEdit={handleRequestEdit} />;
       case 'deliveries':
