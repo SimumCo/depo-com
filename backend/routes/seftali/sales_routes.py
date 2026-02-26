@@ -877,3 +877,116 @@ async def list_campaigns_for_sales(
     
     campaigns = await cursor.to_list(length=50)
     return std_resp(True, campaigns)
+
+
+# ===========================
+# PLASİYER SİPARİŞ HESAPLAMA
+# ===========================
+from services.seftali.plasiyer_order_service import PlasiyerOrderService
+
+
+class UpdateStockBody(BaseModel):
+    items: List[dict]  # [{"product_id": str, "qty": float}]
+    operation: str = "set"  # "set", "add", "subtract"
+
+
+@router.get("/plasiyer/order-calculation")
+async def calculate_plasiyer_order(
+    route_day: Optional[str] = None,
+    current_user=Depends(require_role(SALES_ROLES))
+):
+    """
+    Plasiyerin yarınki (veya belirtilen gün) rota için ihtiyaç listesini hesapla.
+    
+    - Sipariş atan müşterilerin siparişleri
+    - Sipariş atmayan müşterilerin draft'ları
+    - Toplam ihtiyaç - Plasiyer stoğu = Sipariş listesi
+    """
+    result = await PlasiyerOrderService.calculate_plasiyer_order(
+        salesperson_id=current_user.id,
+        route_day=route_day
+    )
+    return std_resp(True, result)
+
+
+@router.get("/plasiyer/stock")
+async def get_plasiyer_stock(current_user=Depends(require_role(SALES_ROLES))):
+    """Plasiyerin mevcut stoğunu getir"""
+    stock_doc = await db["plasiyer_stock"].find_one(
+        {"salesperson_id": current_user.id},
+        {"_id": 0}
+    )
+    
+    if not stock_doc:
+        return std_resp(False, None, "Stok kaydı bulunamadı")
+    
+    # Ürün isimlerini ekle
+    products_cursor = db["products"].find({}, {"_id": 0, "product_id": 1, "name": 1})
+    products = await products_cursor.to_list(length=500)
+    product_names = {p["product_id"]: p["name"] for p in products}
+    
+    enriched_items = []
+    for item in stock_doc.get("items", []):
+        enriched_items.append({
+            "product_id": item["product_id"],
+            "product_name": product_names.get(item["product_id"], item["product_id"]),
+            "qty": item["qty"]
+        })
+    
+    stock_doc["items"] = enriched_items
+    return std_resp(True, stock_doc)
+
+
+@router.patch("/plasiyer/stock")
+async def update_plasiyer_stock(
+    body: UpdateStockBody,
+    current_user=Depends(require_role(SALES_ROLES))
+):
+    """
+    Plasiyer stoğunu güncelle.
+    
+    operation: 
+    - "set": Miktarı üzerine yaz
+    - "add": Miktara ekle (depodan mal aldığında)
+    - "subtract": Miktardan çıkar (müşteriye teslim ettiğinde)
+    """
+    result = await PlasiyerOrderService.update_plasiyer_stock(
+        salesperson_id=current_user.id,
+        items=body.items,
+        operation=body.operation
+    )
+    
+    if result.get("success"):
+        return std_resp(True, result, "Stok güncellendi")
+    return std_resp(False, None, result.get("message", "Hata oluştu"))
+
+
+@router.get("/plasiyer/route-customers/{route_day}")
+async def get_route_customers(
+    route_day: str,
+    current_user=Depends(require_role(SALES_ROLES))
+):
+    """Belirli bir rota gününün müşterilerini getir"""
+    customers = await PlasiyerOrderService.get_route_customers(
+        salesperson_id=current_user.id,
+        route_day=route_day.upper()
+    )
+    
+    # Her müşteri için sipariş durumunu ekle
+    customer_ids = [c["id"] for c in customers]
+    orders = await PlasiyerOrderService.get_customer_orders_today(customer_ids)
+    drafts = await PlasiyerOrderService.get_customer_drafts(customer_ids)
+    
+    for customer in customers:
+        cid = customer["id"]
+        if cid in orders:
+            customer["order_status"] = "submitted"
+            customer["order_items_count"] = len(orders[cid].get("items", []))
+        elif cid in drafts:
+            customer["order_status"] = "draft_available"
+            customer["draft_items_count"] = len([i for i in drafts[cid].get("items", []) if i.get("suggested_qty", 0) > 0])
+        else:
+            customer["order_status"] = "no_order"
+    
+    return std_resp(True, customers)
+
