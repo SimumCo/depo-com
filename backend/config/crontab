@@ -1,0 +1,17 @@
+# ŞEFTALİ Sistem Cron Jobs
+# =========================
+
+# Kesim saati tetikleme (16:30 - Türkiye saati UTC+3 = 13:30 UTC)
+30 13 * * 1-6 cd /app/backend && /root/.venv/bin/python scripts/cutoff_trigger.py >> /var/log/seftali/cutoff.log 2>&1
+
+# Günlük toplamları güncelle (her gece 00:00 UTC)
+0 0 * * * cd /app/backend && /root/.venv/bin/python scripts/batch_jobs.py --job=daily_totals >> /var/log/seftali/batch.log 2>&1
+
+# Pasifleştirme kontrolü (her gece 01:00 UTC)
+0 1 * * * cd /app/backend && /root/.venv/bin/python scripts/batch_jobs.py --job=passivation >> /var/log/seftali/batch.log 2>&1
+
+# Haftalık çarpan hesaplama (Pazartesi 00:00 UTC)
+0 0 * * 1 cd /app/backend && /root/.venv/bin/python scripts/batch_jobs.py --job=multipliers >> /var/log/seftali/batch.log 2>&1
+
+# Rollup temizleme (her gece 02:00 UTC)
+0 2 * * * cd /app/backend && /root/.venv/bin/python scripts/batch_jobs.py --job=cleanup >> /var/log/seftali/batch.log 2>&1
