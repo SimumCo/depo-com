@@ -304,7 +304,7 @@ async def get_customer_consumption(customer_id: str, current_user=Depends(requir
     consumption_data = []
     for r in results:
         product_id = r.pop("_id")
-        product = await db[COL_PRODUCTS].find_one({"id": product_id}, {"_id": 0, "name": 1, "code": 1})
+        product = await get_product_by_id(db, product_id)
         
         consumption_data.append({
             "product_id": product_id,
