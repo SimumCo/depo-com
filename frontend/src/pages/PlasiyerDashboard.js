@@ -9,7 +9,7 @@ import {
   Truck, ShoppingBag, Plus, Package, LogOut, Users, 
   TrendingUp, Home, Search, Filter, AlertTriangle, 
   BarChart3, RotateCcw, Navigation, ChevronRight,
-  Box, Tag
+  Box, Tag, Zap
 } from 'lucide-react';
 
 // Import Layout Components
