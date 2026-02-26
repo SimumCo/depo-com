@@ -3,6 +3,18 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, R
 import { TrendingUp, TrendingDown, Package, BarChart3, Calendar } from 'lucide-react';
 import { sfCustomerAPI } from '../../services/seftaliApi';
 
+// Günlük tüketim formatlaması - 1'den az değerler için kesirli gösterim
+const formatDailyRate = (rate) => {
+  if (rate === null || rate === undefined) return '—';
+  if (rate >= 1) return rate.toFixed(1);
+  if (rate <= 0) return '0';
+  
+  // 1'den küçük değerler için "1/X gün" formatı
+  const daysPerUnit = Math.round(1 / rate);
+  if (daysPerUnit <= 1) return rate.toFixed(1);
+  return `1/${daysPerUnit} gün`;
+};
+
 const ConsumptionAnalytics = () => {
   const [summary, setSummary] = useState([]);
   const [monthlyData, setMonthlyData] = useState([]);
