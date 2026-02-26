@@ -111,29 +111,40 @@ class BulkDismissBody(BaseModel):
 # ===========================
 # 1. GET /draft
 # ===========================
+from services.seftali.draft_service import DraftService
+
 @router.get("/draft")
 async def get_draft(current_user=Depends(require_role([UserRole.CUSTOMER]))):
+    """
+    Müşteri için Draft Engine 2.0 ile hesaplanmış taslak siparişi getir.
+    
+    Kullanılan parametreler:
+    - prev_delivery_qty, prev_delivery_date
+    - curr_delivery_date (last_delivery_date)
+    - interval_rates (son 8 interval SMA)
+    - weekly_multiplier
+    - today_date, next_route_date, supply_days
+    
+    Formül: need_qty = rate_mt × weekly_multiplier × supply_days
+    """
     cust = await _get_sf_customer(current_user)
-    draft = await db[COL_SYSTEM_DRAFTS].find_one({"customer_id": cust["id"]}, {"_id": 0})
-    if not draft:
+    
+    # Draft Engine 2.0 ile hesapla
+    draft = await DraftService.calculate_draft_for_customer(cust["id"])
+    
+    if not draft or not draft.get("items"):
+        # Fallback: eski draft'ı dene
+        old_draft = await db[COL_SYSTEM_DRAFTS].find_one({"customer_id": cust["id"]}, {"_id": 0})
+        if old_draft:
+            return std_resp(True, old_draft, "Eski taslak (Draft Engine 2.0 verisi yok)")
         return std_resp(True, {"customer_id": cust["id"], "items": [], "generated_from": None}, "Henuz taslak yok")
     
+    # Her ürün için son teslimat miktarını enrich et
     enriched_items = []
-    
-    # Her ürün için son alış miktarını bul
     for it in draft.get("items", []):
         product_id = it["product_id"]
         
-        # Ürün bilgisi - yeni helper ile hem UUID hem temiz ID destekler
-        p = await get_product_by_id(db, product_id)
-        if not p:
-            # Ürün bulunamadı, bu item'ı atla
-            continue
-            
-        it["product_name"] = p.get("name", "")
-        it["product_code"] = p.get("code", "")
-        
-        # Bu ürünün son teslimat miktarını bul
+        # Bu ürünün son teslimat miktarını bul (accepted olanlardan)
         pipeline = [
             {
                 "$match": {
@@ -150,7 +161,7 @@ async def get_draft(current_user=Depends(require_role([UserRole.CUSTOMER]))):
         ]
         
         result = await db[COL_DELIVERIES].aggregate(pipeline).to_list(length=1)
-        it["last_delivery_qty"] = result[0]["qty"] if result else 0
+        it["last_delivery_qty"] = result[0]["qty"] if result else it.get("last_delivery_qty", 0)
         
         enriched_items.append(it)
     
