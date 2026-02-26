@@ -335,12 +335,7 @@ const DraftView = ({ onStartEdit }) => {
                       {emoji}
                     </div>
                     <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-1">
-                        <p className="text-xs text-slate-500">Tahmini İhtiyaç</p>
-                        <span className="text-[9px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded" title="Günlük tüketim oranı × Rut gününe kalan gün">
-                          rate×gün
-                        </span>
-                      </div>
+                      <p className="text-xs text-slate-500">Tahmini İhtiyaç</p>
                       <p className="text-lg font-bold text-orange-600">{suggestedQty} <span className="text-xs font-normal text-slate-500">adet</span></p>
                       <p className="text-xs text-slate-500">
                         Son Alış: <span className="font-semibold text-slate-700">{product.last_delivery_qty || product.last_qty || '—'} adet</span>
