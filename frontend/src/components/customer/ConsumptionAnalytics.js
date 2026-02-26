@@ -219,7 +219,12 @@ const ConsumptionAnalytics = () => {
                     <span className="text-xs text-slate-400 font-mono w-5">{idx + 1}.</span>
                     {item.product_name}
                   </span>
-                  <span className="text-sm font-bold text-sky-700">{item.avg_daily}/gun</span>
+                  <span className="text-sm font-bold text-sky-700">
+                    {item.avg_daily >= 1 
+                      ? `${item.avg_daily.toFixed(1)}/gün` 
+                      : formatDailyRate(item.avg_daily)
+                    }
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="flex-1 bg-slate-100 rounded-full h-1.5">
