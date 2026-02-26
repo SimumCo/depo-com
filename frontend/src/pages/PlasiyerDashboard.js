@@ -672,20 +672,49 @@ const CampaignsPage = () => {
   // Siparişe Ekle Modal'ını aç
   const handleAddToOrder = (campaign) => {
     setOrderQty(campaign.min_qty);
+    setSelectedCustomer(null);
     setOrderModal({ open: true, campaign });
   };
 
   // Siparişi onayla
-  const handleConfirmOrder = () => {
-    const { campaign } = orderModal;
-    const totalPrice = orderQty * campaign.campaign_price;
-    const savings = orderQty * (campaign.normal_price - campaign.campaign_price);
+  const handleConfirmOrder = async () => {
+    if (!selectedCustomer) {
+      toast.error('Lütfen bir müşteri seçin');
+      return;
+    }
     
-    toast.success(
-      `${campaign.product_name} - ${orderQty} adet siparişe eklendi! ` +
-      `Toplam: ${totalPrice.toLocaleString('tr-TR')} TL (${savings.toLocaleString('tr-TR')} TL tasarruf)`
-    );
-    setOrderModal({ open: false, campaign: null });
+    const { campaign } = orderModal;
+    
+    try {
+      setSubmitting(true);
+      
+      // API çağrısı
+      const resp = await sfSalesAPI.addCampaignToOrder({
+        campaign_id: campaign.id,
+        customer_id: selectedCustomer,
+        qty: orderQty
+      });
+      
+      if (resp.data?.success) {
+        const totalPrice = orderQty * campaign.campaign_price;
+        const savings = orderQty * (campaign.normal_price - campaign.campaign_price);
+        
+        toast.success(
+          `${campaign.product_name} - ${orderQty} adet siparişe eklendi! ` +
+          `Toplam: ${totalPrice.toLocaleString('tr-TR')} TL (${savings.toLocaleString('tr-TR')} TL tasarruf)`
+        );
+        setOrderModal({ open: false, campaign: null });
+        setSelectedCustomer(null);
+      } else {
+        toast.error(resp.data?.message || 'İşlem başarısız');
+      }
+    } catch (err) {
+      console.error('Kampanya ekleme hatası:', err);
+      toast.error(err.response?.data?.detail || 'Kampanya siparişe eklenemedi');
+    } finally {
+      setSubmitting(false);
+    }
+  };
   };
 
   // Ürün emojisi
