@@ -244,12 +244,19 @@ const RouteOrderPage = () => {
                           Stok: <span className="text-blue-600 font-medium">{info.plasiyer_stock}</span>
                         </span>
                       </div>
+                      {info.case_size > 1 && (
+                        <div className="mt-1 text-xs text-gray-400">
+                          {info.case_name} • İhtiyaç: {info.to_order_raw} → {info.cases_needed} koli
+                        </div>
+                      )}
                     </div>
                     <div className="text-right">
                       <p className={`text-2xl font-bold ${info.to_order > 0 ? 'text-purple-600' : 'text-gray-400'}`}>
                         {info.to_order}
                       </p>
-                      <p className="text-xs text-gray-400">sipariş</p>
+                      <p className="text-xs text-gray-400">
+                        {info.case_size > 1 ? `${info.cases_needed} koli` : 'adet'}
+                      </p>
                     </div>
                   </div>
                 </div>
