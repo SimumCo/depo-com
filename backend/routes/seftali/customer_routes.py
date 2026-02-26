@@ -117,18 +117,22 @@ async def get_draft(current_user=Depends(require_role([UserRole.CUSTOMER]))):
     if not draft:
         return std_resp(True, {"customer_id": cust["id"], "items": [], "generated_from": None}, "Henuz taslak yok")
     
+    enriched_items = []
+    
     # Her ürün için son alış miktarını bul
     for it in draft.get("items", []):
         product_id = it["product_id"]
         
         # Ürün bilgisi
         p = await db[COL_PRODUCTS].find_one({"id": product_id}, {"_id": 0, "name": 1, "code": 1})
-        if p:
-            it["product_name"] = p.get("name", "")
-            it["product_code"] = p.get("code", "")
+        if not p:
+            # Ürün bulunamadı, bu item'ı atla
+            continue
+            
+        it["product_name"] = p.get("name", "")
+        it["product_code"] = p.get("code", "")
         
         # Bu ürünün son teslimat miktarını bul
-        # Aggregation ile bu ürünü içeren son kabul edilmiş teslimatı bul
         pipeline = [
             {
                 "$match": {
@@ -146,7 +150,10 @@ async def get_draft(current_user=Depends(require_role([UserRole.CUSTOMER]))):
         
         result = await db[COL_DELIVERIES].aggregate(pipeline).to_list(length=1)
         it["last_delivery_qty"] = result[0]["qty"] if result else 0
+        
+        enriched_items.append(it)
     
+    draft["items"] = enriched_items
     return std_resp(True, draft)
 
 
