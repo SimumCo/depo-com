@@ -586,7 +586,7 @@ async def daily_consumption_summary(current_user=Depends(require_role([UserRole.
 
     for r in results:
         r["product_id"] = r.pop("_id")
-        p = await db[COL_PRODUCTS].find_one({"id": r["product_id"]}, {"_id": 0, "name": 1, "code": 1})
+        p = await get_product_by_id(db, r["product_id"])
         if p:
             r["product_name"] = p.get("name", "")
             r["product_code"] = p.get("code", "")
