@@ -27,6 +27,7 @@ from routes.fault_reports_routes import router as fault_reports_router
 from routes.production_routes import router as production_router
 from routes.maintenance import router as maintenance_router  # Modular maintenance routes
 from routes.seftali import router as seftali_router
+from routes.draft_engine_routes import router as draft_engine_router
 
 # Old server import removed - all routes modular now
 
