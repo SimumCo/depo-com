@@ -163,8 +163,6 @@ const CustomerDashboard = () => {
       case 'working-copy': return <WorkingCopyPage onBack={() => setActiveTab('draft')} onSubmitted={() => { setActiveTab('dashboard'); fetchStats(); }} />;
       case 'deliveries': return <DeliveryApproval />;
       case 'history': return <DeliveryHistory />;
-      case 'stock': return <StockDeclarationForm />;
-      case 'variance': return <VarianceList />;
       case 'consumption': return <ConsumptionAnalytics />;
       case 'campaigns': return <PlaceholderPage icon={Tag} title="Kampanyalar" subtitle="Aktif kampanya bulunmuyor" />;
       case 'favorites': return <PlaceholderPage icon={Heart} title="Favorilerim" subtitle="Favori urun eklemediniz" />;
