@@ -1,3 +1,40 @@
-from .consumption_service import ConsumptionService
-from .draft_service import DraftService
-from .variance_service import VarianceService
+"""
+ŞEFTALİ - Servis Modülleri
+
+Bu paket, ŞEFTALİ dağıtım yönetim sisteminin temel servislerini içerir.
+
+Modüller:
+- core: Temel yardımcı fonksiyonlar ve sabitler
+- draft_engine: Draft Engine 2.0 hesaplama motoru
+- order_service: Plasiyer sipariş hesaplama servisi
+"""
+
+from .core import (
+    now_utc,
+    to_iso,
+    parse_date,
+    get_route_info,
+    DAY_MAP,
+    WEEKDAY_NAMES,
+    SMA_WINDOW,
+    EPSILON,
+)
+
+from .draft_engine import DraftEngine
+from .order_service import OrderService
+
+__all__ = [
+    # Core utilities
+    'now_utc',
+    'to_iso',
+    'parse_date',
+    'get_route_info',
+    'DAY_MAP',
+    'WEEKDAY_NAMES',
+    'SMA_WINDOW',
+    'EPSILON',
+    
+    # Services
+    'DraftEngine',
+    'OrderService',
+]
