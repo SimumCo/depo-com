@@ -4,16 +4,13 @@ from pydantic import BaseModel, field_validator
 from models.user import UserRole
 from utils.auth import require_role
 from config.database import db
-from services.seftali.utils import (
-    gen_id, now_utc, to_iso,
-    COL_CUSTOMERS, COL_PRODUCTS, COL_DELIVERIES, COL_STOCK_DECLARATIONS,
-    COL_CONSUMPTION_STATS, COL_SYSTEM_DRAFTS, COL_WORKING_COPIES,
-    COL_ORDERS, COL_VARIANCE_EVENTS, COL_AUDIT_EVENTS, std_resp,
-    get_product_by_id,
+from services.seftali.core import (
+    gen_id, now_utc, to_iso, std_resp, get_product_by_id,
+    COL_CUSTOMERS, COL_PRODUCTS, COL_DELIVERIES, COL_ORDERS,
+    COL_SYSTEM_DRAFTS, COL_WORKING_COPIES, COL_STOCK_DECLARATIONS,
+    COL_AUDIT_EVENTS
 )
-from services.seftali.consumption_service import ConsumptionService
-from services.seftali.draft_service import DraftService
-from services.seftali.variance_service import VarianceService
+from services.seftali.draft_engine import DraftEngine
 
 router = APIRouter(prefix="/customer", tags=["Seftali-Customer"])
 
