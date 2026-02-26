@@ -25,6 +25,8 @@ import DraftEnginePage from '../components/plasiyer/DraftEnginePage';
 import CustomerCard, { CustomerDetailModal } from '../components/plasiyer/CustomerCard';
 import OrdersPage from '../components/plasiyer/OrdersPage';
 import CreateDeliveryForm from '../components/plasiyer/CreateDeliveryForm';
+import StockPage from '../components/plasiyer/StockPage';
+import CampaignsPage from '../components/plasiyer/CampaignsPage';
 
 // Day translations
 const dayTranslations = {
