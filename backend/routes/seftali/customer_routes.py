@@ -127,7 +127,7 @@ async def get_draft(current_user=Depends(require_role([UserRole.CUSTOMER]))):
     cust = await _get_sf_customer(current_user)
     
     # Draft Engine 2.0 ile hesapla
-    draft = await DraftService.calculate_draft_for_customer(cust["id"])
+    draft = await DraftEngine.calculate(cust["id"])
     
     if not draft or not draft.get("items"):
         # Fallback: eski draft'ı dene
