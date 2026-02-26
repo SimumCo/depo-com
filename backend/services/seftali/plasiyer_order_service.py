@@ -279,7 +279,8 @@ class PlasiyerOrderService:
                 "customers_with_orders": len(customer_orders),
                 "customers_with_drafts": len([c for c in customer_details if c["source"] == "draft"]),
                 "total_products": len(final_totals),
-                "total_items_to_order": total_items_to_order
+                "total_items_to_order": total_items_to_order,
+                "total_cases_to_order": total_cases_to_order
             }
         }
     
