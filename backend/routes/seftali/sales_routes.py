@@ -902,7 +902,7 @@ async def calculate_plasiyer_order(
     - Sipariş atmayan müşterilerin draft'ları
     - Toplam ihtiyaç - Plasiyer stoğu = Sipariş listesi
     """
-    result = await PlasiyerOrderService.calculate_plasiyer_order(
+    result = await OrderService.calculate(
         salesperson_id=current_user.id,
         route_day=route_day
     )
@@ -950,7 +950,7 @@ async def update_plasiyer_stock(
     - "add": Miktara ekle (depodan mal aldığında)
     - "subtract": Miktardan çıkar (müşteriye teslim ettiğinde)
     """
-    result = await PlasiyerOrderService.update_plasiyer_stock(
+    result = await OrderService.update_stock(
         salesperson_id=current_user.id,
         items=body.items,
         operation=body.operation
@@ -967,15 +967,15 @@ async def get_route_customers(
     current_user=Depends(require_role(SALES_ROLES))
 ):
     """Belirli bir rota gününün müşterilerini getir"""
-    customers = await PlasiyerOrderService.get_route_customers(
+    customers = await OrderService.get_route_customers(
         salesperson_id=current_user.id,
         route_day=route_day.upper()
     )
     
     # Her müşteri için sipariş durumunu ekle
     customer_ids = [c["id"] for c in customers]
-    orders = await PlasiyerOrderService.get_customer_orders_today(customer_ids)
-    drafts = await PlasiyerOrderService.get_customer_drafts(customer_ids)
+    orders = await OrderService._get_customer_orders(customer_ids)
+    drafts = await OrderService._get_customer_drafts(customer_ids)
     
     for customer in customers:
         cid = customer["id"]
