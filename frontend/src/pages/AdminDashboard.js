@@ -91,7 +91,7 @@ const AdminDashboard = () => {
       case 'customers':
         return <PlaceholderPage icon={Users} title="Musteriler" subtitle="Musteri listesi yakin zamanda eklenecek" />;
       case 'reports':
-        return <PlaceholderPage icon={BarChart3} title="Raporlar" subtitle="Raporlama modulu yakin zamanda eklenecek" />;
+        return <ReportsPage />;
       default:
         return (
           <OverviewPage 
