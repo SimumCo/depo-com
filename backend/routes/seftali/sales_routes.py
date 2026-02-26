@@ -377,10 +377,17 @@ async def get_warehouse_draft(
     customer_details = []
     product_totals = {}  # Ürün bazında toplam
     
-    # Ürün koli bilgilerini çek
-    products_cursor = db[COL_PRODUCTS].find({}, {"_id": 0})
+    # Ürün koli bilgilerini çek - yeni products koleksiyonundan
+    products_cursor = db["products"].find({}, {"_id": 0})
     products_list = await products_cursor.to_list(length=500)
-    products_map = {p["id"]: p for p in products_list}
+    products_map = {p["product_id"]: p for p in products_list}
+    
+    # Eski sf_products koleksiyonundan da al (backward compatibility)
+    sf_products_cursor = db[COL_PRODUCTS].find({}, {"_id": 0})
+    sf_products_list = await sf_products_cursor.to_list(length=500)
+    for p in sf_products_list:
+        if p.get("id") not in products_map:
+            products_map[p.get("id")] = p
     
     orders_total = {}  # Siparişlerden gelen toplam
     drafts_total = {}  # Taslaklardan gelen toplam
