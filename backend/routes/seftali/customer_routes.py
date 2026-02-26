@@ -516,7 +516,7 @@ async def delivery_history(current_user=Depends(require_role([UserRole.CUSTOMER]
     items = await cursor.to_list(length=500)
     for d in items:
         for it in d.get("items", []):
-            p = await db[COL_PRODUCTS].find_one({"id": it["product_id"]}, {"_id": 0, "name": 1, "code": 1})
+            p = await get_product_by_id(db, it["product_id"])
             if p:
                 it["product_name"] = p.get("name", "")
                 it["product_code"] = p.get("code", "")
