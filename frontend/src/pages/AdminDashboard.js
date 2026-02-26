@@ -14,6 +14,9 @@ import {
   Badge, Button, gradients
 } from '../components/ui/DesignSystem';
 
+// Import Page Components
+import ReportsPage from '../components/admin/ReportsPage';
+
 // Day translations
 const dayTranslations = {
   MON: 'Pazartesi', TUE: 'Sali', WED: 'Carsamba',
