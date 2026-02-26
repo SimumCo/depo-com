@@ -214,6 +214,7 @@ const PlasiyerDashboard = () => {
     { id: 'customers', label: 'Musteriler', icon: Users },
     { id: 'rut', label: 'Rut', icon: Navigation },
     { id: 'warehouse', label: 'Depo Taslagi', icon: Package },
+    { id: 'draft-engine', label: 'Akıllı Sipariş', icon: Zap },
     { id: 'orders', label: 'Siparisler', icon: ShoppingBag, badge: stats.pendingOrders },
     { id: 'deliveries', label: 'Teslimatlar', icon: Truck },
     { id: 'create', label: 'Teslimat Olustur', icon: Plus },
