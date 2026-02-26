@@ -7,6 +7,7 @@ from config.database import db
 from services.seftali.utils import (
     gen_id, now_utc, to_iso,
     COL_CUSTOMERS, COL_PRODUCTS, COL_DELIVERIES, COL_ORDERS, std_resp,
+    get_product_by_id,
 )
 
 router = APIRouter(prefix="/sales", tags=["Seftali-Sales"])
