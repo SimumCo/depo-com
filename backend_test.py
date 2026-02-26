@@ -11,7 +11,7 @@ from datetime import datetime
 import uuid
 
 # Configuration
-BASE_URL = "https://seftali-dist.preview.emergentagent.com/api"
+BASE_URL = "https://consumption-tracker.preview.emergentagent.com/api"
 
 # Test Users
 TEST_USERS = {
