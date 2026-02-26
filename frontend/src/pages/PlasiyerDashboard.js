@@ -965,6 +965,21 @@ const CampaignsPage = () => {
               </div>
             </div>
 
+            {/* Müşteri Seçimi */}
+            <div className="mb-4">
+              <label className="block text-sm text-slate-600 mb-2">Müşteri Seçin</label>
+              <select
+                value={selectedCustomer || ''}
+                onChange={(e) => setSelectedCustomer(e.target.value)}
+                className="w-full p-3 border border-slate-200 rounded-xl text-sm"
+              >
+                <option value="">-- Müşteri Seçin --</option>
+                {customers.map(c => (
+                  <option key={c.id} value={c.id}>{c.name} ({c.code})</option>
+                ))}
+              </select>
+            </div>
+
             <div className="flex gap-3">
               <button 
                 onClick={() => setOrderModal({ open: false, campaign: null })}
@@ -974,9 +989,14 @@ const CampaignsPage = () => {
               </button>
               <button 
                 onClick={handleConfirmOrder}
-                className="flex-1 py-3 bg-emerald-500 text-white rounded-xl font-bold"
+                disabled={submitting || !selectedCustomer}
+                className={`flex-1 py-3 rounded-xl font-bold ${
+                  submitting || !selectedCustomer 
+                    ? 'bg-slate-300 text-slate-500 cursor-not-allowed' 
+                    : 'bg-emerald-500 text-white'
+                }`}
               >
-                Siparişe Ekle
+                {submitting ? 'Ekleniyor...' : 'Siparişe Ekle'}
               </button>
             </div>
           </div>
