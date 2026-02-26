@@ -1,3 +1,7 @@
+"""
+ŞEFTALİ - Dağıtım Yönetim Sistemi
+Ana Sunucu Dosyası (Refaktör Edilmiş)
+"""
 from fastapi import FastAPI, APIRouter
 from starlette.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -5,31 +9,11 @@ from pathlib import Path
 import os
 import logging
 
-# Import route modules
+# Route imports - Sadece aktif modüller
 from routes.auth_routes import router as auth_router
-from routes.invoice_routes import router as invoice_router
-from routes.manual_invoice_routes import router as manual_invoice_router
-from routes.customer_lookup_routes import router as customer_lookup_router
-from routes.consumption_routes import router as consumption_router
-from routes.customer_consumption_routes import router as customer_consumption_router
-from routes.consumption_period_routes import router as consumption_period_router
 from routes.products import router as products_router
-from routes.bulk_import import router as bulk_import_router
 from routes.users_routes import router as users_router
-from routes.warehouse_routes import router as warehouse_router
-from routes.campaign_routes import router as campaign_router
-from routes.analytics_routes import router as analytics_router
-from routes.notification_routes import router as notification_router
-from routes.reports_routes import router as reports_router
-from routes.orders_routes import router as orders_router
-from routes.favorites_routes import router as favorites_router
-from routes.fault_reports_routes import router as fault_reports_router
-from routes.production_routes import router as production_router
-from routes.maintenance import router as maintenance_router  # Modular maintenance routes
 from routes.seftali import router as seftali_router
-from routes.draft_engine_routes import router as draft_engine_router
-
-# Old server import removed - all routes modular now
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -39,7 +23,11 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Create the main app
-app = FastAPI(title="Distribution Management System", version="2.0.0")
+app = FastAPI(
+    title="ŞEFTALİ - Dağıtım Yönetim Sistemi",
+    description="Süt ürünleri dağıtım ve sipariş yönetim sistemi",
+    version="3.0.0"
+)
 
 # CORS middleware
 app.add_middleware(
@@ -53,48 +41,32 @@ app.add_middleware(
 # Create main API router
 api_router = APIRouter(prefix="/api")
 
-# Include new modular routes
-api_router.include_router(auth_router)
-api_router.include_router(products_router)
-api_router.include_router(invoice_router)
-api_router.include_router(manual_invoice_router)
-api_router.include_router(customer_lookup_router)
-api_router.include_router(consumption_router)
-api_router.include_router(customer_consumption_router)
-api_router.include_router(consumption_period_router)
-api_router.include_router(bulk_import_router)
-api_router.include_router(users_router)
-api_router.include_router(warehouse_router)
-api_router.include_router(campaign_router)
-api_router.include_router(analytics_router)
-api_router.include_router(notification_router)
-api_router.include_router(reports_router)
-api_router.include_router(orders_router)
-api_router.include_router(favorites_router)
-api_router.include_router(fault_reports_router)
-api_router.include_router(production_router)
-api_router.include_router(maintenance_router)
-api_router.include_router(seftali_router)
-api_router.include_router(draft_engine_router)
+# Core routes
+api_router.include_router(auth_router)           # /api/auth/*
+api_router.include_router(products_router)       # /api/products/*
+api_router.include_router(users_router)          # /api/users/*
 
-# Include old routes temporarily
-# TODO: Refactor these into separate modules
-# Legacy routes removed - all routes are now modular
+# ŞEFTALİ routes
+api_router.include_router(seftali_router)        # /api/seftali/*
 
 # Register main router
 app.include_router(api_router)
 
+
 @app.get("/")
 async def root():
     return {
-        "message": "Distribution Management System API",
-        "version": "2.0.0",
+        "app": "ŞEFTALİ",
+        "description": "Dağıtım Yönetim Sistemi",
+        "version": "3.0.0",
         "status": "running"
     }
+
 
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
 
 if __name__ == "__main__":
     import uvicorn
