@@ -21,28 +21,11 @@ async def health_summary(current_user=Depends(require_role([UserRole.ADMIN]))):
 
     total_customers = await db[COL_CUSTOMERS].count_documents({"is_active": True})
 
-    # top spike products
-    pipeline = [
-        {"$match": {"spike.active": True}},
-        {"$group": {"_id": "$product_id", "count": {"$sum": 1}}},
-        {"$sort": {"count": -1}},
-        {"$limit": 5},
-    ]
-    top_spikes_raw = await db[COL_CONSUMPTION_STATS].aggregate(pipeline).to_list(length=5)
-    top_spikes = []
-    for ts in top_spikes_raw:
-        p = await db[COL_PRODUCTS].find_one({"id": ts["_id"]}, {"_id": 0, "name": 1, "code": 1})
-        top_spikes.append({"product_id": ts["_id"], "spike_count": ts["count"],
-                           "product_name": p.get("name", "") if p else ""})
-
     return std_resp(True, {
         "total_deliveries": total_deliveries,
         "pending_deliveries": pending_deliveries,
         "accepted_deliveries": accepted_deliveries,
-        "active_spikes": spike_count,
-        "open_variance": open_variance,
         "total_customers": total_customers,
-        "top_spike_products": top_spikes,
     })
 
 
