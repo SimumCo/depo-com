@@ -882,7 +882,6 @@ async def list_campaigns_for_sales(
 # ===========================
 # PLASİYER SİPARİŞ HESAPLAMA
 # ===========================
-from services.seftali.plasiyer_order_service import PlasiyerOrderService
 
 
 class UpdateStockBody(BaseModel):
