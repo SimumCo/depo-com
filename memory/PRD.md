@@ -1,249 +1,159 @@
-# Dağıtım Yönetim Sistemi PRD
+# ŞEFTALİ Dağıtım Yönetim Sistemi PRD
 
 ## Son Güncelleme: 26 Şubat 2026
 
 ## Proje Özeti
-Yoğurt/ayran dağıtımı yapan bir firmada müşterilerin tüketimini delivery bazlı hesaplayan ve rota gününe göre sipariş taslağı oluşturan deterministik bir sistem.
+Yoğurt/ayran dağıtımı yapan bir firmada müşterilerin tüketimini teslimat bazlı hesaplayan ve rota gününe göre sipariş taslağı oluşturan **deterministik** bir sistem.
 
-## ⚡ YENİ: Draft Engine v2.0 (26 Şubat 2026)
-Kullanıcı tarafından sağlanan 3 detaylı prompt'a dayalı olarak tamamen yeni bir deterministik draft motoru implemente edildi:
+---
 
-### Temel Özellikler
-- **Model B Implicit Consumption Estimation**: Teslimatlar arası günlük tüketim oranı hesaplama
-- **SMA-8 Rate Calculation**: Son 8 interval'in ortalaması (rate_mt)
-- **3 Olgunluk Modu**: FIRST-TIME (≤1 teslimat), YOUNG (2-8 interval), MATURE (≥8 interval + ≥365 gün)
-- **Weekly Multiplier System**: Depot×Segment×Product bazında haftalık çarpan (0.7-1.8 clamp)
-- **K=3 Passivation Rule**: Beklenen tükenme süresi × 3 geçtiyse ürün pasifleşir
-- **Delta-Based Roll-up**: Hiyerarşik toplama (Müşteri → Plasiyer → Depo → Üretim)
-- **Working Copy Management**: Teslimat sonrası otomatik silme
+## ✅ TAMAMLANAN - Draft Engine 2.0 (26 Şubat 2026)
+
+### Model B - Implicit Consumption Estimation
+Tam spesifikasyona uygun deterministik tüketim tahmin sistemi implemente edildi:
+
+| Bileşen | Durum | Açıklama |
+|---------|-------|----------|
+| **Interval Rate Calculation** | ✅ | `daily_rate = prev_qty / days_between` |
+| **SMA-8 Rate (rate_mt)** | ✅ | Son 8 interval'in basit ortalaması |
+| **Weekly Multiplier** | ✅ | Depot×Segment×Product haftalık çarpan (0.7-1.8) |
+| **Maturity Modes** | ✅ | FIRST-TIME, YOUNG, MATURE (3 seviye) |
+| **Passivation (K=3)** | ✅ | Beklenen tükenme × 3 kuralı |
+| **Need Qty Calculation** | ✅ | `need_qty = rate_used × days_to_next_route` |
+| **Delta Roll-up** | ✅ | Incremental güncelleme (no full scan) |
+| **Working Copy** | ✅ | Teslimat sonrası auto-delete |
+| **Idempotency** | ✅ | Event duplicate kontrolü |
 
 ### Yeni Koleksiyonlar (de_ prefix)
-- `de_customers`, `de_products`, `de_routes`
-- `de_deliveries`, `de_delivery_items`
-- `de_customer_product_state` (Ana state tablosu)
-- `de_interval_ledger`, `de_daily_ledger`
-- `de_weekly_product_multipliers`, `de_depot_segment_product_daily_totals`
-- `de_sales_rep_draft_totals`, `de_depot_draft_totals`, `de_production_draft_totals`
-- `de_working_copies`, `de_processed_events`
+- `de_customers` - Müşteri master data (depot_id, segment_id, sales_rep_id)
+- `de_products` - Ürün bilgileri (shelf_life_days, box_size)
+- `de_routes` - Rut takvimi (weekdays[], effective_from/to)
+- `de_deliveries` - Teslimat başlıkları
+- `de_delivery_items` - Teslimat kalemleri
+- `de_customer_product_state` - **ANA STATE TABLOSU** (rate_mt, need_qty, interval_rates)
+- `de_interval_ledger` - Interval geçmişi
+- `de_weekly_product_multipliers` - Haftalık çarpanlar
+- `de_depot_segment_product_daily_totals` - Günlük toplamlar
+- `de_sales_rep_draft_totals` - Plasiyer rollup
+- `de_depot_draft_totals` - Depo rollup
+- `de_production_draft_totals` - Üretim rollup
+- `de_working_copies` - Kullanıcı düzenlemeleri
+- `de_processed_events` - Idempotency
 
-### Yeni API Endpoint'leri
-- `POST /api/draft-engine/deliveries` - Teslimat oluştur ve state güncelle
-- `GET /api/draft-engine/customers/{id}/draft` - Müşteri draft'ı
-- `GET /api/draft-engine/customers/{id}/state` - Müşteri ürün state'leri
-- `GET /api/draft-engine/sales-rep/draft` - Plasiyer birleştirilmiş draft
-- `GET /api/draft-engine/depot/{id}/draft` - Depo draft
-- `POST/GET/PATCH/DELETE /api/draft-engine/customers/{id}/working-copy`
-- `POST /api/draft-engine/setup/indexes`, `POST /api/draft-engine/setup/seed`
-- `POST /api/draft-engine/setup/run-multiplier-batch`
+### API Endpoints (/api/draft-engine/)
+- `POST /setup/indexes` - Index oluşturma
+- `POST /setup/seed` - Demo veri
+- `POST /setup/run-multiplier-batch` - Çarpan batch job
+- `POST /deliveries` - Teslimat oluştur + state güncelle
+- `GET /deliveries` - Teslimat listesi
+- `GET /customers/{id}/draft` - Müşteri draft
+- `GET /customers/{id}/state` - Müşteri product states
+- `GET /sales-rep/draft` - Plasiyer draft (aggregate)
+- `GET /sales-rep/customers` - Plasiyer müşterileri
+- `GET /depot/{id}/draft` - Depo draft
+- `POST/GET/PATCH/DELETE /customers/{id}/working-copy` - Working copy CRUD
+- `GET /products` - Ürün listesi
+- `GET /multipliers` - Çarpanlar
+- `GET /rollup/sales-rep/{id}` - Plasiyer rollup
+- `GET /rollup/depot/{id}` - Depo rollup
+- `GET /rollup/production` - Üretim rollup
+
+### Batch Jobs
+- `/app/backend/scripts/batch_jobs.py`
+  - `--job=multipliers` - Haftalık çarpan hesaplama (Her Pazartesi 00:00)
+  - `--job=passivation` - K=3 pasifleştirme kontrolü (Her gün 01:00)
+  - `--job=cleanup` - Rollup temizliği (Her gün 02:00)
+  - `--job=daily_totals` - Günlük toplamlar güncelleme
+
+### Veri Migrasyonu
+- `/app/backend/scripts/migrate_to_draft_engine.py`
+- sf_ koleksiyonlarından de_ koleksiyonlarına migrasyon tamamlandı
+- 208 teslimat, 1876 customer_product_state oluşturuldu
 
 ### Frontend
-- Yeni "Akıllı Sipariş" sekmesi PlasiyerDashboard'a eklendi
-- `/components/plasiyer/DraftEnginePage.js` - Model B açıklama kartı, tarih seçici, müşteri listesi, sipariş listesi
-- `/services/draftEngineApi.js` - Draft Engine API servisi
+- `DraftEnginePage.js` - Akıllı Sipariş sayfası
+- `draftEngineApi.js` - API service
+- PlasiyerDashboard'a "Akıllı Sipariş" sekmesi eklendi
 
-## Tamamlanan Özellikler
-- [x] Temel sistem yapısı (Backend + Frontend + DB)
-- [x] MODEL B tüketim hesaplama
-- [x] Günlük tüketim hesaplama ve sf_daily_consumption koleksiyonu
-- [x] 25 maddelik PRD implementasyonu (42 test senaryosu %100 başarılı)
-- [x] Müşteri dashboard yeniden tasarımı
-- [x] Ürünler sayfası
-- [x] Taslak sıralaması (tüketim miktarına göre)
-- [x] Önerilen miktar formülü düzeltmesi
-- [x] Sipariş son teslim geri sayım sayacı
-- [x] Sipariş sayfası yeniden tasarımı
-- [x] Plasiyer paneline normal Plasiyer sekmeleri eklendi
-- [x] Plasiyer paneli tamamen yeniden tasarlandı
-- [x] Müşteri panelinden "Ürünler" sekmesi kaldırıldı
-- [x] Plasiyer Rut sayfasına harita entegrasyonu eklendi
-- [x] Plasiyer Depo Sipariş Taslağı özelliği eklendi
-- [x] Admin paneli Depo Siparişleri sayfası eklendi
-- [x] Gerçek GPS koordinatları entegrasyonu
-- [x] Dosya Konsolidasyonu (Şeftali → Dağıtım)
-- [x] **Kod Refactoring ve OOP Düzenlemesi (19 Şubat 2026)**
-  - Büyük dosyalar modüler bileşenlere ayrıldı
-  - PlasiyerDashboard: 1065 → 357 satır (%66 küçültme)
-  - CustomerDashboard: 423 → 375 satır
-  - AdminDashboard: 447 → 346 satır
-  - Yeni modüler bileşenler:
-    - `/components/plasiyer/RutPage.js` - Harita ve rut görünümü
-    - `/components/plasiyer/WarehouseDraftPage.js` - Depo sipariş taslağı
-    - `/components/plasiyer/CustomerCard.js` - Müşteri kartı
-    - `/components/plasiyer/OrdersPage.js` - Sipariş listesi
-    - `/components/plasiyer/CreateDeliveryForm.js` - Teslimat formu
-  - Ortak UI bileşenleri `/components/ui/DesignSystem.js` altında toplandı
-- [x] **Plasiyer Müşteri Kartları (23 Şubat 2026)**
-  - Backend'de yeni `/api/seftali/sales/customers/summary` endpoint'i
-  - Müşteri kartlarında özet veriler: bekleyen sipariş, vadesi geçmiş fatura, son sipariş tarihi
-  - Özet istatistik kartları: Toplam Müşteri, Bekleyen Sipariş, Vadesi Geçmiş, 7+ Gün Sipariş Yok
-  - Sıralama dropdown: İsme Göre, Bekleyen Siparişler, Vadesi Geçenler, Son Sipariş Tarihi
-  - Müşteri Detay Modal: bilgiler, bekleyen siparişler, geçmiş faturalar
-  - Telefon arama ve WhatsApp mesaj entegrasyonu
+---
 
-## Temel Felsefe
-- Sistem deterministiktir (AI yok, otomatik siparis yok)
-- Tuketim sadece delivery accepted ile guncellenir
-- Stock declaration base tuketimi degistirmez
-- Sistem sade kalmalidir
+## Önceki Tamamlanan Özellikler
+
+### Plasiyer Müşteri Yönetimi (23 Şubat 2026)
+- [x] Müşteri kartları data-rich görünüm
+- [x] Mobil uyumlu tabbed modal (Bilgiler, Tüketim, Teslimatlar, Mesajlar)
+- [x] Müşteri düzenleme formu
+
+### Kampanya Sistemi (23 Şubat 2026)
+- [x] İki kampanya türü: Miktar İndirimi, Hediyeli
+- [x] Admin kampanya yönetimi
+- [x] Plasiyer kampanya görüntüleme
+
+### Depo Sipariş Taslağı (23 Şubat 2026)
+- [x] Eski warehouse draft (sf_ tabanlı)
+- [x] Koli yuvarlaması
+- [x] Müşteri detayları
+
+---
 
 ## Tech Stack
 - **Backend:** FastAPI (Python), MongoDB (motor async driver)
-- **Frontend:** React, Tailwind CSS
+- **Frontend:** React, Tailwind CSS, Shadcn/UI
 - **Auth:** JWT with role-based access
-- **DB:** MongoDB with sf_ prefixed collections
-
-## Roller
-1. **Customer** (mobil oncelikli) - siparis taslagi, teslimat onayi, stok bildirimi, sapma yonetimi
-2. **Salesperson** (sales_rep/sales_agent - tablet) - teslimat olusturma, siparis onaylama
-3. **Admin** (desktop, salt okunur) - metrikler, sapma listesi
-
-## Tuketim Modeli (MODEL B)
-```
-consumed = previous_delivery_qty
-daily_avg_base = previous_delivery_qty / days_between_deliveries
-```
-- Yeni delivery qty tuketim hesabina girmez, yeni referans olur
-- Delivery accepted -> tum hesap pipeline calisir
-- Delivery rejected -> yok sayilir
-
-## Spike Kurali
-- spike_ratio >= 3 ise major spike
-- Spike son 7 gun icinde ise draft'ta avg_effective=spike kullanilir
-- Base daily_avg degismez
-- Delivery accepted gelince spike resetlenir
-
-## DB Koleksiyonlari
-1. sf_customers - Musteri ve rota plani
-2. sf_products - Urun katalogu
-3. sf_deliveries - Teslimatlar (pending/accepted/rejected)
-4. sf_stock_declarations - Stok beyanlari
-5. sf_consumption_stats - Tuketim istatistikleri (musteri+urun bazinda tek kayit)
-6. sf_system_drafts - Otomatik taslaklar (musteri basina tek)
-7. sf_working_copies - Calisma kopyalari
-8. sf_orders - Siparisler
-9. sf_variance_events - Tuketim sapma olaylari
-10. sf_audit_events - Denetim olaylari
-
-## API Endpointleri
-### Customer (/api/seftali/customer/)
-- GET /draft, POST /working-copy/start, PATCH /working-copy/:id
-- POST /working-copy/:id/items, POST /working-copy/:id/submit
-- GET /deliveries/pending, POST /deliveries/:id/accept, POST /deliveries/:id/reject
-- POST /stock-declarations
-- GET /variance/pending, POST /variance/apply-reason-bulk, POST /variance/dismiss-bulk
-- GET /products, GET /profile
-
-### Sales (/api/seftali/sales/)
-- POST /deliveries, GET /deliveries, GET /orders
-- POST /orders/:id/approve, POST /orders/:id/request-edit
-- GET /customers, GET /products
-
-### Admin (/api/seftali/admin/)
-- GET /health/summary, GET /variance, GET /deliveries
-
-## Tamamlanan Ozellikler (18 Subat 2026)
-- [x] Backend servisleri (ConsumptionService, DraftService, VarianceService)
-- [x] 19 API endpoint (Customer: 14, Sales: 7, Admin: 3)
-- [x] Atomic pipeline'lar (delivery accept, stock declaration)
-- [x] Seed data (demo kullanicilar, urunler, teslimatlar)
-- [x] MongoDB indexleri
-- [x] Customer Dashboard (mobil-first, bottom nav, 5 sekme)
-- [x] Sales Dashboard (teslimat olusturma, siparis yonetimi)
-- [x] Admin Dashboard (metrikler, sapma tablosu)
-- [x] Edge-case validasyonlar (idempotency, qty kontrolleri)
-- [x] Turkce hata mesajlari
-- [x] %100 backend + frontend test basarisi
-- [x] 7 PDF fatura isleme (AILEM MARKET)
-- [x] UI birlestirme (eski modulleri yeni arayuze ekleme)
-- [x] Gecmis faturalar sekmesi (Faturalar tab)
-- [x] Excel tuketim verisi aktarimi (208 teslimat, 9 urun, 2024-2025)
-
-## Excel Import Detaylari (18 Subat 2026)
-- Dosya: haftalik_tuketim_dataseti_urun_adli.xlsx
-- Musteri: AILEM MARKET (32032404952)
-- 208 benzersiz tarih (2024-01-01 - 2025-12-25)
-- 9 urun: 200 ML AYRAN, 1000 ml AYRAN, 2000 ml AYRAN, 180 ml KAKAOLU SUT 6LI, 180 ml CILEKLI SUT 6LI, 180 ml YAGLI SUT 6LI, 750 GR T.YAGLI YOGURT, 500 GR T.YAGLI YOGURT, 600 GR KASAR PEYNIRI
-- Script: backend/import_excel_consumption.py
-- Tuketim istatistikleri MODEL B ile hesaplandi
+- **DB:** MongoDB with de_ prefixed collections (Draft Engine)
 
 ## Demo Kullanıcılar
-- Müşteri: sf_musteri / musteri123
-- Müşteri 2: sf_musteri2 / musteri123
-- Satıcı: sf_satici / satici123
-- Plasiyer: sf_plasiyer / plasiyer123
-- Admin: admin / admin123
+- Müşteri: `sf_musteri` / `musteri123`
+- Plasiyer: `sf_plasiyer` / `plasiyer123`
+- Admin: `admin` / `admin123`
+
+---
 
 ## Backlog / Gelecek Görevler
-- [ ] P1: Analizler modülünü geliştir (müşteri/admin)
-- [ ] P1: Bildirim sistemi ekle
-- [ ] P2: Admin raporlama modülü
-- [ ] P2: README ve API dokümantasyonu
-- [ ] P3: Production notları (replica set, transaction desteği)
 
-## Tamamlanan Refactoring (19 Şubat 2026)
-- [x] Frontend PlasiyerDashboard: 1065 → 357 satır (%66 küçültme)
-- [x] Frontend CustomerDashboard: 423 → 375 satır
-- [x] Frontend AdminDashboard: 447 → 346 satır
-- [x] Backend maintenance_routes.py: 744 satır → 6 modüler dosya
-  - equipment_routes.py (111 satır)
-  - task_routes.py (228 satır)
-  - schedule_routes.py (88 satır)
-  - spare_parts_routes.py (111 satır)
-  - dashboard_routes.py (185 satır)
-  - utils.py (33 satır)
+### P0 - Kritik
+- [ ] Frontend preview testi (UI doğrulama)
+- [ ] Gerçek teslimat akışı testi
 
-## Test Suite (18 Subat 2026)
-- Test dosyasi: backend/tests/test_seftali_rules.py
-- 42 test, tum kurallar R1-R25 dogrulanmistir
-- Calistirma: cd /app/backend && python tests/test_seftali_rules.py
-- T1: Ilk delivery accepted -> base.avg=0, draft olusur
-- T2: Ikinci delivery -> MODEL B (prev_qty/days)
-- T3: Stock S > D_last -> spike yok, base degismez
-- T4: Spike detection (ratio>=3) + variance
-- T5: Working copy deleted_by_delivery
-- T6: Idempotent accept (409)
-- T7: Order -> tuketim degismez
-- T8: Bulk variance reason -> recorded
+### P1 - Önemli
+- [ ] Cron job kurulumu (sistemd/crontab)
+- [ ] Kampanya "Siparişe Ekle" fonksiyonu
+- [ ] Mesajlar sekmesi implementasyonu
+- [ ] Admin kampanya formu iyileştirme
 
-## Kod Mimarisi (19 Şubat 2026)
+### P2 - İyileştirme
+- [ ] Analizler modülü
+- [ ] Bildirim sistemi
+- [ ] Admin raporlama
+
+---
+
+## Formüller Özeti
+
 ```
-/app/frontend/src/
-├── components/
-│   ├── plasiyer/
-│   │   ├── RutPage.js          # Harita + liste görünümü (289 satır)
-│   │   ├── WarehouseDraftPage.js  # Depo sipariş taslağı (297 satır)
-│   │   ├── CustomerCard.js     # Müşteri kartı (77 satır)
-│   │   ├── OrdersPage.js       # Sipariş listesi (87 satır)
-│   │   └── CreateDeliveryForm.js  # Teslimat formu (138 satır)
-│   ├── shared/
-│   │   ├── DraftView.js        # Sipariş taslağı
-│   │   ├── DeliveryApproval.js # Teslimat onayı
-│   │   └── ...                 # Diğer paylaşımlı bileşenler
-│   └── ui/
-│       └── DesignSystem.js     # Ortak UI bileşenleri (489 satır)
-├── pages/
-│   ├── PlasiyerDashboard.js    # Ana dashboard (357 satır)
-│   ├── CustomerDashboard.js    # Müşteri dashboard (375 satır)
-│   └── AdminDashboard.js       # Admin dashboard (346 satır)
-└── services/
-    └── seftaliApi.js           # API çağrıları
+# Model B - Interval Rate
+daily_rate_interval = prev_qty / days_between
 
-/app/backend/routes/
-├── maintenance/                 # Modüler bakım modülü (19 Şubat 2026)
-│   ├── __init__.py             # Router aggregator (22 satır)
-│   ├── utils.py                # Ortak yardımcı fonksiyonlar (33 satır)
-│   ├── equipment_routes.py     # Ekipman CRUD (111 satır)
-│   ├── task_routes.py          # Bakım görevleri (228 satır)
-│   ├── schedule_routes.py      # Bakım takvimi (88 satır)
-│   ├── spare_parts_routes.py   # Yedek parça talepleri (111 satır)
-│   └── dashboard_routes.py     # Dashboard & istatistikler (185 satır)
-└── seftali/
-    ├── customer_routes.py
-    ├── sales_routes.py
-    └── admin_routes.py
+# SMA-8 Rate
+rate_mt = avg(last 8 interval_rates)
+
+# Weekly Multiplier
+multiplier = clamp(week_avg / baseline_avg, 0.7, 1.8)
+
+# Final Rate
+rate_used = rate_mt × multiplier
+
+# Need Qty (Draft)
+need_qty = rate_used × days_to_next_route
+
+# Passivation (K=3)
+if days_since_last > (last_qty / rate_used) × 3:
+    is_active = false
 ```
 
-## Backend Kod Duzetmeleri (18 Subat 2026)
-- EPSILON: 0.001 -> 1e-6 (spec uyumu)
-- Spike hesabi: base_avg=0 iken de epsilon ile hesaplama (R10)
-- Draft siralama: risk -> estimated_finish_at -> product_id (R19)
+## Maturity Modes
+| Mode | Condition | Behavior |
+|------|-----------|----------|
+| MODE 1 (FIRST-TIME) | delivery_count ≤ 1 | No rate, no draft |
+| MODE 2 (YOUNG) | 2+ deliveries, <8 intervals or <365 days | Compute rate_mt |
+| MODE 3 (MATURE) | ≥8 intervals AND ≥365 days | Full SMA-8 |
