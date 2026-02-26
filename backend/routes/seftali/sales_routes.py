@@ -9,6 +9,7 @@ from services.seftali.utils import (
     COL_CUSTOMERS, COL_PRODUCTS, COL_DELIVERIES, COL_ORDERS, std_resp,
     get_product_by_id,
 )
+from services.seftali.draft_service import DraftService
 
 router = APIRouter(prefix="/sales", tags=["Seftali-Sales"])
 
