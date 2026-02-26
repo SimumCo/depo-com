@@ -143,8 +143,6 @@ const CustomerDashboard = () => {
     { id: 'draft', label: 'Siparis', icon: ShoppingCart },
     { id: 'deliveries', label: 'Teslimat Onayi', icon: Truck, badge: stats.pendingDeliveries },
     { id: 'history', label: 'Faturalar', icon: FileText },
-    { id: 'stock', label: 'Stok Bildirimi', icon: Box },
-    { id: 'variance', label: 'Tuketim Sapmalari', icon: TrendingUp, badge: stats.openVariance },
     { id: 'consumption', label: 'Analizler', icon: BarChart3 },
     { id: 'campaigns', label: 'Kampanyalar', icon: Tag },
     { id: 'favorites', label: 'Favorilerim', icon: Heart },
