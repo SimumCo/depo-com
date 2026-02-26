@@ -1,9 +1,45 @@
 # Dağıtım Yönetim Sistemi PRD
 
-## Son Güncelleme: 23 Şubat 2026
+## Son Güncelleme: 26 Şubat 2026
 
 ## Proje Özeti
 Yoğurt/ayran dağıtımı yapan bir firmada müşterilerin tüketimini delivery bazlı hesaplayan ve rota gününe göre sipariş taslağı oluşturan deterministik bir sistem.
+
+## ⚡ YENİ: Draft Engine v2.0 (26 Şubat 2026)
+Kullanıcı tarafından sağlanan 3 detaylı prompt'a dayalı olarak tamamen yeni bir deterministik draft motoru implemente edildi:
+
+### Temel Özellikler
+- **Model B Implicit Consumption Estimation**: Teslimatlar arası günlük tüketim oranı hesaplama
+- **SMA-8 Rate Calculation**: Son 8 interval'in ortalaması (rate_mt)
+- **3 Olgunluk Modu**: FIRST-TIME (≤1 teslimat), YOUNG (2-8 interval), MATURE (≥8 interval + ≥365 gün)
+- **Weekly Multiplier System**: Depot×Segment×Product bazında haftalık çarpan (0.7-1.8 clamp)
+- **K=3 Passivation Rule**: Beklenen tükenme süresi × 3 geçtiyse ürün pasifleşir
+- **Delta-Based Roll-up**: Hiyerarşik toplama (Müşteri → Plasiyer → Depo → Üretim)
+- **Working Copy Management**: Teslimat sonrası otomatik silme
+
+### Yeni Koleksiyonlar (de_ prefix)
+- `de_customers`, `de_products`, `de_routes`
+- `de_deliveries`, `de_delivery_items`
+- `de_customer_product_state` (Ana state tablosu)
+- `de_interval_ledger`, `de_daily_ledger`
+- `de_weekly_product_multipliers`, `de_depot_segment_product_daily_totals`
+- `de_sales_rep_draft_totals`, `de_depot_draft_totals`, `de_production_draft_totals`
+- `de_working_copies`, `de_processed_events`
+
+### Yeni API Endpoint'leri
+- `POST /api/draft-engine/deliveries` - Teslimat oluştur ve state güncelle
+- `GET /api/draft-engine/customers/{id}/draft` - Müşteri draft'ı
+- `GET /api/draft-engine/customers/{id}/state` - Müşteri ürün state'leri
+- `GET /api/draft-engine/sales-rep/draft` - Plasiyer birleştirilmiş draft
+- `GET /api/draft-engine/depot/{id}/draft` - Depo draft
+- `POST/GET/PATCH/DELETE /api/draft-engine/customers/{id}/working-copy`
+- `POST /api/draft-engine/setup/indexes`, `POST /api/draft-engine/setup/seed`
+- `POST /api/draft-engine/setup/run-multiplier-batch`
+
+### Frontend
+- Yeni "Akıllı Sipariş" sekmesi PlasiyerDashboard'a eklendi
+- `/components/plasiyer/DraftEnginePage.js` - Model B açıklama kartı, tarih seçici, müşteri listesi, sipariş listesi
+- `/services/draftEngineApi.js` - Draft Engine API servisi
 
 ## Tamamlanan Özellikler
 - [x] Temel sistem yapısı (Backend + Frontend + DB)
