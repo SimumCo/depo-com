@@ -116,12 +116,23 @@ async def get_draft(current_user=Depends(require_role([UserRole.CUSTOMER]))):
     draft = await db[COL_SYSTEM_DRAFTS].find_one({"customer_id": cust["id"]}, {"_id": 0})
     if not draft:
         return std_resp(True, {"customer_id": cust["id"], "items": [], "generated_from": None}, "Henuz taslak yok")
-    # enrich product names
+    
+    # Müşterinin son teslimatını bul
+    last_delivery = await db[COL_DELIVERIES].find_one(
+        {"customer_id": cust["id"], "acceptance_status": "accepted"},
+        {"_id": 0, "items": 1},
+        sort=[("delivered_at", -1)]
+    )
+    last_delivery_items = {it["product_id"]: it.get("qty", 0) for it in (last_delivery.get("items", []) if last_delivery else [])}
+    
+    # enrich product names + son teslimat miktarı
     for it in draft.get("items", []):
         p = await db[COL_PRODUCTS].find_one({"id": it["product_id"]}, {"_id": 0, "name": 1, "code": 1})
         if p:
             it["product_name"] = p.get("name", "")
             it["product_code"] = p.get("code", "")
+        # Son teslimat miktarını ekle
+        it["last_delivery_qty"] = last_delivery_items.get(it["product_id"], 0)
     return std_resp(True, draft)
 
 
