@@ -146,9 +146,9 @@ async def list_orders(
         if c:
             o["customer_name"] = c["name"]
         for it in o.get("items", []):
-            p = await db[COL_PRODUCTS].find_one({"id": it["product_id"]}, {"_id": 0, "name": 1})
+            p = await get_product_by_id(db, it["product_id"])
             if p:
-                it["product_name"] = p["name"]
+                it["product_name"] = p.get("name", "")
     return std_resp(True, items)
 
 
