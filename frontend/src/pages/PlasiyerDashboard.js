@@ -21,6 +21,7 @@ import {
 // Import Plasiyer Page Components
 import RutPage from '../components/plasiyer/RutPage';
 import WarehouseDraftPage from '../components/plasiyer/WarehouseDraftPage';
+import DraftEnginePage from '../components/plasiyer/DraftEnginePage';
 import CustomerCard, { CustomerDetailModal } from '../components/plasiyer/CustomerCard';
 import OrdersPage from '../components/plasiyer/OrdersPage';
 import CreateDeliveryForm from '../components/plasiyer/CreateDeliveryForm';
