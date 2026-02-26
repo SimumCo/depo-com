@@ -553,7 +553,7 @@ async def daily_consumption(
     for it in items:
         pid = it["product_id"]
         if pid not in prod_cache:
-            p = await db[COL_PRODUCTS].find_one({"id": pid}, {"_id": 0, "name": 1, "code": 1})
+            p = await get_product_by_id(db, pid)
             prod_cache[pid] = p
         p = prod_cache.get(pid)
         if p:
