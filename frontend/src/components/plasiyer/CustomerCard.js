@@ -548,13 +548,165 @@ export const CustomerDetailModal = ({
 
           {/* TAB: Mesajlar */}
           {activeTab === 'messages' && (
-            <div className="text-center py-8">
-              <MessageSquare className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-              <p className="text-sm text-slate-500 mb-2">Mesaj özelliği yakında eklenecek</p>
-              <p className="text-xs text-slate-400">Müşteri ile iletişim geçmişiniz burada görünecek</p>
-            </div>
+            <MessagesTab customerId={customer.id} customerName={customer.name} />
           )}
         </div>
+      </div>
+    </div>
+  );
+};
+
+// Mesajlar Tab Bileşeni
+const MessagesTab = ({ customerId, customerName }) => {
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+
+  // Örnek mesajlar (gerçek API implemente edilene kadar)
+  useEffect(() => {
+    // Simüle edilmiş mesaj geçmişi
+    const mockMessages = [
+      {
+        id: '1',
+        direction: 'outgoing',
+        text: 'Merhaba, yarınki teslimatınız için hatırlatma yapmak istedim.',
+        timestamp: new Date(Date.now() - 86400000).toISOString(),
+        status: 'delivered'
+      },
+      {
+        id: '2',
+        direction: 'incoming',
+        text: 'Teşekkürler, bekliyoruz. Ayran siparişimizi 50 adet artırabilir misiniz?',
+        timestamp: new Date(Date.now() - 82800000).toISOString(),
+        status: 'read'
+      },
+      {
+        id: '3',
+        direction: 'outgoing',
+        text: 'Tabii, güncellendi. Yarın sabah 10:00 civarı orada olacağız.',
+        timestamp: new Date(Date.now() - 79200000).toISOString(),
+        status: 'delivered'
+      }
+    ];
+    
+    setTimeout(() => {
+      setMessages(mockMessages);
+      setLoading(false);
+    }, 500);
+  }, [customerId]);
+
+  const handleSendMessage = async () => {
+    if (!newMessage.trim()) return;
+    
+    setSending(true);
+    
+    // Simüle edilmiş gönderim
+    setTimeout(() => {
+      const newMsg = {
+        id: Date.now().toString(),
+        direction: 'outgoing',
+        text: newMessage,
+        timestamp: new Date().toISOString(),
+        status: 'sent'
+      };
+      
+      setMessages(prev => [...prev, newMsg]);
+      setNewMessage('');
+      setSending(false);
+      toast.success('Mesaj gönderildi');
+    }, 500);
+  };
+
+  const formatTime = (isoString) => {
+    const date = new Date(isoString);
+    const now = new Date();
+    const diff = now - date;
+    
+    if (diff < 86400000) {
+      return date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+    } else if (diff < 172800000) {
+      return 'Dün ' + date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+    } else {
+      return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="text-center py-8">
+        <div className="animate-spin w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+        <p className="text-sm text-slate-500">Mesajlar yükleniyor...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-80">
+      {/* Mesaj Listesi */}
+      <div className="flex-1 overflow-y-auto space-y-3 mb-3 pr-1">
+        {messages.length === 0 ? (
+          <div className="text-center py-8">
+            <MessageSquare className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+            <p className="text-sm text-slate-500 mb-2">Henüz mesaj yok</p>
+            <p className="text-xs text-slate-400">İlk mesajınızı gönderin</p>
+          </div>
+        ) : (
+          messages.map(msg => (
+            <div 
+              key={msg.id}
+              className={`flex ${msg.direction === 'outgoing' ? 'justify-end' : 'justify-start'}`}
+            >
+              <div 
+                className={`max-w-[80%] rounded-2xl px-4 py-2 ${
+                  msg.direction === 'outgoing' 
+                    ? 'bg-orange-500 text-white rounded-br-md' 
+                    : 'bg-slate-100 text-slate-800 rounded-bl-md'
+                }`}
+              >
+                <p className="text-sm">{msg.text}</p>
+                <p className={`text-[10px] mt-1 ${
+                  msg.direction === 'outgoing' ? 'text-orange-100' : 'text-slate-400'
+                }`}>
+                  {formatTime(msg.timestamp)}
+                  {msg.direction === 'outgoing' && (
+                    <span className="ml-1">
+                      {msg.status === 'delivered' ? '✓✓' : msg.status === 'read' ? '✓✓' : '✓'}
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Mesaj Gönderme */}
+      <div className="border-t border-slate-200 pt-3">
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+            placeholder="Mesajınızı yazın..."
+            className="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-orange-400"
+          />
+          <button
+            onClick={handleSendMessage}
+            disabled={sending || !newMessage.trim()}
+            className={`px-4 py-2 rounded-xl font-medium text-sm ${
+              sending || !newMessage.trim()
+                ? 'bg-slate-100 text-slate-400'
+                : 'bg-orange-500 text-white hover:bg-orange-600'
+            }`}
+          >
+            {sending ? '...' : 'Gönder'}
+          </button>
+        </div>
+        <p className="text-[10px] text-slate-400 mt-2 text-center">
+          Not: Mesajlar şu an simüle edilmektedir. Gerçek SMS/WhatsApp entegrasyonu yakında.
+        </p>
       </div>
     </div>
   );
