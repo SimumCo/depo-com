@@ -248,6 +248,8 @@ const PlasiyerDashboard = () => {
         );
       case 'rut':
         return <RutPage todayCustomers={todayCustomers} />;
+      case 'route-order':
+        return <RouteOrderPage />;
       case 'warehouse':
         return <WarehouseDraftPage />;
       case 'draft-engine':
