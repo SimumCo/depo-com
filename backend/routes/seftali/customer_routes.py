@@ -8,11 +8,57 @@ from services.seftali.core import (
     gen_id, now_utc, to_iso, std_resp, get_product_by_id,
     COL_CUSTOMERS, COL_PRODUCTS, COL_DELIVERIES, COL_ORDERS,
     COL_SYSTEM_DRAFTS, COL_WORKING_COPIES, COL_STOCK_DECLARATIONS,
-    COL_AUDIT_EVENTS
+    COL_AUDIT_EVENTS, COL_VARIANCE_EVENTS
 )
 from services.seftali.draft_engine import DraftEngine
 
 router = APIRouter(prefix="/customer", tags=["Seftali-Customer"])
+
+
+# ---------- Service Stubs (simplified for refactored system) ----------
+class ConsumptionService:
+    """Simplified consumption service - logic moved to Draft Engine 2.0"""
+    @classmethod
+    async def apply_delivery_accepted(cls, customer_id: str, delivery: dict):
+        """No-op: Draft Engine 2.0 handles consumption via interval ledger"""
+        pass
+    
+    @classmethod
+    async def apply_stock_declaration(cls, customer_id: str, stock_decl: dict):
+        """No-op: Returns empty spike events list"""
+        return None, []
+
+
+class DraftService:
+    """Simplified draft service - logic moved to Draft Engine 2.0"""
+    @classmethod
+    async def update_draft_for_customer(cls, customer_id: str, product_ids: List[str], trigger: str):
+        """Trigger draft recalculation using Draft Engine 2.0"""
+        await DraftEngine.calculate(customer_id)
+
+
+class VarianceService:
+    """Simplified variance service"""
+    @classmethod
+    async def create_variance_for_spike(cls, customer_id: str, product_id: str, 
+                                        stock_decl_id: str, spike_ratio: float,
+                                        observed_daily: float, base_avg: float):
+        """Create variance event for spike detection"""
+        from services.seftali.core import gen_id, to_iso, now_utc
+        event = {
+            "id": gen_id(),
+            "customer_id": customer_id,
+            "product_id": product_id,
+            "stock_decl_id": stock_decl_id,
+            "spike_ratio": spike_ratio,
+            "observed_daily": observed_daily,
+            "base_avg": base_avg,
+            "status": "needs_reason",
+            "detected_at": to_iso(now_utc()),
+            "created_at": to_iso(now_utc()),
+            "updated_at": to_iso(now_utc())
+        }
+        await db[COL_VARIANCE_EVENTS].insert_one(event)
 
 
 # ---------- helpers ----------
