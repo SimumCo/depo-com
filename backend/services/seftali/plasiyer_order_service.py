@@ -177,10 +177,10 @@ class PlasiyerOrderService:
         # 4. Plasiyer stoğunu al
         plasiyer_stock = await PlasiyerOrderService.get_plasiyer_stock(salesperson_id)
         
-        # 5. Ürün bilgilerini al
-        products_cursor = db["products"].find({}, {"_id": 0, "product_id": 1, "name": 1})
+        # 5. Ürün bilgilerini al (koli boyutu dahil)
+        products_cursor = db["products"].find({}, {"_id": 0, "product_id": 1, "name": 1, "case_size": 1, "case_name": 1})
         products_list = await products_cursor.to_list(length=500)
-        product_names = {p["product_id"]: p["name"] for p in products_list}
+        product_info = {p["product_id"]: p for p in products_list}
         
         # 6. Hesaplama
         customer_details = []
