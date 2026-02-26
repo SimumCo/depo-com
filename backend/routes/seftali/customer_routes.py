@@ -124,8 +124,8 @@ async def get_draft(current_user=Depends(require_role([UserRole.CUSTOMER]))):
     for it in draft.get("items", []):
         product_id = it["product_id"]
         
-        # Ürün bilgisi
-        p = await db[COL_PRODUCTS].find_one({"id": product_id}, {"_id": 0, "name": 1, "code": 1})
+        # Ürün bilgisi - yeni helper ile hem UUID hem temiz ID destekler
+        p = await get_product_by_id(db, product_id)
         if not p:
             # Ürün bulunamadı, bu item'ı atla
             continue
