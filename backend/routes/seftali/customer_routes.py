@@ -108,7 +108,6 @@ class BulkDismissBody(BaseModel):
 # ===========================
 # 1. GET /draft
 # ===========================
-from services.seftali.draft_service import DraftService
 
 @router.get("/draft")
 async def get_draft(current_user=Depends(require_role([UserRole.CUSTOMER]))):
