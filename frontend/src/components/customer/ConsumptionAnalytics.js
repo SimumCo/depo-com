@@ -193,7 +193,8 @@ const ConsumptionAnalytics = () => {
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
             <XAxis type="number" tick={{ fontSize: 10 }} stroke="#94a3b8" />
             <YAxis type="category" dataKey="product_name" tick={{ fontSize: 10 }} stroke="#94a3b8" width={140} />
-            <Tooltip formatter={(v) => [`${v} adet/gun`, 'Ort. Tuketim']}
+            <Tooltip 
+              formatter={(v) => [v >= 1 ? `${v.toFixed(1)} adet/gün` : formatDailyRate(v), 'Ort. Tüketim']}
               contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0' }} />
             <Bar dataKey="avg_daily" fill="#0284c7" radius={[0, 4, 4, 0]} />
           </BarChart>
