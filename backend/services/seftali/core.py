@@ -44,6 +44,9 @@ COL_DE_STATE = "de_customer_product_state"
 COL_DE_LEDGER = "de_interval_ledger"
 COL_DE_MULTIPLIERS = "de_weekly_product_multipliers"
 
+# Variance collections
+COL_VARIANCE_EVENTS = "sf_variance_events"
+
 
 # =============================================================================
 # DATE/TIME UTILITIES
