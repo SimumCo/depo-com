@@ -251,7 +251,7 @@ async def update_customer(customer_id: str, body: UpdateCustomerBody, current_us
     
     # Rut günleri değiştiyse müşterinin draft'ını yeniden hesapla
     if body.route_days is not None:
-        await DraftService.update_draft_for_customer(customer_id, [], "route_change")
+        await DraftEngine.save(customer_id, "route_change")
     
     # Güncellenmiş müşteriyi döndür
     updated_customer = await db[COL_CUSTOMERS].find_one({"id": customer_id}, {"_id": 0})
