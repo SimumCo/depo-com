@@ -27,6 +27,7 @@ import OrdersPage from '../components/plasiyer/OrdersPage';
 import CreateDeliveryForm from '../components/plasiyer/CreateDeliveryForm';
 import StockPage from '../components/plasiyer/StockPage';
 import CampaignsPage from '../components/plasiyer/CampaignsPage';
+import RouteOrderPage from '../components/plasiyer/RouteOrderPage';
 
 // Day translations
 const dayTranslations = {
