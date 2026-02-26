@@ -9,6 +9,7 @@ from services.seftali.utils import (
     COL_CUSTOMERS, COL_PRODUCTS, COL_DELIVERIES, COL_STOCK_DECLARATIONS,
     COL_CONSUMPTION_STATS, COL_SYSTEM_DRAFTS, COL_WORKING_COPIES,
     COL_ORDERS, COL_VARIANCE_EVENTS, COL_AUDIT_EVENTS, std_resp,
+    get_product_by_id,
 )
 from services.seftali.consumption_service import ConsumptionService
 from services.seftali.draft_service import DraftService
