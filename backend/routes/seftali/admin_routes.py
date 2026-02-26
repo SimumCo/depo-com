@@ -330,3 +330,66 @@ async def delete_campaign(
         raise HTTPException(404, "Kampanya bulunamadı")
     
     return std_resp(True, {"id": campaign_id}, "Kampanya silindi")
+
+
+# ===========================
+# SİSTEM AYARLARI
+# ===========================
+from pydantic import BaseModel
+from datetime import datetime, timezone
+
+class SystemSettingsBody(BaseModel):
+    order_cutoff_hour: Optional[int] = None
+    order_cutoff_minute: Optional[int] = None
+    auto_draft_enabled: Optional[bool] = None
+
+COL_SETTINGS = "sf_system_settings"
+
+@router.get("/settings")
+async def get_system_settings(current_user=Depends(require_role([UserRole.ADMIN]))):
+    """Sistem ayarlarını getir"""
+    settings = await db[COL_SETTINGS].find_one({"type": "order_settings"}, {"_id": 0})
+    
+    if not settings:
+        # Varsayılan ayarlar
+        settings = {
+            "type": "order_settings",
+            "order_cutoff_hour": 16,
+            "order_cutoff_minute": 30,
+            "auto_draft_enabled": True,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db[COL_SETTINGS].insert_one(settings)
+    
+    return std_resp(True, settings)
+
+@router.patch("/settings")
+async def update_system_settings(
+    body: SystemSettingsBody,
+    current_user=Depends(require_role([UserRole.ADMIN]))
+):
+    """Sistem ayarlarını güncelle"""
+    update_data = {}
+    
+    if body.order_cutoff_hour is not None:
+        if 0 <= body.order_cutoff_hour <= 23:
+            update_data["order_cutoff_hour"] = body.order_cutoff_hour
+    
+    if body.order_cutoff_minute is not None:
+        if 0 <= body.order_cutoff_minute <= 59:
+            update_data["order_cutoff_minute"] = body.order_cutoff_minute
+    
+    if body.auto_draft_enabled is not None:
+        update_data["auto_draft_enabled"] = body.auto_draft_enabled
+    
+    if update_data:
+        update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+        await db[COL_SETTINGS].update_one(
+            {"type": "order_settings"},
+            {"$set": update_data},
+            upsert=True
+        )
+    
+    settings = await db[COL_SETTINGS].find_one({"type": "order_settings"}, {"_id": 0})
+    return std_resp(True, settings, "Ayarlar güncellendi")
+
