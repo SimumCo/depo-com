@@ -117,31 +117,36 @@ async def get_draft(current_user=Depends(require_role([UserRole.CUSTOMER]))):
     if not draft:
         return std_resp(True, {"customer_id": cust["id"], "items": [], "generated_from": None}, "Henuz taslak yok")
     
-    # Müşterinin son kabul edilmiş teslimatını bul
-    last_delivery_cursor = db[COL_DELIVERIES].find(
-        {"customer_id": cust["id"], "acceptance_status": "accepted"},
-        {"_id": 0, "items": 1, "delivered_at": 1}
-    ).sort("delivered_at", -1).limit(1)
-    
-    last_deliveries = await last_delivery_cursor.to_list(length=1)
-    last_delivery = last_deliveries[0] if last_deliveries else None
-    
-    last_delivery_items = {}
-    if last_delivery and last_delivery.get("items"):
-        for it in last_delivery["items"]:
-            pid = it.get("product_id")
-            qty = it.get("qty", 0)
-            if pid:
-                last_delivery_items[pid] = qty
-    
-    # enrich product names + son teslimat miktarı
+    # Her ürün için son alış miktarını bul
     for it in draft.get("items", []):
-        p = await db[COL_PRODUCTS].find_one({"id": it["product_id"]}, {"_id": 0, "name": 1, "code": 1})
+        product_id = it["product_id"]
+        
+        # Ürün bilgisi
+        p = await db[COL_PRODUCTS].find_one({"id": product_id}, {"_id": 0, "name": 1, "code": 1})
         if p:
             it["product_name"] = p.get("name", "")
             it["product_code"] = p.get("code", "")
-        # Son teslimat miktarını ekle
-        it["last_delivery_qty"] = last_delivery_items.get(it["product_id"], 0)
+        
+        # Bu ürünün son teslimat miktarını bul
+        # Aggregation ile bu ürünü içeren son kabul edilmiş teslimatı bul
+        pipeline = [
+            {
+                "$match": {
+                    "customer_id": cust["id"],
+                    "acceptance_status": "accepted",
+                    "items.product_id": product_id
+                }
+            },
+            {"$sort": {"delivered_at": -1}},
+            {"$limit": 1},
+            {"$unwind": "$items"},
+            {"$match": {"items.product_id": product_id}},
+            {"$project": {"qty": "$items.qty"}}
+        ]
+        
+        result = await db[COL_DELIVERIES].aggregate(pipeline).to_list(length=1)
+        it["last_delivery_qty"] = result[0]["qty"] if result else 0
+    
     return std_resp(True, draft)
 
 
