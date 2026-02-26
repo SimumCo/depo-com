@@ -69,36 +69,34 @@ def days_between_consecutive_routes(route_days):
     """
     Sonraki teslimat ile ondan sonraki teslimat arasindaki gun sayisi.
     Ornek: Rota Pazartesi/Cuma → sonraki Cuma ise, ondan sonraki Pazartesi = 3 gun
+    
+    Eger ardisik gunler varsa (Pzt,Sal,Car...) minimum aralik 1 gun olur.
     """
     if not route_days:
         return 7
-    today = now_utc().weekday()
+    
     route_weekdays = sorted(set(DAY_MAP.get(d, 0) for d in route_days))
-
+    
     if len(route_weekdays) < 2:
         return 7
-
-    # Find next route day
-    next_rd = None
-    min_diff = 8
-    for rd in route_weekdays:
-        diff = (rd - today) % 7
-        if diff == 0:
-            diff = 7
-        if diff < min_diff:
-            min_diff = diff
-            next_rd = rd
-
-    # Find the route day AFTER next_rd
-    after_diff = 8
-    for rd in route_weekdays:
-        diff = (rd - next_rd) % 7
-        if diff == 0:
-            diff = 7
-        if diff < after_diff:
-            after_diff = diff
-
-    return after_diff
+    
+    # Her ardışık rota günü arasındaki farkı hesapla
+    # En küçük farkı bul (minimum supply days)
+    min_gap = 7
+    for i in range(len(route_weekdays)):
+        current = route_weekdays[i]
+        next_idx = (i + 1) % len(route_weekdays)
+        next_day = route_weekdays[next_idx]
+        
+        # Farkı hesapla (wrap-around için mod kullan)
+        gap = (next_day - current) % 7
+        if gap == 0:
+            gap = 7  # Aynı gün olamaz, bir hafta sonrasına
+        
+        if gap < min_gap:
+            min_gap = gap
+    
+    return min_gap
 
 
 def next_route_date(route_days):
