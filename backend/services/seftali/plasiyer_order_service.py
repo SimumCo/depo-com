@@ -226,24 +226,43 @@ class PlasiyerOrderService:
                     "items": items
                 })
         
-        # 7. Final hesaplama (toplam ihtiyaç - plasiyer stoğu)
+        # 7. Final hesaplama (toplam ihtiyaç - plasiyer stoğu + koli yuvarlama)
+        import math
         final_totals = {}
         total_items_to_order = 0
+        total_cases_to_order = 0
         
         for pid, data in totals.items():
             total_need = data["orders_qty"] + data["drafts_qty"]
             stock = plasiyer_stock.get(pid, 0)
-            to_order = max(0, total_need - stock)
+            to_order_raw = max(0, total_need - stock)
+            
+            # Koli boyutuna göre yuvarla
+            pinfo = product_info.get(pid, {})
+            case_size = pinfo.get("case_size", 1)
+            case_name = pinfo.get("case_name", "Tekli")
+            
+            if case_size > 1 and to_order_raw > 0:
+                cases_needed = math.ceil(to_order_raw / case_size)
+                to_order = cases_needed * case_size
+            else:
+                cases_needed = to_order_raw
+                to_order = to_order_raw
             
             final_totals[pid] = {
-                "name": product_names.get(pid, pid),
+                "name": pinfo.get("name", pid),
                 "orders_qty": data["orders_qty"],
                 "drafts_qty": data["drafts_qty"],
                 "total_need": total_need,
                 "plasiyer_stock": stock,
-                "to_order": to_order
+                "to_order_raw": to_order_raw,
+                "to_order": to_order,
+                "case_size": case_size,
+                "case_name": case_name,
+                "cases_needed": cases_needed
             }
             total_items_to_order += to_order
+            total_cases_to_order += cases_needed if case_size > 1 else 0
         
         return {
             "salesperson_id": salesperson_id,
