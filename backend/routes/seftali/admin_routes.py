@@ -4,7 +4,7 @@ from models.user import UserRole
 from utils.auth import require_role
 from config.database import db
 from services.seftali.core import (
-    COL_DELIVERIES, COL_CUSTOMERS, COL_PRODUCTS, std_resp
+    COL_DELIVERIES, COL_CUSTOMERS, COL_PRODUCTS, COL_VARIANCE_EVENTS, std_resp
 )
 
 router = APIRouter(prefix="/admin", tags=["Seftali-Admin"])
