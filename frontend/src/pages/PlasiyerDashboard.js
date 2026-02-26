@@ -514,8 +514,7 @@ const ReturnsPage = () => (
   </div>
 );
 
-// Stock Page - Stok Durumu
-const StockPage = ({ products = [] }) => (
+export default PlasiyerDashboard;
   <div className="space-y-6" data-testid="stock-page">
     <PageHeader title="Stok Durumu" subtitle="Ana Sayfa / Stok" />
     
