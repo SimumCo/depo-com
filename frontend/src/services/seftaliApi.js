@@ -36,6 +36,11 @@ export const sfSalesAPI = {
   getCampaigns: () => api.get('/seftali/sales/campaigns'),
   addCampaignToOrder: (data) => api.post('/seftali/sales/campaigns/add-to-order', data),
   getCustomerConsumption: (customerId) => api.get(`/seftali/sales/customers/${customerId}/consumption`),
+  // Plasiyer Sipariş Hesaplama
+  getRouteOrderCalculation: (routeDay) => api.get(`/seftali/sales/plasiyer/order-calculation`, { params: { route_day: routeDay } }),
+  getRouteCustomers: (routeDay) => api.get(`/seftali/sales/plasiyer/route-customers/${routeDay}`),
+  getPlasiyerStock: () => api.get('/seftali/sales/plasiyer/stock'),
+  updatePlasiyerStock: (data) => api.patch('/seftali/sales/plasiyer/stock', data),
 };
 
 // ŞEFTALİ Admin API
