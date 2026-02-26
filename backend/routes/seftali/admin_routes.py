@@ -3,9 +3,8 @@ from typing import Optional
 from models.user import UserRole
 from utils.auth import require_role
 from config.database import db
-from services.seftali.utils import (
-    COL_DELIVERIES, COL_VARIANCE_EVENTS, COL_CONSUMPTION_STATS,
-    COL_CUSTOMERS, COL_PRODUCTS, std_resp,
+from services.seftali.core import (
+    COL_DELIVERIES, COL_CUSTOMERS, COL_PRODUCTS, std_resp
 )
 
 router = APIRouter(prefix="/admin", tags=["Seftali-Admin"])
@@ -20,8 +19,6 @@ async def health_summary(current_user=Depends(require_role([UserRole.ADMIN]))):
     pending_deliveries = await db[COL_DELIVERIES].count_documents({"acceptance_status": "pending"})
     accepted_deliveries = await db[COL_DELIVERIES].count_documents({"acceptance_status": "accepted"})
 
-    spike_count = await db[COL_CONSUMPTION_STATS].count_documents({"spike.active": True})
-    open_variance = await db[COL_VARIANCE_EVENTS].count_documents({"status": "needs_reason"})
     total_customers = await db[COL_CUSTOMERS].count_documents({"is_active": True})
 
     # top spike products
