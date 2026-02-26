@@ -55,4 +55,7 @@ export const sfAdminAPI = {
   createCampaign: (data) => api.post('/seftali/admin/campaigns', data),
   updateCampaign: (id, data) => api.patch(`/seftali/admin/campaigns/${id}`, data),
   deleteCampaign: (id) => api.delete(`/seftali/admin/campaigns/${id}`),
+  // Sistem Ayarları
+  getSettings: () => api.get('/seftali/admin/settings'),
+  updateSettings: (data) => api.patch('/seftali/admin/settings', data),
 };
