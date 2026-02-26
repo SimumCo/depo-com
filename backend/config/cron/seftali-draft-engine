@@ -1,0 +1,20 @@
+# ŞEFTALİ Draft Engine - Cron Job Konfigürasyonu
+# Bu dosyayı /etc/cron.d/seftali-draft-engine olarak kopyalayın
+
+# Ortam değişkenleri
+SHELL=/bin/bash
+PATH=/usr/local/bin:/usr/bin:/bin
+PYTHON=/root/.venv/bin/python
+BACKEND_DIR=/app/backend
+
+# Weekly Multiplier Batch - Her Pazartesi 00:00
+0 0 * * 1 root cd $BACKEND_DIR && $PYTHON scripts/batch_jobs.py --job=multipliers >> /var/log/seftali/multipliers.log 2>&1
+
+# Passivation Check - Her gün 01:00  
+0 1 * * * root cd $BACKEND_DIR && $PYTHON scripts/batch_jobs.py --job=passivation >> /var/log/seftali/passivation.log 2>&1
+
+# Rollup Cleanup - Her gün 02:00
+0 2 * * * root cd $BACKEND_DIR && $PYTHON scripts/batch_jobs.py --job=cleanup >> /var/log/seftali/cleanup.log 2>&1
+
+# Daily Totals Update - Her gün 03:00
+0 3 * * * root cd $BACKEND_DIR && $PYTHON scripts/batch_jobs.py --job=daily_totals >> /var/log/seftali/daily_totals.log 2>&1
