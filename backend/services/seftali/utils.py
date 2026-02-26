@@ -113,3 +113,46 @@ def std_resp(success, data=None, message=""):
     if message:
         resp["message"] = message
     return resp
+
+
+async def get_product_by_id(db, product_id: str):
+    """
+    Ürünü hem yeni temiz ID (AYRAN_200ML) hem de eski UUID formatında arayabilir.
+    Önce yeni 'products' koleksiyonunda arar, bulamazsa sf_products'ta bakar.
+    """
+    # Önce yeni products koleksiyonunda ara (temiz ID)
+    product = await db["products"].find_one(
+        {"product_id": product_id}, 
+        {"_id": 0, "product_id": 1, "name": 1, "category_id": 1, "shelf_life_days": 1}
+    )
+    if product:
+        # Standardize field names for compatibility
+        return {
+            "id": product.get("product_id"),
+            "name": product.get("name", ""),
+            "code": product.get("product_id", ""),
+            "category_id": product.get("category_id"),
+            "shelf_life_days": product.get("shelf_life_days")
+        }
+    
+    # Eski sf_products koleksiyonunda ara (UUID)
+    product = await db[COL_PRODUCTS].find_one(
+        {"id": product_id}, 
+        {"_id": 0, "id": 1, "name": 1, "code": 1, "category_id": 1, "shelf_life_days": 1}
+    )
+    if product:
+        return product
+    
+    # Eşleştirme tablosundan bak (eski UUID → yeni ID)
+    mapping = await db["product_id_mapping"].find_one(
+        {"legacy_uuid": product_id},
+        {"_id": 0, "product_id": 1, "name": 1}
+    )
+    if mapping:
+        return {
+            "id": mapping.get("product_id"),
+            "name": mapping.get("name", ""),
+            "code": mapping.get("product_id", "")
+        }
+    
+    return None
