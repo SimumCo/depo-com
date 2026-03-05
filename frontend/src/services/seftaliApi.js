@@ -63,4 +63,10 @@ export const sfAdminAPI = {
   getProduct: (id) => api.get(`/seftali/admin/products/${id}`),
   updateProduct: (id, data) => api.patch(`/seftali/admin/products/${id}`, data),
   getDepolar: () => api.get('/seftali/admin/depolar'),
+  // Depo Stok Yönetimi
+  getWarehouseStock: (params) => api.get('/seftali/admin/warehouse-stock', { params }),
+  addWarehouseStock: (data) => api.post('/seftali/admin/warehouse-stock', data),
+  updateWarehouseStock: (productId, depoNo, data) => api.patch(`/seftali/admin/warehouse-stock/${productId}?depo_no=${depoNo}`, data),
+  bulkUpdateWarehouseStock: (data) => api.post('/seftali/admin/warehouse-stock/bulk', data),
+  deleteWarehouseStock: (productId, depoNo) => api.delete(`/seftali/admin/warehouse-stock/${productId}?depo_no=${depoNo}`),
 };
