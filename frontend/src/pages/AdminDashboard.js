@@ -81,6 +81,8 @@ const AdminDashboard = () => {
     if (loading) return <Loading />;
 
     switch (activeTab) {
+      case 'products':
+        return <ProductsManagementPage />;
       case 'warehouse':
         return <WarehouseOrdersPage orders={warehouseOrders} onProcess={handleProcessOrder} />;
       case 'campaigns':
