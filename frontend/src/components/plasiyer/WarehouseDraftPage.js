@@ -1,14 +1,11 @@
-// Plasiyer - Depo Sipariş Oluştur Sayfası (Gelişmiş)
+// Plasiyer - Akıllı Sipariş Sayfası (Yeni Tasarım)
 import React, { useState, useEffect, useCallback } from 'react';
 import { sfSalesAPI } from '../../services/seftaliApi';
 import { toast } from 'sonner';
 import { 
-  Package, ShoppingBag, FileText, Users, ChevronRight, Clock, 
-  Plus, Minus, Trash2, Edit3, Check, AlertTriangle, Box, Send
+  Package, Users, Clock, Plus, ChevronDown, Send, 
+  AlertCircle, CupSoda
 } from 'lucide-react';
-import { 
-  PageHeader, StatCard, EmptyState, Loading, gradients 
-} from '../ui/DesignSystem';
 
 // Gün seçenekleri
 const DAYS = [
@@ -33,10 +30,9 @@ const WarehouseDraftPage = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [selectedDay, setSelectedDay] = useState(getTomorrowDayCode());
-  const [orderItems, setOrderItems] = useState([]); // Düzenlenebilir sipariş listesi
-  const [expandedCustomer, setExpandedCustomer] = useState(null);
-  const [editingItem, setEditingItem] = useState(null);
+  const [selectedDay] = useState(getTomorrowDayCode());
+  const [orderItems, setOrderItems] = useState([]);
+  const [showAddProduct, setShowAddProduct] = useState(false);
 
   const fetchDraft = useCallback(async () => {
     try {
@@ -45,7 +41,6 @@ const WarehouseDraftPage = () => {
       const draftData = res.data?.data || null;
       setData(draftData);
       
-      // Sipariş öğelerini düzenlenebilir state'e kopyala
       if (draftData?.order_items) {
         setOrderItems(draftData.order_items.map(item => ({
           ...item,
@@ -67,7 +62,6 @@ const WarehouseDraftPage = () => {
     setOrderItems(items => items.map(item => {
       if (item.product_id === productId) {
         const boxSize = item.box_size || 1;
-        // Koli bazında yuvarla
         const roundedQty = boxSize > 1 
           ? Math.ceil(newQty / boxSize) * boxSize 
           : Math.max(0, newQty);
@@ -79,12 +73,6 @@ const WarehouseDraftPage = () => {
       }
       return item;
     }));
-  };
-
-  // Ürün sil
-  const removeItem = (productId) => {
-    setOrderItems(items => items.filter(item => item.product_id !== productId));
-    toast.info('Ürün listeden çıkarıldı');
   };
 
   // Depoya gönder
@@ -120,359 +108,232 @@ const WarehouseDraftPage = () => {
     const now = new Date();
     const cutoff = new Date(now);
     cutoff.setHours(16, 30, 0, 0);
-    
     const isAfterCutoff = now > cutoff;
-    const diff = cutoff - now;
-    const hours = Math.floor(Math.abs(diff) / 3600000);
-    const mins = Math.floor((Math.abs(diff) % 3600000) / 60000);
-    
-    return { isAfterCutoff, hours, mins };
+    return { isAfterCutoff };
   };
 
   const timeInfo = getTimeInfo();
 
-  if (loading) return <Loading />;
-
-  if (!data) {
+  if (loading) {
     return (
-      <EmptyState 
-        icon={Package} 
-        title="Veri yüklenemedi"
-        subtitle="Lütfen sayfayı yenileyin"
-      />
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+      </div>
     );
   }
 
-  // Toplam hesapla
-  const totalEditedQty = orderItems.reduce((sum, item) => sum + (item.edited_qty || 0), 0);
-  const hasChanges = orderItems.some(item => item.is_edited);
+  if (!data) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-slate-500">
+        <Package className="w-12 h-12 mb-4 opacity-50" />
+        <p>Veri yüklenemedi</p>
+      </div>
+    );
+  }
+
+  const routeDayLabel = DAYS.find(d => d.code === data.route_day)?.label || data.route_day;
 
   return (
-    <div className="space-y-6" data-testid="warehouse-draft-page">
+    <div className="space-y-6" data-testid="akilli-siparis-page">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <PageHeader 
-            title="Depo Sipariş Oluştur"
-            subtitle={`${DAYS.find(d => d.code === data.route_day)?.label || data.route_day} rutu için sipariş taslağı`}
-          />
+          <h1 className="text-2xl font-bold text-slate-900">Depo Sipariş Oluştur</h1>
+          <p className="text-slate-500 text-sm mt-1">{routeDayLabel} rutu için sipariş taslağı</p>
         </div>
         
-        {/* Saat Bilgisi */}
-        <div className="bg-white border border-slate-200 rounded-xl p-3 text-right">
-          <div className={`text-sm font-medium flex items-center gap-2 justify-end ${
-            timeInfo.isAfterCutoff ? 'text-amber-600' : 'text-slate-600'
-          }`}>
-            <Clock className="w-4 h-4" />
-            {timeInfo.isAfterCutoff ? (
-              <span>Sipariş kesim saati geçti</span>
-            ) : (
-              <span>Kesim: {timeInfo.hours}s {timeInfo.mins}dk kaldı</span>
-            )}
-          </div>
-          <p className="text-xs text-slate-400 mt-1">
-            16:30'dan sonra taslaklar dahil edilir
-          </p>
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-5 gap-4">
-        <StatCard 
-          title="Rut Müşterisi" 
-          value={data.customer_count} 
-          icon={Users}
-          gradient={gradients.blue}
-        />
-        <StatCard 
-          title="Sipariş Veren" 
-          value={data.order_customer_count} 
-          icon={ShoppingBag}
-          gradient={gradients.green}
-        />
-        <StatCard 
-          title="Taslaktan" 
-          value={data.draft_customer_count} 
-          icon={FileText}
-          gradient={gradients.amber}
-        />
-        <StatCard 
-          title="Ürün Çeşidi" 
-          value={data.total_products} 
-          icon={Package}
-          gradient={gradients.purple || gradients.blue}
-        />
-        <StatCard 
-          title="Toplam Sipariş" 
-          value={totalEditedQty} 
-          gradient={gradients.orange}
-        />
-      </div>
-
-      {/* Hesaplama Açıklaması */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-        <h3 className="text-sm font-semibold text-blue-800 mb-2 flex items-center gap-2">
-          <AlertTriangle className="w-4 h-4" />
-          Sipariş Hesaplama Mantığı
-        </h3>
-        <div className="grid grid-cols-4 gap-4 text-xs text-blue-700">
-          <div className="bg-white rounded-lg p-2">
-            <p className="font-medium">1. Müşteri Siparişleri</p>
-            <p className="text-blue-600">Gönderilen siparişler toplanır</p>
-          </div>
-          <div className="bg-white rounded-lg p-2">
-            <p className="font-medium">2. Müşteri Taslakları</p>
-            <p className="text-blue-600">16:30'dan sonra dahil edilir</p>
-          </div>
-          <div className="bg-white rounded-lg p-2">
-            <p className="font-medium">3. Plasiyer Stoğu</p>
-            <p className="text-blue-600">Eldeki stok çıkarılır</p>
-          </div>
-          <div className="bg-white rounded-lg p-2">
-            <p className="font-medium">4. Koli Yuvarlaması</p>
-            <p className="text-blue-600">Koli adedine yuvarlanır</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Ana İçerik */}
-      <div className="grid grid-cols-3 gap-6">
-        {/* Sol: Müşteri Detayları */}
-        <div className="col-span-2 space-y-4">
-          <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-            <Users className="w-5 h-5 text-slate-500" />
-            Müşteri Siparişleri & Taslaklar
-          </h2>
-          
-          {data.customers?.length > 0 ? (
-            <div className="space-y-3">
-              {data.customers.map((cust, idx) => (
-                <CustomerDetailCard 
-                  key={cust.customer_id}
-                  customer={cust}
-                  index={idx}
-                  isExpanded={expandedCustomer === cust.customer_id}
-                  onToggle={() => setExpandedCustomer(
-                    expandedCustomer === cust.customer_id ? null : cust.customer_id
-                  )}
-                />
-              ))}
-            </div>
-          ) : (
-            <EmptyState 
-              icon={Users} 
-              title="Bu rut için müşteri yok"
-            />
-          )}
-        </div>
-
-        {/* Sağ: Sipariş Listesi */}
-        <div className="space-y-4">
-          <div className="bg-white border border-orange-200 rounded-2xl overflow-hidden sticky top-24">
-            <div className="bg-orange-500 text-white p-4">
-              <h2 className="text-lg font-bold flex items-center gap-2">
-                <Box className="w-5 h-5" />
-                Depo Sipariş Listesi
-              </h2>
-              <p className="text-orange-100 text-xs mt-1">
-                {hasChanges && <span className="text-yellow-200">• Değişiklikler var</span>}
-              </p>
-            </div>
-            
-            <div className="p-4 space-y-3 max-h-[500px] overflow-y-auto">
-              {orderItems.length > 0 ? (
-                orderItems.map((item) => (
-                  <OrderItemRow 
-                    key={item.product_id}
-                    item={item}
-                    onUpdateQty={(qty) => updateItemQty(item.product_id, qty)}
-                    onRemove={() => removeItem(item.product_id)}
-                    isEditing={editingItem === item.product_id}
-                    setEditing={(val) => setEditingItem(val ? item.product_id : null)}
-                  />
-                ))
-              ) : (
-                <p className="text-center text-slate-500 py-8">Sipariş listesi boş</p>
-              )}
-            </div>
-
-            {/* Toplam ve Gönder */}
-            <div className="border-t border-slate-200 p-4 bg-slate-50">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-base font-semibold text-slate-700">Toplam Sipariş</span>
-                <span className="text-2xl font-bold text-orange-600">{totalEditedQty} Adet</span>
-              </div>
-              
-              <button 
-                onClick={handleSubmit}
-                disabled={submitting || orderItems.length === 0}
-                className={`w-full py-3 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-colors ${
-                  submitting || orderItems.length === 0
-                    ? 'bg-slate-300 cursor-not-allowed'
-                    : 'bg-orange-500 hover:bg-orange-600'
-                }`}
-                data-testid="submit-warehouse-btn"
-              >
-                <Send className="w-5 h-5" />
-                {submitting ? 'Gönderiliyor...' : 'Depoya Gönder'}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Müşteri Detay Kartı
-const CustomerDetailCard = ({ customer, index, isExpanded, onToggle }) => {
-  const sourceColors = {
-    order: { bg: 'bg-emerald-500', border: 'border-emerald-200', text: 'text-emerald-600', label: '✓ Sipariş' },
-    draft: { bg: 'bg-amber-500', border: 'border-amber-200', text: 'text-amber-600', label: '○ Taslak' },
-    none: { bg: 'bg-slate-400', border: 'border-slate-200', text: 'text-slate-500', label: '- Yok' }
-  };
-  
-  const colors = sourceColors[customer.source] || sourceColors.none;
-
-  return (
-    <div className={`bg-white border rounded-xl overflow-hidden ${colors.border}`}>
-      <button 
-        onClick={onToggle}
-        className="w-full p-3 text-left hover:bg-slate-50 transition-colors"
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm ${colors.bg}`}>
-              {index + 1}
-            </div>
+        {/* Saat Uyarısı */}
+        {timeInfo.isAfterCutoff && (
+          <div className="flex items-center gap-2 bg-amber-50 border border-amber-300 rounded-lg px-4 py-2">
+            <Clock className="w-4 h-4 text-amber-600" />
             <div>
-              <h3 className="font-semibold text-slate-900 text-sm">{customer.customer_name}</h3>
-              <p className={`text-xs ${colors.text}`}>{colors.label}</p>
+              <span className="text-amber-700 font-medium text-sm">Sipariş kesim saati geçti!</span>
+              <span className="text-amber-600 text-xs ml-2">16:30'dan sonra taslaklar dahil edilir</span>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="text-right">
-              <p className="text-lg font-bold text-slate-900">{customer.total_qty}</p>
-              <p className="text-xs text-slate-500">adet</p>
-            </div>
-            <ChevronRight className={`w-5 h-5 text-slate-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+        )}
+      </div>
+
+      {/* İstatistik Kutuları */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="bg-blue-500 rounded-xl p-5 text-white">
+          <p className="text-blue-100 text-sm font-medium">Rut Müşterisi</p>
+          <p className="text-4xl font-bold mt-2">{data.customer_count || 0}</p>
+        </div>
+        <div className="bg-green-500 rounded-xl p-5 text-white">
+          <p className="text-green-100 text-sm font-medium">Sipariş Veren</p>
+          <p className="text-4xl font-bold mt-2">{data.order_customer_count || 0}</p>
+        </div>
+        <div className="bg-orange-500 rounded-xl p-5 text-white">
+          <p className="text-orange-100 text-sm font-medium">Taslaktan</p>
+          <p className="text-4xl font-bold mt-2">{data.draft_customer_count || 0}</p>
+        </div>
+      </div>
+
+      {/* Müşteri Siparişleri & Taslaklar Başlık */}
+      <div className="flex items-center gap-2 text-slate-700">
+        <Users className="w-5 h-5" />
+        <h2 className="font-semibold">Müşteri Siparişleri & Taslaklar</h2>
+      </div>
+
+      {/* Ürün Listesi */}
+      <div className="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">
+        {orderItems.length > 0 ? (
+          orderItems.map((item) => (
+            <ProductRow 
+              key={item.product_id}
+              item={item}
+              onUpdateQty={(qty) => updateItemQty(item.product_id, qty)}
+            />
+          ))
+        ) : (
+          <div className="p-8 text-center text-slate-500">
+            <Package className="w-12 h-12 mx-auto mb-3 opacity-30" />
+            <p>Henüz ürün yok</p>
           </div>
-        </div>
-      </button>
-      
-      {isExpanded && customer.items?.length > 0 && (
-        <div className="px-3 pb-3 border-t border-slate-100">
-          <div className="mt-2 space-y-1">
-            {customer.items.map((item, iIdx) => (
-              <div key={iIdx} className="flex items-center justify-between py-1.5 text-sm">
-                <span className="text-slate-700">{item.product_id?.slice(0, 8)}...</span>
-                <span className="font-medium text-slate-800">{item.qty} adet</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
+        )}
 
-// Sipariş Satırı (Düzenlenebilir)
-const OrderItemRow = ({ item, onUpdateQty, onRemove, isEditing, setEditing }) => {
-  const [tempQty, setTempQty] = useState(item.edited_qty);
-
-  const handleSave = () => {
-    onUpdateQty(tempQty);
-    setEditing(false);
-  };
-
-  const handleCancel = () => {
-    setTempQty(item.edited_qty);
-    setEditing(false);
-  };
-
-  return (
-    <div className={`bg-slate-50 rounded-xl p-3 ${item.is_edited ? 'ring-2 ring-orange-300' : ''}`}>
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex-1 min-w-0">
-          <p className="font-medium text-slate-800 text-sm truncate">{item.product_name}</p>
-          <p className="text-xs text-slate-500">{item.product_code}</p>
-        </div>
+        {/* Ürün Ekle Butonu */}
         <button 
-          onClick={onRemove}
-          className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded"
+          onClick={() => setShowAddProduct(!showAddProduct)}
+          className="w-full p-4 flex items-center gap-3 text-slate-600 hover:bg-slate-50 transition-colors"
+          data-testid="add-product-btn"
         >
-          <Trash2 className="w-4 h-4" />
+          <Plus className="w-6 h-6" />
+          <span className="text-lg font-medium">Ürün ekle</span>
         </button>
       </div>
 
-      {/* Hesaplama Detayı */}
-      <div className="grid grid-cols-4 gap-1 text-[10px] text-slate-500 mb-2">
-        <div>
-          <span className="block text-slate-400">Sipariş</span>
-          <span className="font-medium text-emerald-600">{item.order_qty}</span>
-        </div>
-        <div>
-          <span className="block text-slate-400">Taslak</span>
-          <span className="font-medium text-amber-600">{item.draft_qty}</span>
-        </div>
-        <div>
-          <span className="block text-slate-400">İhtiyaç</span>
-          <span className="font-medium">{item.net_need}</span>
-        </div>
-        <div>
-          <span className="block text-slate-400">Koli</span>
-          <span className="font-medium">{item.box_size}'li</span>
+      {/* Gönder Butonu */}
+      {orderItems.length > 0 && (
+        <button 
+          onClick={handleSubmit}
+          disabled={submitting}
+          className={`w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-colors ${
+            submitting 
+              ? 'bg-slate-300 cursor-not-allowed'
+              : 'bg-orange-500 hover:bg-orange-600'
+          }`}
+          data-testid="submit-warehouse-btn"
+        >
+          <Send className="w-5 h-5" />
+          {submitting ? 'Gönderiliyor...' : 'Depoya Sipariş Gönder'}
+        </button>
+      )}
+
+      {/* Bilgi Kutusu */}
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
+        <AlertCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+        <div className="text-sm text-blue-700">
+          <p className="font-medium mb-1">Nasıl Çalışır?</p>
+          <ul className="list-disc list-inside space-y-1 text-blue-600">
+            <li>Müşteriler saat 16:30'a kadar sipariş atabilir</li>
+            <li>Sipariş atmayan müşteriler için sistem taslağı kullanılır</li>
+            <li>Toplam ihtiyaçtan araç stoğunuz düşülür</li>
+            <li>Kalan miktar depo siparişi olarak hesaplanır</li>
+          </ul>
         </div>
       </div>
+    </div>
+  );
+};
 
-      {/* Miktar Düzenleme */}
-      {isEditing ? (
-        <div className="flex items-center gap-2">
-          <button 
-            onClick={() => setTempQty(Math.max(0, tempQty - item.box_size))}
-            className="w-8 h-8 bg-slate-200 rounded-lg flex items-center justify-center hover:bg-slate-300"
-          >
-            <Minus className="w-4 h-4" />
-          </button>
-          <input 
-            type="number"
-            value={tempQty}
-            onChange={(e) => setTempQty(parseInt(e.target.value) || 0)}
-            className="flex-1 text-center text-lg font-bold border border-slate-200 rounded-lg py-1"
-          />
-          <button 
-            onClick={() => setTempQty(tempQty + item.box_size)}
-            className="w-8 h-8 bg-slate-200 rounded-lg flex items-center justify-center hover:bg-slate-300"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
-          <button 
-            onClick={handleSave}
-            className="p-2 bg-emerald-500 text-white rounded-lg"
-          >
-            <Check className="w-4 h-4" />
-          </button>
+// Ürün Satırı Bileşeni
+const ProductRow = ({ item, onUpdateQty }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  // Tahmini ihtiyaç seçenekleri oluştur
+  const generateOptions = () => {
+    const baseQty = item.edited_qty || 0;
+    const step = item.box_size || 1;
+    const options = [];
+    
+    // 0'dan başlayarak makul seçenekler üret
+    for (let i = 0; i <= Math.max(baseQty * 2, step * 20); i += step) {
+      options.push(i);
+    }
+    
+    return options;
+  };
+
+  const options = generateOptions();
+  const casesNeeded = Math.ceil((item.edited_qty || 0) / (item.box_size || 1));
+  
+  // Tahmini SKT formatla
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '-';
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  return (
+    <div className="p-4">
+      <div className="flex items-start gap-4">
+        {/* Ürün İkonu */}
+        <div className="flex-shrink-0 w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center">
+          <CupSoda className="w-6 h-6 text-slate-400" />
         </div>
-      ) : (
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-xl font-bold text-orange-600">{item.edited_qty}</span>
-            <span className="text-xs text-slate-500">adet ({item.boxes || Math.ceil(item.edited_qty / (item.box_size || 1))} koli)</span>
+
+        {/* Ürün Bilgileri */}
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-slate-900">{item.product_name}</h3>
+          <div className="flex flex-col gap-1 mt-1 text-sm text-slate-500">
+            <p>Depo stoğu : {item.warehouse_stock?.toLocaleString('tr-TR') || '0'} ad</p>
+            <p>Tahmini SKT : {formatDate(item.estimated_expiry)}</p>
           </div>
-          <button 
-            onClick={() => setEditing(true)}
-            className="p-2 text-slate-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg"
-          >
-            <Edit3 className="w-4 h-4" />
-          </button>
         </div>
-      )}
 
-      {item.is_edited && (
-        <p className="text-[10px] text-orange-600 mt-1">
-          Orijinal: {item.final_qty} → Düzenlendi: {item.edited_qty}
-        </p>
-      )}
+        {/* Stok Bilgisi */}
+        <div className="text-right text-sm">
+          <p className="text-slate-500">stok : <span className="font-medium text-slate-700">{item.plasiyer_stock || 0} ad</span></p>
+        </div>
+
+        {/* Toplam Bilgisi */}
+        <div className="text-right text-sm">
+          <p className="text-slate-500">
+            taslak ve sipariş toplam : <span className="font-medium text-slate-700">{item.total_qty || 0} ad</span>
+            <span className="ml-2 text-slate-400">{casesNeeded} koli</span>
+          </p>
+        </div>
+
+        {/* Tahmini İhtiyaç Dropdown */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-slate-500">tahmini ihtiyaç</span>
+          <div className="relative">
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="flex items-center justify-between w-24 px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium hover:border-slate-400 transition-colors"
+              data-testid={`qty-dropdown-${item.product_id}`}
+            >
+              <span>{item.edited_qty || 0}</span>
+              <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+            </button>
+            
+            {isOpen && (
+              <div className="absolute right-0 mt-1 w-24 bg-white border border-slate-200 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                {options.map((qty) => (
+                  <button
+                    key={qty}
+                    onClick={() => {
+                      onUpdateQty(qty);
+                      setIsOpen(false);
+                    }}
+                    className={`w-full px-3 py-2 text-left text-sm hover:bg-slate-50 ${
+                      qty === item.edited_qty ? 'bg-orange-50 text-orange-600 font-medium' : 'text-slate-700'
+                    }`}
+                  >
+                    {qty}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
