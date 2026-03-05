@@ -33,6 +33,21 @@ Yoğurt/ayran dağıtımı yapan bir firmada müşterilerin tüketimini teslimat
 
 ---
 
+## What's Been Implemented (Latest Update: Aralık 2025)
+
+### Plasiyer Panel - Sidebar Menu Refactoring
+- **"Depo Taslağı" tab renamed to "Akıllı Sipariş"**
+- **Old empty "Akıllı Sipariş" (draft-engine) tab removed**
+- **New "Akıllı Sipariş" page redesigned** according to user's visual requirements:
+  - 3 stat boxes: Rut Müşterisi, Sipariş Veren, Taslaktan
+  - "Sipariş kesim saati geçti!" warning banner
+  - "Müşteri Siparişleri & Taslaklar" section with product list
+  - "+ Ürün ekle" button
+  - "Nasıl Çalışır?" info box
+  - Dropdown for "tahmini ihtiyaç" per product
+
+---
+
 ## Çalışan Dashboard'lar
 - ✅ **Plasiyer Dashboard**: Ana sayfa, Müşteriler, Rota Siparişi, Teslimatlar
 - ✅ **Customer Dashboard**: Ana sayfa, Sipariş, Teslimat Onayı, Analizler
