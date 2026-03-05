@@ -1073,6 +1073,17 @@ const ProductEditModal = ({ product, depolar, onClose, onSave }) => {
             />
           </div>
           
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Raf Ömrü (Gün)</label>
+            <input
+              type="number"
+              value={formData.shelf_life_days}
+              onChange={(e) => setFormData({...formData, shelf_life_days: e.target.value})}
+              placeholder="Örn: 30"
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+          </div>
+          
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">SKT (Son Kullanma Tarihi)</label>
