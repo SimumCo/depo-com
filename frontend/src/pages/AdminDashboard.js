@@ -768,52 +768,11 @@ const CampaignsManagementPage = () => {
 };
 
 // ============================================
-// ÜRÜN YÖNETİMİ SAYFASI (Alt Sekmeli)
+// ÜRÜN YÖNETİMİ SAYFASI (Stok ile birlikte)
 // ============================================
 const ProductsManagementPage = () => {
-  const [activeSubTab, setActiveSubTab] = useState('products'); // 'products' | 'stock'
-
-  return (
-    <div className="space-y-6" data-testid="products-management-page">
-      <PageHeader title="Ürün Yönetimi" subtitle="Admin / Ürünler" />
-      
-      {/* Alt Sekmeler */}
-      <div className="flex gap-2 border-b border-slate-200">
-        <button
-          onClick={() => setActiveSubTab('products')}
-          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-            activeSubTab === 'products'
-              ? 'border-orange-500 text-orange-600'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
-          data-testid="products-tab"
-        >
-          <Package className="w-4 h-4 inline-block mr-2" />
-          Ürünler
-        </button>
-        <button
-          onClick={() => setActiveSubTab('stock')}
-          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-            activeSubTab === 'stock'
-              ? 'border-orange-500 text-orange-600'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
-          data-testid="stock-tab"
-        >
-          <BarChart3 className="w-4 h-4 inline-block mr-2" />
-          Depo Stoğu
-        </button>
-      </div>
-
-      {/* Alt Sekme İçerikleri */}
-      {activeSubTab === 'products' ? <ProductsListContent /> : <WarehouseStockContent />}
-    </div>
-  );
-};
-
-// Ürün Listesi İçeriği
-const ProductsListContent = () => {
   const [products, setProducts] = useState([]);
+  const [stockMap, setStockMap] = useState({});
   const [depolar, setDepolar] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -823,14 +782,24 @@ const ProductsListContent = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [prodRes, depoRes] = await Promise.all([
+      const [prodRes, depoRes, stockRes] = await Promise.all([
         sfAdminAPI.getProducts(),
-        sfAdminAPI.getDepolar()
+        sfAdminAPI.getDepolar(),
+        sfAdminAPI.getWarehouseStock({})
       ]);
       setProducts(prodRes.data?.data || []);
       setDepolar(depoRes.data?.data || []);
+      
+      // Stok verilerini product_id bazlı map'e çevir
+      const stockData = stockRes.data?.data || [];
+      const map = {};
+      stockData.forEach(s => {
+        if (!map[s.product_id]) map[s.product_id] = {};
+        map[s.product_id][s.depo_no] = s;
+      });
+      setStockMap(map);
     } catch (err) {
-      toast.error('Ürünler yüklenemedi');
+      toast.error('Veriler yüklenemedi');
     } finally {
       setLoading(false);
     }
@@ -842,7 +811,17 @@ const ProductsListContent = () => {
 
   const handleSaveProduct = async (productData) => {
     try {
-      await sfAdminAPI.updateProduct(editingProduct.product_id, productData);
+      // Ürün bilgilerini güncelle
+      await sfAdminAPI.updateProduct(editingProduct.product_id, productData.productInfo);
+      
+      // Stok bilgisi varsa güncelle
+      if (productData.stockInfo && productData.stockInfo.depo_no) {
+        await sfAdminAPI.addWarehouseStock({
+          product_id: editingProduct.product_id,
+          ...productData.stockInfo
+        });
+      }
+      
       toast.success('Ürün güncellendi');
       setEditingProduct(null);
       fetchData();
@@ -880,10 +859,32 @@ const ProductsListContent = () => {
     }
   };
 
+  // Ürünün toplam stokunu hesapla
+  const getProductStock = (productId) => {
+    const productStocks = stockMap[productId];
+    if (!productStocks) return 0;
+    return Object.values(productStocks).reduce((sum, s) => sum + (s.quantity || 0), 0);
+  };
+
+  // Stok rengi
+  const getStockColor = (qty) => {
+    if (qty === 0) return 'text-slate-400';
+    if (qty < 10) return 'text-red-600 font-bold';
+    if (qty < 50) return 'text-amber-600';
+    return 'text-emerald-600';
+  };
+
+  // Toplam stok
+  const totalStock = Object.values(stockMap).reduce((sum, prodStock) => {
+    return sum + Object.values(prodStock).reduce((s, item) => s + (item.quantity || 0), 0);
+  }, 0);
+
   if (loading) return <Loading />;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="products-management-page">
+      <PageHeader title="Ürün Yönetimi" subtitle="Admin / Ürünler" />
+
       {/* Filtreler */}
       <div className="flex items-center gap-4">
         <div className="flex-1 relative">
@@ -915,27 +916,22 @@ const ProductsListContent = () => {
           <p className="text-2xl font-bold text-emerald-700">{products.length}</p>
         </div>
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-          <p className="text-xs text-blue-600 mb-1">Aktif Ürün</p>
-          <p className="text-2xl font-bold text-blue-700">{products.filter(p => p.is_active).length}</p>
+          <p className="text-xs text-blue-600 mb-1">Toplam Stok</p>
+          <p className="text-2xl font-bold text-blue-700">{totalStock.toLocaleString('tr-TR')}</p>
         </div>
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-          <p className="text-xs text-amber-600 mb-1">SKT 60 Gün İçinde</p>
+          <p className="text-xs text-amber-600 mb-1">Düşük Stoklu</p>
           <p className="text-2xl font-bold text-amber-700">
             {products.filter(p => {
-              if (!p.skt) return false;
-              const diff = Math.ceil((new Date(p.skt) - new Date()) / (1000 * 60 * 60 * 24));
-              return diff > 0 && diff <= 60;
+              const qty = getProductStock(p.product_id);
+              return qty > 0 && qty < 50;
             }).length}
           </p>
         </div>
         <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-          <p className="text-xs text-red-600 mb-1">SKT Kritik (&lt;30 gün)</p>
+          <p className="text-xs text-red-600 mb-1">Stoksuz</p>
           <p className="text-2xl font-bold text-red-700">
-            {products.filter(p => {
-              if (!p.skt) return false;
-              const diff = Math.ceil((new Date(p.skt) - new Date()) / (1000 * 60 * 60 * 24));
-              return diff > 0 && diff <= 30;
-            }).length}
+            {products.filter(p => getProductStock(p.product_id) === 0).length}
           </p>
         </div>
       </div>
@@ -948,7 +944,7 @@ const ProductsListContent = () => {
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Ürün Adı</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Kategori</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Koli</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600">Stok</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Raf Ömrü</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">SKT</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Depo</th>
@@ -957,48 +953,53 @@ const ProductsListContent = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredProducts.map((product) => (
-                <tr key={product.product_id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-slate-800">{product.name}</p>
-                    <p className="text-xs text-slate-500">{product.product_id}</p>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-slate-600">{product.category_id}</td>
-                  <td className="px-4 py-3">
-                    <p className="text-sm text-slate-600">{product.case_name || '-'}</p>
-                    <p className="text-xs text-slate-400">{product.case_size ? `${product.case_size} adet` : ''}</p>
-                  </td>
-                  <td className="px-4 py-3">
-                    <p className="text-sm font-medium text-slate-700">{product.shelf_life_days || '-'}</p>
-                    <p className="text-xs text-slate-400">{product.shelf_life_days ? 'gün' : ''}</p>
-                  </td>
-                  <td className={`px-4 py-3 text-sm ${getSktColor(product.skt)}`}>
-                    {formatDate(product.skt)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <p className="text-sm font-medium text-slate-700">{product.depo_no || '-'}</p>
-                    <p className="text-xs text-slate-400">{product.depo_name || ''}</p>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      product.is_active 
-                        ? 'bg-emerald-100 text-emerald-700' 
-                        : 'bg-red-100 text-red-700'
-                    }`}>
-                      {product.is_active ? 'Aktif' : 'Pasif'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <button
-                      onClick={() => setEditingProduct(product)}
-                      className="p-2 text-slate-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
-                      data-testid={`edit-product-${product.product_id}`}
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {filteredProducts.map((product) => {
+                const stockQty = getProductStock(product.product_id);
+                return (
+                  <tr key={product.product_id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-slate-800">{product.name}</p>
+                      <p className="text-xs text-slate-500">{product.product_id}</p>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-600">{product.category_id}</td>
+                    <td className="px-4 py-3 text-right">
+                      <span className={`text-lg font-bold ${getStockColor(stockQty)}`}>
+                        {stockQty.toLocaleString('tr-TR')}
+                      </span>
+                      <p className="text-xs text-slate-400">adet</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="text-sm font-medium text-slate-700">{product.shelf_life_days || '-'}</p>
+                      <p className="text-xs text-slate-400">{product.shelf_life_days ? 'gün' : ''}</p>
+                    </td>
+                    <td className={`px-4 py-3 text-sm ${getSktColor(product.skt)}`}>
+                      {formatDate(product.skt)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="text-sm font-medium text-slate-700">{product.depo_no || '-'}</p>
+                      <p className="text-xs text-slate-400">{product.depo_name || ''}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        product.is_active 
+                          ? 'bg-emerald-100 text-emerald-700' 
+                          : 'bg-red-100 text-red-700'
+                      }`}>
+                        {product.is_active ? 'Aktif' : 'Pasif'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        onClick={() => setEditingProduct({...product, currentStock: stockMap[product.product_id]})}
+                        className="p-2 text-slate-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                        data-testid={`edit-product-${product.product_id}`}
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -1013,414 +1014,6 @@ const ProductsListContent = () => {
           onSave={handleSaveProduct}
         />
       )}
-    </div>
-  );
-};
-
-// ============================================
-// DEPO STOK YÖNETİMİ İÇERİĞİ
-// ============================================
-const WarehouseStockContent = () => {
-  const [stockItems, setStockItems] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [depolar, setDepolar] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterDepo, setFilterDepo] = useState('');
-  const [editingStock, setEditingStock] = useState(null);
-  const [showAddModal, setShowAddModal] = useState(false);
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const [stockRes, prodRes, depoRes] = await Promise.all([
-        sfAdminAPI.getWarehouseStock({ depo_no: filterDepo || undefined }),
-        sfAdminAPI.getProducts(),
-        sfAdminAPI.getDepolar()
-      ]);
-      setStockItems(stockRes.data?.data || []);
-      setProducts(prodRes.data?.data || []);
-      setDepolar(depoRes.data?.data || []);
-    } catch (err) {
-      toast.error('Stok verileri yüklenemedi');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, [filterDepo]);
-
-  const handleSaveStock = async (stockData) => {
-    try {
-      if (editingStock) {
-        await sfAdminAPI.updateWarehouseStock(
-          editingStock.product_id, 
-          editingStock.depo_no, 
-          stockData
-        );
-        toast.success('Stok güncellendi');
-      } else {
-        await sfAdminAPI.addWarehouseStock(stockData);
-        toast.success('Stok eklendi');
-      }
-      setEditingStock(null);
-      setShowAddModal(false);
-      fetchData();
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'İşlem hatası');
-    }
-  };
-
-  const handleDeleteStock = async (productId, depoNo) => {
-    if (!window.confirm('Bu stok kaydını silmek istediğinize emin misiniz?')) return;
-    try {
-      await sfAdminAPI.deleteWarehouseStock(productId, depoNo);
-      toast.success('Stok kaydı silindi');
-      fetchData();
-    } catch (err) {
-      toast.error('Silme işlemi başarısız');
-    }
-  };
-
-  // Filtrele
-  const filteredStock = stockItems.filter(s => {
-    if (!searchTerm) return true;
-    return s.product_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           s.product_id?.toLowerCase().includes(searchTerm.toLowerCase());
-  });
-
-  // Toplam stok hesapla
-  const totalStock = stockItems.reduce((sum, s) => sum + (s.quantity || 0), 0);
-  const lowStockCount = stockItems.filter(s => s.quantity < 50).length;
-  const criticalStockCount = stockItems.filter(s => s.quantity < 10).length;
-
-  // SKT uyarı rengi
-  const getSktColor = (skt) => {
-    if (!skt) return 'text-slate-500';
-    const date = new Date(skt);
-    const now = new Date();
-    const diffDays = Math.ceil((date - now) / (1000 * 60 * 60 * 24));
-    if (diffDays < 30) return 'text-red-600 font-bold';
-    if (diffDays < 60) return 'text-amber-600';
-    return 'text-emerald-600';
-  };
-
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '-';
-    try {
-      return new Date(dateStr).toLocaleDateString('tr-TR');
-    } catch {
-      return dateStr;
-    }
-  };
-
-  if (loading) return <Loading />;
-
-  return (
-    <div className="space-y-6" data-testid="warehouse-stock-content">
-      {/* Üst Bar - Filtre ve Ekle */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4 flex-1">
-          <div className="flex-1 relative max-w-md">
-            <input
-              type="text"
-              placeholder="Ürün ara..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-              data-testid="stock-search-input"
-            />
-            <Package className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          </div>
-          <select
-            value={filterDepo}
-            onChange={(e) => setFilterDepo(e.target.value)}
-            className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-            data-testid="stock-depo-filter"
-          >
-            <option value="">Tüm Depolar</option>
-            {depolar.map(d => (
-              <option key={d.depo_no} value={d.depo_no}>{d.name}</option>
-            ))}
-          </select>
-        </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 text-white rounded-xl font-medium hover:bg-orange-600 transition-colors"
-          data-testid="add-stock-btn"
-        >
-          <Plus className="w-4 h-4" />
-          Stok Ekle
-        </button>
-      </div>
-
-      {/* İstatistikler */}
-      <div className="grid grid-cols-4 gap-4">
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-          <p className="text-xs text-blue-600 mb-1">Toplam Stok</p>
-          <p className="text-2xl font-bold text-blue-700">{totalStock.toLocaleString('tr-TR')}</p>
-          <p className="text-xs text-blue-500 mt-1">{stockItems.length} farklı ürün</p>
-        </div>
-        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-          <p className="text-xs text-emerald-600 mb-1">Yeterli Stok</p>
-          <p className="text-2xl font-bold text-emerald-700">{stockItems.filter(s => s.quantity >= 50).length}</p>
-          <p className="text-xs text-emerald-500 mt-1">≥50 adet</p>
-        </div>
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-          <p className="text-xs text-amber-600 mb-1">Düşük Stok</p>
-          <p className="text-2xl font-bold text-amber-700">{lowStockCount}</p>
-          <p className="text-xs text-amber-500 mt-1">&lt;50 adet</p>
-        </div>
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-          <p className="text-xs text-red-600 mb-1">Kritik Stok</p>
-          <p className="text-2xl font-bold text-red-700">{criticalStockCount}</p>
-          <p className="text-xs text-red-500 mt-1">&lt;10 adet</p>
-        </div>
-      </div>
-
-      {/* Stok Tablosu */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Ürün</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Depo</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600">Miktar</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Lot No</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">SKT</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Son Güncelleme</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600">İşlem</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredStock.length === 0 ? (
-                <tr>
-                  <td colSpan="7" className="px-4 py-8 text-center text-slate-500">
-                    <Package className="w-12 h-12 mx-auto text-slate-300 mb-3" />
-                    <p>Henüz stok kaydı bulunmuyor</p>
-                    <p className="text-sm text-slate-400 mt-1">Stok eklemek için yukarıdaki butonu kullanın</p>
-                  </td>
-                </tr>
-              ) : (
-                filteredStock.map((stock) => (
-                  <tr key={`${stock.product_id}-${stock.depo_no}`} className="hover:bg-slate-50">
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-slate-800">{stock.product_name || stock.product_id}</p>
-                      <p className="text-xs text-slate-500">{stock.category_id || stock.product_id}</p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <p className="text-sm font-medium text-slate-700">{stock.depo_no}</p>
-                      <p className="text-xs text-slate-400">{stock.depo_name || ''}</p>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <span className={`text-lg font-bold ${
-                        stock.quantity < 10 ? 'text-red-600' :
-                        stock.quantity < 50 ? 'text-amber-600' :
-                        'text-emerald-600'
-                      }`}>
-                        {stock.quantity?.toLocaleString('tr-TR')}
-                      </span>
-                      <p className="text-xs text-slate-400">adet</p>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-600">
-                      {stock.lot_no || '-'}
-                    </td>
-                    <td className={`px-4 py-3 text-sm ${getSktColor(stock.skt)}`}>
-                      {formatDate(stock.skt)}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-slate-500">
-                      {stock.updated_at ? new Date(stock.updated_at).toLocaleString('tr-TR') : '-'}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <div className="flex items-center justify-center gap-1">
-                        <button
-                          onClick={() => setEditingStock(stock)}
-                          className="p-2 text-slate-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
-                          data-testid={`edit-stock-${stock.product_id}`}
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteStock(stock.product_id, stock.depo_no)}
-                          className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          data-testid={`delete-stock-${stock.product_id}`}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Stok Ekleme/Düzenleme Modalı */}
-      {(showAddModal || editingStock) && (
-        <StockEditModal
-          stock={editingStock}
-          products={products}
-          depolar={depolar}
-          onClose={() => { setShowAddModal(false); setEditingStock(null); }}
-          onSave={handleSaveStock}
-        />
-      )}
-    </div>
-  );
-};
-
-// Stok Ekleme/Düzenleme Modalı
-const StockEditModal = ({ stock, products, depolar, onClose, onSave }) => {
-  const isEdit = !!stock;
-  const [formData, setFormData] = useState({
-    product_id: stock?.product_id || '',
-    depo_no: stock?.depo_no || 'D001',
-    quantity: stock?.quantity || 0,
-    lot_no: stock?.lot_no || '',
-    skt: stock?.skt || '',
-  });
-  const [saving, setSaving] = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.product_id) {
-      toast.error('Lütfen bir ürün seçin');
-      return;
-    }
-    if (formData.quantity < 0) {
-      toast.error('Miktar 0\'dan küçük olamaz');
-      return;
-    }
-    setSaving(true);
-    await onSave(formData);
-    setSaving(false);
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl w-full max-w-lg mx-4 shadow-xl">
-        <div className="flex items-center justify-between p-4 border-b border-slate-200">
-          <h2 className="text-lg font-bold text-slate-800">
-            {isEdit ? 'Stok Düzenle' : 'Yeni Stok Ekle'}
-          </h2>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg">
-            <X className="w-5 h-5 text-slate-500" />
-          </button>
-        </div>
-        
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
-          {/* Ürün Seçimi */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Ürün</label>
-            {isEdit ? (
-              <input
-                type="text"
-                value={stock.product_name || stock.product_id}
-                disabled
-                className="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-lg text-sm text-slate-500"
-              />
-            ) : (
-              <select
-                value={formData.product_id}
-                onChange={(e) => setFormData({...formData, product_id: e.target.value})}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                data-testid="stock-product-select"
-              >
-                <option value="">Ürün Seçin</option>
-                {products.map(p => (
-                  <option key={p.product_id} value={p.product_id}>{p.name} ({p.product_id})</option>
-                ))}
-              </select>
-            )}
-          </div>
-
-          {/* Depo Seçimi */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Depo</label>
-            {isEdit ? (
-              <input
-                type="text"
-                value={`${stock.depo_name || stock.depo_no}`}
-                disabled
-                className="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-lg text-sm text-slate-500"
-              />
-            ) : (
-              <select
-                value={formData.depo_no}
-                onChange={(e) => setFormData({...formData, depo_no: e.target.value})}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                data-testid="stock-depo-select"
-              >
-                {depolar.map(d => (
-                  <option key={d.depo_no} value={d.depo_no}>{d.name}</option>
-                ))}
-              </select>
-            )}
-          </div>
-
-          {/* Miktar */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Miktar (Adet)</label>
-            <input
-              type="number"
-              value={formData.quantity}
-              onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || 0})}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-              min="0"
-              data-testid="stock-quantity-input"
-            />
-          </div>
-
-          {/* Lot No ve SKT */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Lot No</label>
-              <input
-                type="text"
-                value={formData.lot_no}
-                onChange={(e) => setFormData({...formData, lot_no: e.target.value})}
-                placeholder="Opsiyonel"
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                data-testid="stock-lot-input"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">SKT</label>
-              <input
-                type="date"
-                value={formData.skt}
-                onChange={(e) => setFormData({...formData, skt: e.target.value})}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                data-testid="stock-skt-input"
-              />
-            </div>
-          </div>
-
-          {/* Butonlar */}
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-2.5 border border-slate-200 rounded-xl text-slate-600 font-medium hover:bg-slate-50"
-            >
-              İptal
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 py-2.5 bg-orange-500 text-white rounded-xl font-medium hover:bg-orange-600 disabled:bg-slate-300"
-              data-testid="save-stock-btn"
-            >
-              {saving ? 'Kaydediliyor...' : 'Kaydet'}
-            </button>
-          </div>
-        </form>
-      </div>
     </div>
   );
 };
