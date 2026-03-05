@@ -58,4 +58,9 @@ export const sfAdminAPI = {
   // Sistem Ayarları
   getSettings: () => api.get('/seftali/admin/settings'),
   updateSettings: (data) => api.patch('/seftali/admin/settings', data),
+  // Ürün Yönetimi
+  getProducts: () => api.get('/seftali/admin/products'),
+  getProduct: (id) => api.get(`/seftali/admin/products/${id}`),
+  updateProduct: (id, data) => api.patch(`/seftali/admin/products/${id}`, data),
+  getDepolar: () => api.get('/seftali/admin/depolar'),
 };
