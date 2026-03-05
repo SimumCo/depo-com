@@ -216,9 +216,7 @@ const PlasiyerDashboard = () => {
     { id: 'dashboard', label: 'Ana Sayfa', icon: Home },
     { id: 'customers', label: 'Musteriler', icon: Users },
     { id: 'rut', label: 'Rut', icon: Navigation },
-    { id: 'route-order', label: 'Rota Siparişi', icon: Truck },
-    { id: 'warehouse', label: 'Depo Taslagi', icon: Package },
-    { id: 'draft-engine', label: 'Akıllı Sipariş', icon: Zap },
+    { id: 'akilli-siparis', label: 'Akıllı Sipariş', icon: Package },
     { id: 'orders', label: 'Siparisler', icon: ShoppingBag, badge: stats.pendingOrders },
     { id: 'deliveries', label: 'Teslimatlar', icon: Truck },
     { id: 'create', label: 'Teslimat Olustur', icon: Plus },
@@ -248,12 +246,8 @@ const PlasiyerDashboard = () => {
         );
       case 'rut':
         return <RutPage todayCustomers={todayCustomers} />;
-      case 'route-order':
-        return <RouteOrderPage />;
-      case 'warehouse':
+      case 'akilli-siparis':
         return <WarehouseDraftPage />;
-      case 'draft-engine':
-        return <DraftEnginePage />;
       case 'orders':
         return <OrdersPage orders={orders} onApprove={handleApproveOrder} onRequestEdit={handleRequestEdit} />;
       case 'deliveries':
