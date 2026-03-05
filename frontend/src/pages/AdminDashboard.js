@@ -1219,39 +1219,5 @@ const ProductEditModal = ({ product, depolar, onClose, onSave }) => {
     </div>
   );
 };
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="is_active"
-              checked={formData.is_active}
-              onChange={(e) => setFormData({...formData, is_active: e.target.checked})}
-              className="w-4 h-4 rounded border-slate-300 text-orange-500 focus:ring-orange-500"
-            />
-            <label htmlFor="is_active" className="text-sm text-slate-700">Aktif</label>
-          </div>
-          
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-2.5 border border-slate-200 rounded-xl text-slate-600 font-medium hover:bg-slate-50"
-            >
-              İptal
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 py-2.5 bg-orange-500 text-white rounded-xl font-medium hover:bg-orange-600 disabled:bg-slate-300"
-            >
-              {saving ? 'Kaydediliyor...' : 'Kaydet'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
 
 export default AdminDashboard;
