@@ -1018,8 +1018,11 @@ const ProductsManagementPage = () => {
   );
 };
 
-// Ürün Düzenleme Modalı
+// Ürün Düzenleme Modalı (Stok ile)
 const ProductEditModal = ({ product, depolar, onClose, onSave }) => {
+  // Mevcut stok bilgisi (ilk depodan)
+  const currentStockData = product.currentStock ? Object.values(product.currentStock)[0] : null;
+  
   const [formData, setFormData] = useState({
     name: product.name || '',
     category_id: product.category_id || '',
@@ -1027,16 +1030,23 @@ const ProductEditModal = ({ product, depolar, onClose, onSave }) => {
     case_size: product.case_size || '',
     shelf_life_days: product.shelf_life_days || '',
     skt: product.skt || '',
-    depo_no: product.depo_no || '',
+    depo_no: product.depo_no || 'D001',
     is_active: product.is_active ?? true,
   });
+  
+  const [stockData, setStockData] = useState({
+    quantity: currentStockData?.quantity || 0,
+    lot_no: currentStockData?.lot_no || '',
+    stock_skt: currentStockData?.skt || '',
+  });
+  
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
     
-    const updateData = {
+    const productInfo = {
       name: formData.name,
       category_id: formData.category_id,
       case_name: formData.case_name,
@@ -1048,14 +1058,21 @@ const ProductEditModal = ({ product, depolar, onClose, onSave }) => {
       is_active: formData.is_active,
     };
     
-    await onSave(updateData);
+    const stockInfo = {
+      depo_no: formData.depo_no,
+      quantity: parseInt(stockData.quantity) || 0,
+      lot_no: stockData.lot_no,
+      skt: stockData.stock_skt,
+    };
+    
+    await onSave({ productInfo, stockInfo });
     setSaving(false);
   };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl w-full max-w-lg mx-4 shadow-xl">
-        <div className="flex items-center justify-between p-4 border-b border-slate-200">
+      <div className="bg-white rounded-2xl w-full max-w-lg mx-4 shadow-xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-4 border-b border-slate-200 sticky top-0 bg-white">
           <h2 className="text-lg font-bold text-slate-800">Ürün Düzenle</h2>
           <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg">
             <X className="w-5 h-5 text-slate-500" />
@@ -1104,34 +1121,14 @@ const ProductEditModal = ({ product, depolar, onClose, onSave }) => {
             </div>
           </div>
           
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Koli Adı</label>
-            <input
-              type="text"
-              value={formData.case_name}
-              onChange={(e) => setFormData({...formData, case_name: e.target.value})}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Raf Ömrü (Gün)</label>
-            <input
-              type="number"
-              value={formData.shelf_life_days}
-              onChange={(e) => setFormData({...formData, shelf_life_days: e.target.value})}
-              placeholder="Örn: 30"
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
-          </div>
-          
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">SKT (Son Kullanma Tarihi)</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Raf Ömrü (Gün)</label>
               <input
-                type="date"
-                value={formData.skt}
-                onChange={(e) => setFormData({...formData, skt: e.target.value})}
+                type="number"
+                value={formData.shelf_life_days}
+                onChange={(e) => setFormData({...formData, shelf_life_days: e.target.value})}
+                placeholder="Örn: 30"
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
             </div>
@@ -1148,6 +1145,80 @@ const ProductEditModal = ({ product, depolar, onClose, onSave }) => {
                 ))}
               </select>
             </div>
+          </div>
+          
+          {/* Stok Bilgileri */}
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
+            <h3 className="text-sm font-semibold text-blue-800 flex items-center gap-2">
+              <Package className="w-4 h-4" />
+              Stok Bilgileri
+            </h3>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-blue-700 mb-1">Miktar (Adet)</label>
+                <input
+                  type="number"
+                  value={stockData.quantity}
+                  onChange={(e) => setStockData({...stockData, quantity: e.target.value})}
+                  className="w-full px-3 py-2 border border-blue-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  min="0"
+                  data-testid="product-stock-quantity"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-blue-700 mb-1">Lot No</label>
+                <input
+                  type="text"
+                  value={stockData.lot_no}
+                  onChange={(e) => setStockData({...stockData, lot_no: e.target.value})}
+                  placeholder="Opsiyonel"
+                  className="w-full px-3 py-2 border border-blue-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-blue-700 mb-1">Stok SKT</label>
+                <input
+                  type="date"
+                  value={stockData.stock_skt}
+                  onChange={(e) => setStockData({...stockData, stock_skt: e.target.value})}
+                  className="w-full px-3 py-2 border border-blue-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="is_active"
+              checked={formData.is_active}
+              onChange={(e) => setFormData({...formData, is_active: e.target.checked})}
+              className="w-4 h-4 rounded border-slate-300 text-orange-500 focus:ring-orange-500"
+            />
+            <label htmlFor="is_active" className="text-sm text-slate-700">Aktif</label>
+          </div>
+          
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-2.5 border border-slate-200 rounded-xl text-slate-600 font-medium hover:bg-slate-50"
+            >
+              İptal
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="flex-1 py-2.5 bg-orange-500 text-white rounded-xl font-medium hover:bg-orange-600 disabled:bg-slate-300"
+            >
+              {saving ? 'Kaydediliyor...' : 'Kaydet'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
           </div>
           
           <div className="flex items-center gap-2">
