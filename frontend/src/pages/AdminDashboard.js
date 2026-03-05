@@ -767,4 +767,361 @@ const CampaignsManagementPage = () => {
   );
 };
 
+// ============================================
+// ÜRÜN YÖNETİMİ SAYFASI
+// ============================================
+const ProductsManagementPage = () => {
+  const [products, setProducts] = useState([]);
+  const [depolar, setDepolar] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterDepo, setFilterDepo] = useState('');
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [prodRes, depoRes] = await Promise.all([
+        sfAdminAPI.getProducts(),
+        sfAdminAPI.getDepolar()
+      ]);
+      setProducts(prodRes.data?.data || []);
+      setDepolar(depoRes.data?.data || []);
+    } catch (err) {
+      toast.error('Ürünler yüklenemedi');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleSaveProduct = async (productData) => {
+    try {
+      await sfAdminAPI.updateProduct(editingProduct.product_id, productData);
+      toast.success('Ürün güncellendi');
+      setEditingProduct(null);
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Güncelleme hatası');
+    }
+  };
+
+  // Filtrele
+  const filteredProducts = products.filter(p => {
+    const matchSearch = !searchTerm || 
+      p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.product_id?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchDepo = !filterDepo || p.depo_no === filterDepo;
+    return matchSearch && matchDepo;
+  });
+
+  // SKT'ye göre uyarı rengi
+  const getSktColor = (skt) => {
+    if (!skt) return 'text-slate-500';
+    const date = new Date(skt);
+    const now = new Date();
+    const diffDays = Math.ceil((date - now) / (1000 * 60 * 60 * 24));
+    if (diffDays < 30) return 'text-red-600 font-bold';
+    if (diffDays < 60) return 'text-amber-600';
+    return 'text-emerald-600';
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '-';
+    try {
+      return new Date(dateStr).toLocaleDateString('tr-TR');
+    } catch {
+      return dateStr;
+    }
+  };
+
+  if (loading) return <Loading />;
+
+  return (
+    <div className="space-y-6" data-testid="products-management-page">
+      <PageHeader title="Ürün Yönetimi" subtitle="Admin / Ürünler" />
+
+      {/* Filtreler */}
+      <div className="flex items-center gap-4">
+        <div className="flex-1 relative">
+          <input
+            type="text"
+            placeholder="Ürün ara..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+          />
+          <Package className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        </div>
+        <select
+          value={filterDepo}
+          onChange={(e) => setFilterDepo(e.target.value)}
+          className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+        >
+          <option value="">Tüm Depolar</option>
+          {depolar.map(d => (
+            <option key={d.depo_no} value={d.depo_no}>{d.name}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* İstatistikler */}
+      <div className="grid grid-cols-4 gap-4">
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+          <p className="text-xs text-emerald-600 mb-1">Toplam Ürün</p>
+          <p className="text-2xl font-bold text-emerald-700">{products.length}</p>
+        </div>
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <p className="text-xs text-blue-600 mb-1">Aktif Ürün</p>
+          <p className="text-2xl font-bold text-blue-700">{products.filter(p => p.is_active).length}</p>
+        </div>
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <p className="text-xs text-amber-600 mb-1">SKT 60 Gün İçinde</p>
+          <p className="text-2xl font-bold text-amber-700">
+            {products.filter(p => {
+              if (!p.skt) return false;
+              const diff = Math.ceil((new Date(p.skt) - new Date()) / (1000 * 60 * 60 * 24));
+              return diff > 0 && diff <= 60;
+            }).length}
+          </p>
+        </div>
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+          <p className="text-xs text-red-600 mb-1">SKT Kritik (&lt;30 gün)</p>
+          <p className="text-2xl font-bold text-red-700">
+            {products.filter(p => {
+              if (!p.skt) return false;
+              const diff = Math.ceil((new Date(p.skt) - new Date()) / (1000 * 60 * 60 * 24));
+              return diff > 0 && diff <= 30;
+            }).length}
+          </p>
+        </div>
+      </div>
+
+      {/* Ürün Tablosu */}
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Ürün Adı</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Kategori</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Koli</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">SKT</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Depo</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Durum</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600">İşlem</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filteredProducts.map((product) => (
+                <tr key={product.product_id} className="hover:bg-slate-50">
+                  <td className="px-4 py-3">
+                    <p className="font-medium text-slate-800">{product.name}</p>
+                    <p className="text-xs text-slate-500">{product.product_id}</p>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-slate-600">{product.category_id}</td>
+                  <td className="px-4 py-3">
+                    <p className="text-sm text-slate-600">{product.case_name || '-'}</p>
+                    <p className="text-xs text-slate-400">{product.case_size ? `${product.case_size} adet` : ''}</p>
+                  </td>
+                  <td className={`px-4 py-3 text-sm ${getSktColor(product.skt)}`}>
+                    {formatDate(product.skt)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <p className="text-sm font-medium text-slate-700">{product.depo_no || '-'}</p>
+                    <p className="text-xs text-slate-400">{product.depo_name || ''}</p>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      product.is_active 
+                        ? 'bg-emerald-100 text-emerald-700' 
+                        : 'bg-red-100 text-red-700'
+                    }`}>
+                      {product.is_active ? 'Aktif' : 'Pasif'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <button
+                      onClick={() => setEditingProduct(product)}
+                      className="p-2 text-slate-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                      data-testid={`edit-product-${product.product_id}`}
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Düzenleme Modalı */}
+      {editingProduct && (
+        <ProductEditModal
+          product={editingProduct}
+          depolar={depolar}
+          onClose={() => setEditingProduct(null)}
+          onSave={handleSaveProduct}
+        />
+      )}
+    </div>
+  );
+};
+
+// Ürün Düzenleme Modalı
+const ProductEditModal = ({ product, depolar, onClose, onSave }) => {
+  const [formData, setFormData] = useState({
+    name: product.name || '',
+    category_id: product.category_id || '',
+    case_name: product.case_name || '',
+    case_size: product.case_size || '',
+    skt: product.skt || '',
+    depo_no: product.depo_no || '',
+    is_active: product.is_active ?? true,
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    
+    const updateData = {
+      name: formData.name,
+      category_id: formData.category_id,
+      case_name: formData.case_name,
+      case_size: parseInt(formData.case_size) || null,
+      skt: formData.skt || null,
+      depo_no: formData.depo_no,
+      depo_name: depolar.find(d => d.depo_no === formData.depo_no)?.name || '',
+      is_active: formData.is_active,
+    };
+    
+    await onSave(updateData);
+    setSaving(false);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-2xl w-full max-w-lg mx-4 shadow-xl">
+        <div className="flex items-center justify-between p-4 border-b border-slate-200">
+          <h2 className="text-lg font-bold text-slate-800">Ürün Düzenle</h2>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg">
+            <X className="w-5 h-5 text-slate-500" />
+          </button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Ürün ID</label>
+            <input
+              type="text"
+              value={product.product_id}
+              disabled
+              className="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-lg text-sm text-slate-500"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Ürün Adı</label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({...formData, name: e.target.value})}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Kategori</label>
+              <input
+                type="text"
+                value={formData.category_id}
+                onChange={(e) => setFormData({...formData, category_id: e.target.value})}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Koli Boyutu</label>
+              <input
+                type="number"
+                value={formData.case_size}
+                onChange={(e) => setFormData({...formData, case_size: e.target.value})}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Koli Adı</label>
+            <input
+              type="text"
+              value={formData.case_name}
+              onChange={(e) => setFormData({...formData, case_name: e.target.value})}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">SKT (Son Kullanma Tarihi)</label>
+              <input
+                type="date"
+                value={formData.skt}
+                onChange={(e) => setFormData({...formData, skt: e.target.value})}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Depo</label>
+              <select
+                value={formData.depo_no}
+                onChange={(e) => setFormData({...formData, depo_no: e.target.value})}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              >
+                <option value="">Depo Seçin</option>
+                {depolar.map(d => (
+                  <option key={d.depo_no} value={d.depo_no}>{d.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="is_active"
+              checked={formData.is_active}
+              onChange={(e) => setFormData({...formData, is_active: e.target.checked})}
+              className="w-4 h-4 rounded border-slate-300 text-orange-500 focus:ring-orange-500"
+            />
+            <label htmlFor="is_active" className="text-sm text-slate-700">Aktif</label>
+          </div>
+          
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-2.5 border border-slate-200 rounded-xl text-slate-600 font-medium hover:bg-slate-50"
+            >
+              İptal
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="flex-1 py-2.5 bg-orange-500 text-white rounded-xl font-medium hover:bg-orange-600 disabled:bg-slate-300"
+            >
+              {saving ? 'Kaydediliyor...' : 'Kaydet'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 export default AdminDashboard;
