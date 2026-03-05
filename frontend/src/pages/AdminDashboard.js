@@ -909,6 +909,7 @@ const ProductsManagementPage = () => {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Ürün Adı</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Kategori</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Koli</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Raf Ömrü</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">SKT</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Depo</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Durum</th>
@@ -926,6 +927,10 @@ const ProductsManagementPage = () => {
                   <td className="px-4 py-3">
                     <p className="text-sm text-slate-600">{product.case_name || '-'}</p>
                     <p className="text-xs text-slate-400">{product.case_size ? `${product.case_size} adet` : ''}</p>
+                  </td>
+                  <td className="px-4 py-3">
+                    <p className="text-sm font-medium text-slate-700">{product.shelf_life_days || '-'}</p>
+                    <p className="text-xs text-slate-400">{product.shelf_life_days ? 'gün' : ''}</p>
                   </td>
                   <td className={`px-4 py-3 text-sm ${getSktColor(product.skt)}`}>
                     {formatDate(product.skt)}
