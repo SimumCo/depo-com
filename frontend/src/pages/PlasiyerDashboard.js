@@ -9,7 +9,7 @@ import {
   Truck, ShoppingBag, Plus, Package, LogOut, Users, 
   TrendingUp, Home, Search, Filter, AlertTriangle, 
   BarChart3, RotateCcw, Navigation, ChevronRight,
-  Box, Tag, Zap
+  Box, Tag
 } from 'lucide-react';
 
 // Import Layout Components
@@ -21,13 +21,11 @@ import {
 // Import Plasiyer Page Components
 import RutPage from '../components/plasiyer/RutPage';
 import WarehouseDraftPage from '../components/plasiyer/WarehouseDraftPage';
-import DraftEnginePage from '../components/plasiyer/DraftEnginePage';
 import CustomerCard, { CustomerDetailModal } from '../components/plasiyer/CustomerCard';
 import OrdersPage from '../components/plasiyer/OrdersPage';
 import CreateDeliveryForm from '../components/plasiyer/CreateDeliveryForm';
 import StockPage from '../components/plasiyer/StockPage';
 import CampaignsPage from '../components/plasiyer/CampaignsPage';
-import RouteOrderPage from '../components/plasiyer/RouteOrderPage';
 
 // Day translations
 const dayTranslations = {
