@@ -650,7 +650,7 @@ async def bulk_update_warehouse_stock(
     current_user=Depends(require_role([UserRole.ADMIN]))
 ):
     """Toplu stok güncelleme"""
-    from services.seftali.utils import now_utc, to_iso
+    from services.seftali.core import now_utc, to_iso
     
     updated = 0
     created = 0
