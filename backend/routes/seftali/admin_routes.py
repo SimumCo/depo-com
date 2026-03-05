@@ -503,3 +503,214 @@ async def list_depolar(current_user=Depends(require_role([UserRole.ADMIN]))):
     """Depo listesini getir"""
     return std_resp(True, DEPOLAR)
 
+
+# ===========================
+# DEPO STOK YÖNETİMİ
+# ===========================
+
+class WarehouseStockItem(BaseModel):
+    product_id: str
+    quantity: int
+    lot_no: Optional[str] = None
+    skt: Optional[str] = None  # YYYY-MM-DD
+    depo_no: str = "D001"
+
+
+class WarehouseStockUpdate(BaseModel):
+    quantity: Optional[int] = None
+    lot_no: Optional[str] = None
+    skt: Optional[str] = None
+
+
+class WarehouseStockBulkUpdate(BaseModel):
+    items: List[dict]  # [{product_id, quantity, lot_no, skt, depo_no}]
+
+
+@router.get("/warehouse-stock")
+async def list_warehouse_stock(
+    depo_no: Optional[str] = None,
+    product_id: Optional[str] = None,
+    current_user=Depends(require_role([UserRole.ADMIN]))
+):
+    """Depo stok listesini getir"""
+    filt = {}
+    if depo_no:
+        filt["depo_no"] = depo_no
+    if product_id:
+        filt["product_id"] = product_id
+    
+    cursor = db[COL_WAREHOUSE_STOCK].find(filt, {"_id": 0}).sort([("depo_no", 1), ("product_id", 1)])
+    items = await cursor.to_list(length=1000)
+    
+    # Ürün bilgilerini ekle
+    for item in items:
+        product = await db[COL_PRODUCTS].find_one({"product_id": item["product_id"]}, {"_id": 0, "name": 1, "category_id": 1})
+        if product:
+            item["product_name"] = product.get("name", "")
+            item["category_id"] = product.get("category_id", "")
+        
+        # Depo adını ekle
+        depo = next((d for d in DEPOLAR if d["depo_no"] == item.get("depo_no")), None)
+        if depo:
+            item["depo_name"] = depo["name"]
+    
+    return std_resp(True, items)
+
+
+@router.post("/warehouse-stock")
+async def add_warehouse_stock(
+    body: WarehouseStockItem,
+    current_user=Depends(require_role([UserRole.ADMIN]))
+):
+    """Depoya stok ekle veya güncelle (upsert)"""
+    from services.seftali.utils import now_utc, to_iso
+    
+    # Ürün kontrolü
+    product = await db[COL_PRODUCTS].find_one({"product_id": body.product_id})
+    if not product:
+        return std_resp(False, None, "Ürün bulunamadı")
+    
+    existing = await db[COL_WAREHOUSE_STOCK].find_one({
+        "product_id": body.product_id,
+        "depo_no": body.depo_no
+    })
+    
+    stock_data = {
+        "product_id": body.product_id,
+        "depo_no": body.depo_no,
+        "quantity": body.quantity,
+        "lot_no": body.lot_no or "",
+        "skt": body.skt or "",
+        "updated_at": to_iso(now_utc()),
+        "updated_by": current_user.id
+    }
+    
+    if existing:
+        await db[COL_WAREHOUSE_STOCK].update_one(
+            {"product_id": body.product_id, "depo_no": body.depo_no},
+            {"$set": stock_data}
+        )
+        message = "Stok güncellendi"
+    else:
+        stock_data["id"] = str(uuid.uuid4())
+        stock_data["created_at"] = to_iso(now_utc())
+        await db[COL_WAREHOUSE_STOCK].insert_one(stock_data)
+        message = "Stok eklendi"
+    
+    result = await db[COL_WAREHOUSE_STOCK].find_one(
+        {"product_id": body.product_id, "depo_no": body.depo_no}, 
+        {"_id": 0}
+    )
+    return std_resp(True, result, message)
+
+
+@router.patch("/warehouse-stock/{product_id}")
+async def update_warehouse_stock(
+    product_id: str,
+    body: WarehouseStockUpdate,
+    depo_no: str = Query("D001"),
+    current_user=Depends(require_role([UserRole.ADMIN]))
+):
+    """Depo stok güncelle"""
+    from services.seftali.utils import now_utc, to_iso
+    from fastapi import HTTPException
+    
+    existing = await db[COL_WAREHOUSE_STOCK].find_one({
+        "product_id": product_id,
+        "depo_no": depo_no
+    })
+    
+    if not existing:
+        raise HTTPException(404, "Stok kaydı bulunamadı")
+    
+    update_data = {"updated_at": to_iso(now_utc()), "updated_by": current_user.id}
+    
+    if body.quantity is not None:
+        update_data["quantity"] = body.quantity
+    if body.lot_no is not None:
+        update_data["lot_no"] = body.lot_no
+    if body.skt is not None:
+        update_data["skt"] = body.skt
+    
+    await db[COL_WAREHOUSE_STOCK].update_one(
+        {"product_id": product_id, "depo_no": depo_no},
+        {"$set": update_data}
+    )
+    
+    result = await db[COL_WAREHOUSE_STOCK].find_one(
+        {"product_id": product_id, "depo_no": depo_no}, 
+        {"_id": 0}
+    )
+    return std_resp(True, result, "Stok güncellendi")
+
+
+@router.post("/warehouse-stock/bulk")
+async def bulk_update_warehouse_stock(
+    body: WarehouseStockBulkUpdate,
+    current_user=Depends(require_role([UserRole.ADMIN]))
+):
+    """Toplu stok güncelleme"""
+    from services.seftali.utils import now_utc, to_iso
+    
+    updated = 0
+    created = 0
+    
+    for item in body.items:
+        product_id = item.get("product_id")
+        depo_no = item.get("depo_no", "D001")
+        quantity = item.get("quantity", 0)
+        lot_no = item.get("lot_no", "")
+        skt = item.get("skt", "")
+        
+        if not product_id:
+            continue
+        
+        existing = await db[COL_WAREHOUSE_STOCK].find_one({
+            "product_id": product_id,
+            "depo_no": depo_no
+        })
+        
+        stock_data = {
+            "product_id": product_id,
+            "depo_no": depo_no,
+            "quantity": quantity,
+            "lot_no": lot_no,
+            "skt": skt,
+            "updated_at": to_iso(now_utc()),
+            "updated_by": current_user.id
+        }
+        
+        if existing:
+            await db[COL_WAREHOUSE_STOCK].update_one(
+                {"product_id": product_id, "depo_no": depo_no},
+                {"$set": stock_data}
+            )
+            updated += 1
+        else:
+            stock_data["id"] = str(uuid.uuid4())
+            stock_data["created_at"] = to_iso(now_utc())
+            await db[COL_WAREHOUSE_STOCK].insert_one(stock_data)
+            created += 1
+    
+    return std_resp(True, {"updated": updated, "created": created}, f"{updated} güncellendi, {created} eklendi")
+
+
+@router.delete("/warehouse-stock/{product_id}")
+async def delete_warehouse_stock(
+    product_id: str,
+    depo_no: str = Query("D001"),
+    current_user=Depends(require_role([UserRole.ADMIN]))
+):
+    """Depo stok kaydını sil"""
+    from fastapi import HTTPException
+    
+    result = await db[COL_WAREHOUSE_STOCK].delete_one({
+        "product_id": product_id,
+        "depo_no": depo_no
+    })
+    
+    if result.deleted_count == 0:
+        raise HTTPException(404, "Stok kaydı bulunamadı")
+    
+    return std_resp(True, {"product_id": product_id, "depo_no": depo_no}, "Stok kaydı silindi")
+
