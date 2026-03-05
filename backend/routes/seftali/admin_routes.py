@@ -563,7 +563,7 @@ async def add_warehouse_stock(
     current_user=Depends(require_role([UserRole.ADMIN]))
 ):
     """Depoya stok ekle veya güncelle (upsert)"""
-    from services.seftali.utils import now_utc, to_iso
+    from services.seftali.core import now_utc, to_iso
     
     # Ürün kontrolü
     product = await db[COL_PRODUCTS].find_one({"product_id": body.product_id})
@@ -612,7 +612,7 @@ async def update_warehouse_stock(
     current_user=Depends(require_role([UserRole.ADMIN]))
 ):
     """Depo stok güncelle"""
-    from services.seftali.utils import now_utc, to_iso
+    from services.seftali.core import now_utc, to_iso
     from fastapi import HTTPException
     
     existing = await db[COL_WAREHOUSE_STOCK].find_one({
