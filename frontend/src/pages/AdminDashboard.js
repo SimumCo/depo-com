@@ -68,6 +68,7 @@ const AdminDashboard = () => {
   // Sidebar items
   const sidebarItems = [
     { id: 'overview', label: 'Genel Bakis', icon: Home },
+    { id: 'products', label: 'Ürünler', icon: Package },
     { id: 'warehouse', label: 'Depo Siparisleri', icon: Package, badge: pendingOrdersCount },
     { id: 'campaigns', label: 'Kampanyalar', icon: Tag },
     { id: 'variance', label: 'Sapmalar', icon: TrendingUp, badge: pendingVarianceCount },
