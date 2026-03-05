@@ -282,8 +282,8 @@ const ProductRow = ({ item, onUpdateQty }) => {
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-slate-900">{item.product_name}</h3>
           <div className="flex flex-col gap-1 mt-1 text-sm text-slate-500">
-            <p>Depo stoğu : {item.warehouse_stock?.toLocaleString('tr-TR') || '0'} ad</p>
-            <p>Tahmini SKT : {formatDate(item.estimated_expiry)}</p>
+            <p>Depo stoğu : {(item.warehouse_stock || item.net_need || 0).toLocaleString('tr-TR')} ad</p>
+            <p>Tahmini SKT : {formatDate(item.estimated_expiry || item.expiry_date)}</p>
           </div>
         </div>
 
@@ -295,7 +295,7 @@ const ProductRow = ({ item, onUpdateQty }) => {
         {/* Toplam Bilgisi */}
         <div className="text-right text-sm">
           <p className="text-slate-500">
-            taslak ve sipariş toplam : <span className="font-medium text-slate-700">{item.total_qty || 0} ad</span>
+            taslak ve sipariş toplam : <span className="font-medium text-slate-700">{Math.round((item.order_qty || 0) + (item.draft_qty || 0))} ad</span>
             <span className="ml-2 text-slate-400">{casesNeeded} koli</span>
           </p>
         </div>
