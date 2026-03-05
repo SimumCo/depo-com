@@ -38,6 +38,7 @@ COL_SETTINGS = "sf_system_settings"
 COL_AUDIT_EVENTS = "sf_audit_events"
 COL_STOCK_DECLARATIONS = "sf_stock_declarations"
 COL_PLASIYER_STOCK = "plasiyer_stock"
+COL_WAREHOUSE_STOCK = "sf_warehouse_stock"
 
 # Draft Engine collections
 COL_DE_STATE = "de_customer_product_state"
