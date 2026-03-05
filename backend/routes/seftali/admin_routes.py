@@ -373,3 +373,133 @@ async def update_system_settings(
     settings = await db[COL_SETTINGS].find_one({"type": "order_settings"}, {"_id": 0})
     return std_resp(True, settings, "Ayarlar güncellendi")
 
+
+# ===========================
+# ÜRÜN YÖNETİMİ
+# ===========================
+
+@router.get("/products")
+async def list_products(current_user=Depends(require_role([UserRole.ADMIN]))):
+    """Tüm ürünleri listele (Admin için)"""
+    cursor = db[COL_PRODUCTS].find({}, {"_id": 0}).sort("name", 1)
+    products = await cursor.to_list(length=500)
+    
+    # SKT'yi string formatına çevir
+    for prod in products:
+        if prod.get("skt"):
+            try:
+                if hasattr(prod["skt"], "strftime"):
+                    prod["skt"] = prod["skt"].strftime("%Y-%m-%d")
+            except:
+                pass
+    
+    return std_resp(True, products)
+
+
+@router.get("/products/{product_id}")
+async def get_product(product_id: str, current_user=Depends(require_role([UserRole.ADMIN]))):
+    """Tek bir ürün detayını getir"""
+    product = await db[COL_PRODUCTS].find_one({"product_id": product_id}, {"_id": 0})
+    if not product:
+        return std_resp(False, None, "Ürün bulunamadı")
+    
+    # SKT'yi string formatına çevir
+    if product.get("skt"):
+        try:
+            if hasattr(product["skt"], "strftime"):
+                product["skt"] = product["skt"].strftime("%Y-%m-%d")
+        except:
+            pass
+    
+    return std_resp(True, product)
+
+
+from pydantic import BaseModel
+from typing import Optional as Opt
+from datetime import datetime, timezone
+
+class ProductUpdateBody(BaseModel):
+    name: Opt[str] = None
+    category_id: Opt[str] = None
+    unit_type: Opt[str] = None
+    shelf_life_days: Opt[int] = None
+    case_name: Opt[str] = None
+    case_size: Opt[int] = None
+    skt: Opt[str] = None  # YYYY-MM-DD format
+    depo_no: Opt[str] = None
+    depo_name: Opt[str] = None
+    is_active: Opt[bool] = None
+
+
+@router.patch("/products/{product_id}")
+async def update_product(
+    product_id: str,
+    body: ProductUpdateBody,
+    current_user=Depends(require_role([UserRole.ADMIN]))
+):
+    """Ürün bilgilerini güncelle"""
+    # Mevcut ürünü kontrol et
+    existing = await db[COL_PRODUCTS].find_one({"product_id": product_id})
+    if not existing:
+        return std_resp(False, None, "Ürün bulunamadı")
+    
+    update_data = {}
+    
+    if body.name is not None:
+        update_data["name"] = body.name
+    if body.category_id is not None:
+        update_data["category_id"] = body.category_id
+    if body.unit_type is not None:
+        update_data["unit_type"] = body.unit_type
+    if body.shelf_life_days is not None:
+        update_data["shelf_life_days"] = body.shelf_life_days
+    if body.case_name is not None:
+        update_data["case_name"] = body.case_name
+    if body.case_size is not None:
+        update_data["case_size"] = body.case_size
+    if body.is_active is not None:
+        update_data["is_active"] = body.is_active
+    if body.depo_no is not None:
+        update_data["depo_no"] = body.depo_no
+    if body.depo_name is not None:
+        update_data["depo_name"] = body.depo_name
+    
+    # SKT'yi datetime'a çevir
+    if body.skt is not None:
+        try:
+            update_data["skt"] = datetime.strptime(body.skt, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        except ValueError:
+            return std_resp(False, None, "Geçersiz SKT formatı (YYYY-MM-DD olmalı)")
+    
+    if not update_data:
+        return std_resp(False, None, "Güncellenecek alan belirtilmedi")
+    
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db[COL_PRODUCTS].update_one(
+        {"product_id": product_id},
+        {"$set": update_data}
+    )
+    
+    # Güncellenmiş ürünü döndür
+    updated = await db[COL_PRODUCTS].find_one({"product_id": product_id}, {"_id": 0})
+    if updated.get("skt") and hasattr(updated["skt"], "strftime"):
+        updated["skt"] = updated["skt"].strftime("%Y-%m-%d")
+    
+    return std_resp(True, updated, "Ürün güncellendi")
+
+
+# Depo listesi
+DEPOLAR = [
+    {"depo_no": "D001", "name": "İstanbul Merkez Depo"},
+    {"depo_no": "D002", "name": "İstanbul Anadolu Depo"},
+    {"depo_no": "D003", "name": "Ankara Merkez Depo"},
+    {"depo_no": "D004", "name": "İzmir Depo"},
+    {"depo_no": "D005", "name": "Bursa Depo"},
+]
+
+@router.get("/depolar")
+async def list_depolar(current_user=Depends(require_role([UserRole.ADMIN]))):
+    """Depo listesini getir"""
+    return std_resp(True, DEPOLAR)
+
