@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, Query
-from typing import Optional
+from typing import Optional, List
 from models.user import UserRole
 from utils.auth import require_role
 from config.database import db
 from services.seftali.core import (
-    COL_DELIVERIES, COL_CUSTOMERS, COL_PRODUCTS, COL_VARIANCE_EVENTS, std_resp
+    COL_DELIVERIES, COL_CUSTOMERS, COL_PRODUCTS, COL_VARIANCE_EVENTS, COL_WAREHOUSE_STOCK, std_resp
 )
 
 router = APIRouter(prefix="/admin", tags=["Seftali-Admin"])
